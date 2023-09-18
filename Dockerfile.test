@@ -1,0 +1,9 @@
+FROM python:3.11 AS builder
+
+COPY ./configs/requirements-test.txt /tmp/requirements-test.txt
+RUN pip install -r /tmp/requirements-test.txt
+
+RUN mkdir /app
+COPY ./tests/ /app/backend/tests/
+
+WORKDIR /app/backend/tests

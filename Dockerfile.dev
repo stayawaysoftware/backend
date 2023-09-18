@@ -1,7 +1,7 @@
 FROM python:3.11 AS builder
 
-COPY ./configs/requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+COPY ./configs/requirements-dev.txt /tmp/requirements-dev.txt
+RUN pip install -r /tmp/requirements-dev.txt
 
 RUN mkdir /app
 COPY ./src/ /app/backend/src/

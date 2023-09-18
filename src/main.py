@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
+from db import db
 import uvicorn
 
 app = FastAPI(
