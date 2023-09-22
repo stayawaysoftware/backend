@@ -13,6 +13,9 @@ run: delete-containers build-dev
 run-bash: delete-containers build-dev
 	@sudo docker run -it --name devcontainer -p 8000:8000 dev bash
 
+run-local:
+	@python3 src/main.py
+
 test: delete-containers build-test
 	@sudo docker run -it --name testcontainer -p 8000:8000 test
 	
