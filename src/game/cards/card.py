@@ -77,3 +77,9 @@ class Card:
     ) -> None:
         """Set the function to do effect"""
         self.function_to_do_efect = function_to_do_efect
+
+    def do_effect(self, game: Game, targets: list[int] = None) -> GameAction:
+        """Do effect of card"""
+        if targets is None:
+            targets = []
+        return self.do_effect(game, targets)
