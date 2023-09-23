@@ -76,4 +76,18 @@ class Game:
         """Sets new game decks"""
         self.decks = newDecks
     
-    
+    def nextTurn(self):
+        """Changes the current turn to the next one."""
+        pass
+
+    def endGame(self):
+        """Ends the actual game."""
+        pass
+
+    def checkVictory(self):
+        """Checks who win the match"""
+        pass
+
+    def dealStartingCards(self):
+        """Deals the initial cards to the players"""
+        pass
