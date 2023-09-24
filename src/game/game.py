@@ -11,8 +11,8 @@ class Game:
             decks(Deck): Decks of the game.
     """
 
-    def __init__(self, gameId: int, name: str, userIds: list, playerQuantity: int, roundDirection: bool, actualPhase: str,
-                    actualTurn: int, decks: list): #Deck type will be implemented once i finish all the basic stuff
+    def __init__(self, gameId: int, name: str, userIds: list[int], playerQuantity: int, roundDirection: bool, actualPhase: str,
+                    actualTurn: int): #Deck type will be implemented once I finish all the basic stuff
         """ Game Class constructor """
         self.gameId = game_id
         self.name = name
@@ -21,7 +21,7 @@ class Game:
         self.roundDirection = round_direction
         self.actualPhase = actual_phase
         self.actualTurn = actual_turn
-        self.decks = decks
+        #self.decks = decks
 
     
     def get_gameId(self):
@@ -68,13 +68,13 @@ class Game:
         """Sets a new player turn"""
         self.actualTurn = newTurn
 
-    def get_decks(self):
+    #def get_decks(self):
         """Returns the game decks"""
-        return self.decks
+    #    return self.decks
 
-    def set_decks(self, newDecks: list):
+    #def set_decks(self, newDecks: list):
         """Sets new game decks"""
-        self.decks = newDecks
+    #    self.decks = newDecks
     
     def nextTurn(self):
         """Changes the current turn to the next one."""
