@@ -9,10 +9,23 @@ class Game:
             actualPhase(str): The actual phase in the turn.
             actualTurn(int): The position that has the actual turn.
             decks(Deck): Decks of the game.
-    """
+        Methods:
+            for each attribute exists a get/set method with exception at the attributes "id", "gameId",
+            "userIds" and "playerQuantity" because we don't want to modify that attributes in the match.
+
+            get_attributeName(): returns the attribute "attributeName"
+            set_attributeName(): sets a new value for "attributeName"
+            nextTurn(): Changes the current turn to the next one.
+            endGame():  Ends the actual game.
+            checkVictory(): Checks who win the match.
+            dealingStartingCards(): Deals the initial cards to the players
+
+        note: Decks will be implemented soon.
+
+    """ 
 
     def __init__(self, gameId: int, name: str, userIds: list[int], playerQuantity: int, roundDirection: bool, actualPhase: str,
-                    actualTurn: int): #Deck type will be implemented once I finish all the basic stuff
+                    actualTurn: int):
         """ Game Class constructor """
         self.gameId = game_id
         self.name = name
