@@ -21,7 +21,6 @@ class Game:
         self.roundDirection = round_direction
         self.actualPhase = actual_phase
         self.actualTurn = actual_turn
-        #self.decks = decks
 
     
     def get_gameId(self):
@@ -68,13 +67,6 @@ class Game:
         """Sets a new player turn"""
         self.actualTurn = newTurn
 
-    #def get_decks(self):
-        """Returns the game decks"""
-    #    return self.decks
-
-    #def set_decks(self, newDecks: list):
-        """Sets new game decks"""
-    #    self.decks = newDecks
     
     def nextTurn(self):
         """Changes the current turn to the next one."""
