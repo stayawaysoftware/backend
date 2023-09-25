@@ -1,42 +1,50 @@
-
 class Player:
-    """ Player Class that represents a player in a Match 
-        Attributes:
-            id (int): The id of the player inherited from User Class id (Must be the same).
-            name (str): The name of the player inherited from User Class name (Must be the same).
-            id_game (int): The id of the player inherited from Room Class id (Must be the same).
-            role (str): Player's role in the game.
-            round_position (int): Player's position during the round.
-            alive (bool): Player's status during the game.
-            quarentined (bool): Player's status about quarentine effect.
+    """Player Class that represents a player in a Match
+    Attributes:
+        id (int): The id of the player inherited from User Class id (Must be the same).
+        name (str): The name of the player inherited from User Class name (Must be the same).
+        id_game (int): The id of the player inherited from Room Class id (Must be the same).
+        role (str): Player's role in the game.
+        round_position (int): Player's position during the round.
+        alive (bool): Player's status during the game.
+        quarentined (bool): Player's status about quarentine effect.
     """
 
-    def __init__(self, id: int, name: str, id_game: int, role: str, round_position: int, alive: bool=True,
-                    quarantined: bool=False):
+    def __init__(
+        self,
+        id: int,
+        name: str,
+        id_game: int,
+        role: str,
+        round_position: int,
+        alive: bool = True,
+        quarantined: bool = False,
+    ):
         """Constructor for Player class"""
         self.id = id
         self.name = name
-        self.id_lobby = id_lobby
+        self.id_game = id_game
         self.role = role
         self.round_position = round_position
-        self.alive = alive #Weird, why would I want this condition to be false?
+        self.alive = (
+            alive  # Weird, why would I want this condition to be false?
+        )
         self.quarantined = quarantined
 
-    
     def __str__(self):
         """String representation for Player Class"""
-        return f"""User: {self.id},{self.name},{self.id_lobby},{self.role},{self.round_position},
-                    {self.alive},{self.quarantined}"""
+        return f"User: {self.id},{self.name},{self.id_lobby},{self.role},\
+            {self.round_position},{self.alive},{self.quarantined}"
 
     def get_id(self):
         """Returns the player's id"""
-        return self.id    
+        return self.id
 
     def get_name(self):
         """Returns the player's name"""
         return self.name
 
-    def set_name(self,newName: str):
+    def set_name(self, newName: str):
         """Sets the player's name"""
         self.name = newName
 
@@ -63,7 +71,7 @@ class Player:
     def get_alive(self):
         """Returns the player's alive status"""
         return self.alive
-    
+
     def set_alive(self, newStatus: bool):
         """Sets the player's alive status"""
         self.alive = newStatus
@@ -71,24 +79,19 @@ class Player:
     def get_quarentined(self):
         """Returns the player's quarentine status"""
         return self.quarantined
-    
-    def set_quarentined(self,newStatus: bool):
+
+    def set_quarentined(self, newStatus: bool):
         """Sets the player's quarentine status"""
         self.quarantined = newStatus
 
-
     def DrawCard(self):
         """Draws a card from the deck."""
-        pass
 
     def SwapCard(self):
         """Swap cards with another player."""
-        pass
 
     def PlayCard(self):
         """Allows the player to play a card in the game."""
-        pass
 
     def DiscardCard(self):
         """Allows the player to discard a card in the game."""
-        pass
