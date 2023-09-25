@@ -1,7 +1,7 @@
 from typing import Callable
-from src.game.cards.cardType import CardType
-from src.game import Game
-from src.game.gameAction import GameAction
+
+from src.core.game.cards.card_type import CardType
+from src.core.game.game import Game
 
 
 class Card:
@@ -14,7 +14,7 @@ class Card:
         description: str,
         type: CardType,
         deck_id: int,
-        function_to_do_efect: Callable[[Game, list[int]], GameAction],
+        function_to_do_efect: Callable[[Game, list[int]], None],
     ) -> None:
         """Constructor for Card class"""
         self.card_id = card_id
@@ -26,7 +26,8 @@ class Card:
 
     def __str__(self) -> str:
         """String representation of Card class"""
-        return f"Card: {self.name} ({self.card_id}) ({self.type}) ({self.deck_id})"
+        return f"Card: {self.name} ({self.card_id}) ({self.type})\
+             ({self.deck_id})"
 
     def get_card_id(self) -> int:
         """Return the card id"""
@@ -48,7 +49,7 @@ class Card:
         """Return the deck id"""
         return self.deck_id
 
-    def get_function_to_do_efect(self) -> Callable[[Game, list[int]], GameAction]:
+    def get_function_to_do_efect(self) -> Callable[[Game, list[int]], None]:
         """Return the function to do effect"""
         return self.function_to_do_efect
 
@@ -73,12 +74,12 @@ class Card:
         self.deck_id = deck_id
 
     def set_function_to_do_efect(
-        self, function_to_do_efect: Callable[[Game, list[int]], GameAction]
+        self, function_to_do_efect: Callable[[Game, list[int]], None]
     ) -> None:
         """Set the function to do effect"""
         self.function_to_do_efect = function_to_do_efect
 
-    def do_effect(self, game: Game, targets: list[int] = None) -> GameAction:
+    def do_effect(self, game: Game, targets: list[int] = None) -> None:
         """Do effect of card"""
         if targets is None:
             targets = []
