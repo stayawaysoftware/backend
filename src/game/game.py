@@ -1,95 +1,98 @@
 class Game:
     """ Game Class that represents a Game Match 
         Attributes:
-            gameId (int): The id of the Match inherited from Room Class id (Must be the same).
+            game_id (int): The id of the Match inherited from Room Class id (Must be the same).
             name (str): The name of the Match inherited from Room Class name (Must be the same).
-            userIds (list): List of Players ids in the game inherited from Room Class.
-            playerQuantity(int): How much players are in the match. (This can be inherited from Room Class)
-            roundDirection(bool): In which direction the round goes (0 left. 1 right).
-            actualPhase(str): The actual phase in the turn.
-            actualTurn(int): The position that has the actual turn.
+            user_ids (list): List of Players ids in the game inherited from Room Class.
+            player_quantity(int): How much players are in the match. (This can be inherited from Room Class)
+            round_direction(bool): In which direction the round goes (0 left. 1 right).
+            actual_phase(str): The actual phase in the turn.
+            actual_turn(int): The position that has the actual turn.
             decks(Deck): Decks of the game.
         Methods:
             for each attribute exists a get/set method with exception at the attributes "id", "gameId",
-            "userIds" and "playerQuantity" because we don't want to modify that attributes in the match.
+            "user_ids" because we don't want to modify that attributes in the match.
 
             get_attributeName(): returns the attribute "attributeName"
             set_attributeName(): sets a new value for "attributeName"
-            nextTurn(): Changes the current turn to the next one.
-            endGame():  Ends the actual game.
-            checkVictory(): Checks who win the match.
-            dealingStartingCards(): Deals the initial cards to the players
+            diminish_player_quantity(self):Substracts 1 to player_quantity.
+            set_round_direction(self): Sets the round direction to the opposite direction.
+            next_turn(): Changes the current turn to the next one.
+            end_game():  Ends the actual game.
+            check_victory(): Checks who win the match.
+            dealing_starting_cards(): Deals the initial cards to the players
 
         note: Decks will be implemented soon.
 
     """ 
 
-    def __init__(self, gameId: int, name: str, userIds: list[int], playerQuantity: int, roundDirection: bool, actualPhase: str,
-                    actualTurn: int):
+    def __init__(self, game_id: int, name: str, user_ids: list[int], player_quantity: int, round_direction: bool, actual_phase: str,
+                    actual_turn: int):
         """ Game Class constructor """
-        self.gameId = game_id
+        self.game_id = game_id
         self.name = name
-        self.userIds = user_ids
-        self.playerQuantity = player_quantity
-        self.roundDirection = round_direction
-        self.actualPhase = actual_phase
-        self.actualTurn = actual_turn
+        self.user_ids = user_ids
+        self.player_quantity = player_quantity
+        self.round_direction = round_direction
+        self.actual_phase = actual_phase
+        self.actual_turn = actual_turn
 
     
-    def get_gameId(self):
+    def get_game_id(self):
         """ Returns the match ID """
-        return self.gameId
+        return self.game_id
 
     def get_name(self):
         """ Returns the match name """
         return self.name
 
-    def get_userIds(self):
+    def get_user_ids(self):
         """Returns the list of players id"""
-        return self.userIds
+        return self.user_ids
     
-    def get_playerQuantity(self):
+    def get_player_quantity(self):
         """Returns the players quantity"""
-        return self.playerQuantity
+        return self.player_quantity
 
-    def set_playerQuantity(self, newQuant: int):
-        """Sets the players quantity"""
-        self.playerQuantity = newQuant
+    def diminish_player_quantity(self):
+        """Substracts 1 to player_quantity"""
+        if (self.player.quantity >= 1):
+            self.player_quantity -= 1
+
     
-    def get_roundDirection(self):
+    def get_round_direction(self):
         """Returns the round direction"""
-        return self.roundDirection
+        return self.round_direction
     
-    def set_roundDirection(self, newDirection: bool):
-        """Sets the round direction"""
-        self.roundDirection = newDirection
+    def set_round_direction(self):
+        """Sets the round direction to the opposite direction"""
+        self.round_direction = not self.round_direction
 
-    def get_actualPhase(self):
+    def get_actual_phase(self):
         """Returns the actual phase"""
-        return actualPhase
+        return actual_phase
 
-    def set_actualPhase(self, newPhase: str):
+    def set_actual_phase(self, newPhase: str):
         """Sets a new phase"""
-        self.actualPhase = newPhase
+        self.actual_phase = newPhase
 
-    def get_actualTurn(self):
+    def get_actual_turn(self):
         """Returns the actual player turn"""
-        return self.actualTurn 
+        return self.actual_turn 
 
-    def set_actualTurn(self, newTurn: int):
+    def set_actual_turn(self, newTurn: int):
         """Sets a new player turn"""
-        self.actualTurn = newTurn
-
+        self.actual_turn = newTurn
     
-    def nextTurn(self):
+    def next_turn(self):
         """Changes the current turn to the next one."""
         pass
 
-    def endGame(self):
+    def end_game(self):
         """Ends the actual game."""
         pass
 
-    def checkVictory(self):
+    def check_victory(self):
         """Checks who win the match"""
         pass
 
