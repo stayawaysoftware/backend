@@ -20,6 +20,7 @@ class GameAction:
     """
 
     def __init__(self, action: str, target: int = None):
+        """Initialize class. Argument target is optional."""
         self.action = action
         self.target = target
 
