@@ -6,10 +6,10 @@ from src.core.game.game import Game
 from src.core.game.game_action import GameAction
 
 
-class SimpleTest(unittest.TestCase):
-    """Simple test."""
+class TestGameActionCreation(unittest.TestCase):
+    """Test for Game Action creation."""
 
-    def test_do_effect1(self):
+    def test_creation1(self):
         """Test do_effect method 1."""
         card = Card(
             1,
@@ -22,7 +22,7 @@ class SimpleTest(unittest.TestCase):
             str(card.do_effect(None, None)), str(GameAction("Action 1", None))
         )
 
-    def test_do_effect2(self):
+    def test_creation2(self):
         """Test do_effect method 2."""
         card = Card(
             2,
@@ -35,7 +35,7 @@ class SimpleTest(unittest.TestCase):
             str(card.do_effect(None, 2)), str(GameAction("Action 2", 2))
         )
 
-    def test_do_effect3(self):
+    def test_creation3(self):
         """Test do_effect method 3."""
         card = Card(
             3,
@@ -49,12 +49,10 @@ class SimpleTest(unittest.TestCase):
         )
 
 
-class RealEffectsTest(unittest.TestCase):
-    """Real effects test, with the Stay Away cards."""
+class TestFlamethrowerEffect(unittest.TestCase):
+    """Test for flamethrower_effect method."""
 
-    # ====================== FLAMETHROWER EFFECT ======================
-
-    def test_flamethrower_effect(self):
+    def test_effect(self):
         """Test flamethrower_effect method."""
         card = Card(
             1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
@@ -64,7 +62,7 @@ class RealEffectsTest(unittest.TestCase):
             str(card.do_effect(game, 2)), str(GameAction("KILL", 2))
         )
 
-    def test_flamethrower_effect_assert1(self):
+    def test_assert1(self):
         """Test flamethrower_effect method assertion 1 -> act_player = target."""
         card = Card(
             1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
@@ -72,7 +70,7 @@ class RealEffectsTest(unittest.TestCase):
         game = Game(1, "Game 1", [1, 2, 3], 3, True, "PLAY", 1)
         self.assertRaises(AssertionError, card.do_effect, game, 1)
 
-    def test_flamethrower_effect_assert2(self):
+    def test_assert2(self):
         """Test flamethrower_effect method assertion 2 -> cnt_player = 1."""
         card = Card(
             1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
@@ -80,7 +78,7 @@ class RealEffectsTest(unittest.TestCase):
         game = Game(1, "Game 1", [1], 1, True, "PLAY", 1)
         self.assertRaises(AssertionError, card.do_effect, game, 2)
 
-    def test_flamethrower_effect_assert3(self):
+    def test_assert3(self):
         """Test flamethrower_effect method assertion 3 -> act_phase != PLAY."""
         card = Card(
             1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
@@ -88,7 +86,7 @@ class RealEffectsTest(unittest.TestCase):
         game = Game(1, "Game 1", [1, 2, 3], 3, True, "DRAW", 1)
         self.assertRaises(AssertionError, card.do_effect, game, 2)
 
-    def test_flamethrower_effect_assert4(self):
+    def test_assert4(self):
         """Test flamethrower_effect method assertion 4 -> target is None."""
         card = Card(
             1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
