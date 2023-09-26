@@ -16,10 +16,10 @@ class SimpleTest(unittest.TestCase):
             "Card 1",
             "Description 1",
             "Category 1",
-            lambda game, x: GameAction("Action 1"),
+            lambda game, x: GameAction("Action 1", None),
         )
         self.assertEqual(
-            str(card.do_effect(None, None)), str(GameAction("Action 1"))
+            str(card.do_effect(None, None)), str(GameAction("Action 1", None))
         )
 
     def test_do_effect2(self):
@@ -45,7 +45,7 @@ class SimpleTest(unittest.TestCase):
             lambda game, x: GameAction("Action 3", x),
         )
         self.assertEqual(
-            str(card.do_effect(None, None)), str(GameAction("Action 3"))
+            str(card.do_effect(None, None)), str(GameAction("Action 3", None))
         )
 
 
