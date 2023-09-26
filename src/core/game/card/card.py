@@ -1,9 +1,9 @@
 """Module providing the Card class."""
-
-from typing import Callable
-
-from src.core.game.game_action import GameAction
 from src.core.game.game import Game
+from src.core.game.game_action import GameAction
+from typing import Callable
+from typing import Optional
+
 
 class Card:
     """
@@ -14,7 +14,7 @@ class Card:
         name (str): Card name.
         description (str): Card description.
         category (str): Card category (Action, Defense, Obstacle, Infection, Panic).
-        effect (Callable[[Game], GameAction]): Card effect.
+        effect (Callable[[Game, Optional[int]], GameAction]): Card effect.
             Card function that takes a game and returns a game action, calculating the card effect in this game.
 
     Methods:
@@ -26,7 +26,15 @@ class Card:
         Other methods:
             do_effect(): Return card effect in this game (GameAction).
     """
-    def __init__(self, number: int, name: str, description: str, category: str, effect: Callable[[Game, int], GameAction]):
+
+    def __init__(
+        self,
+        number: int,
+        name: str,
+        description: str,
+        category: str,
+        effect: Callable[[Game, Optional[int]], GameAction],
+    ):
         """Initialize class."""
         self.number = number
         self.name = name
@@ -54,6 +62,6 @@ class Card:
         """Return card category."""
         return self.category
 
-    def do_effect(self, game: Game, target : int = None) -> GameAction:
+    def do_effect(self, game: Game, target: Optional[int]) -> GameAction:
         """Return card effect in this game."""
         return self.effect(game, target)
