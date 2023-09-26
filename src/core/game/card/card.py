@@ -26,7 +26,7 @@ class Card:
         Other methods:
             do_effect(): Return card effect in this game (GameAction).
     """
-    def __init__(self, number: int, name: str, description: str, category: str, effect: Callable[[Game], GameAction]):
+    def __init__(self, number: int, name: str, description: str, category: str, effect: Callable[[Game, int], GameAction]):
         """Initialize class."""
         self.number = number
         self.name = name
@@ -54,6 +54,6 @@ class Card:
         """Return card category."""
         return self.category
 
-    def do_effect(self, game: Game) -> GameAction:
+    def do_effect(self, game: Game, target : int = None) -> GameAction:
         """Return card effect in this game."""
-        return self.effect(game)
+        return self.effect(game, target)
