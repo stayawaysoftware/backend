@@ -4,26 +4,41 @@ from models.room import Room
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
-from schemas.room import ActiveRoom
+from schemas.room import RoomOut
 
 room = APIRouter(tags=["rooms"])
 
 
 @room.get(
     "/rooms",
-    response_model=list[ActiveRoom],
+    response_model=list[RoomOut],
     response_description="List the rooms that were uploaded to the database",
 )
 def get_rooms():
     with db_session:
         rooms = Room.select()
-        result = [ActiveRoom.from_orm(u) for u in rooms]
+        result = [RoomOut.from_orm(u) for u in rooms]
+    return result
+
+
+@room.get(
+    "/rooms/{room_id}/users",
+    response_model=list[str],
+    response_description="List the usernames that are in the room",
+)
+def get_users_in_room(room_id: int):
+    with db_session:
+        if not Room.exists(id=room_id):
+            raise HTTPException(status_code=500, detail="Room does not exist")
+        users = Room.get(id=room_id).users
+        # Get the usernames of the users in the room
+        result = [u.username for u in users]
     return result
 
 
 @room.post(
     "/rooms",
-    response_model=ActiveRoom,
+    response_model=RoomOut,
     response_description="Returns the created room",
 )
 async def create_room(

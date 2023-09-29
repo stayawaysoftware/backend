@@ -4,6 +4,21 @@ from fastapi.responses import RedirectResponse
 from models import db
 from routes.room import room
 from routes.user import user
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
+
+middleware = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+]
+
+app = FastAPI(middleware=middleware)
+
 
 app = FastAPI(title="Demo", description="A simple demo", version="demo")
 
