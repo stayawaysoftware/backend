@@ -2,6 +2,7 @@
 import unittest
 from src.core.game.card.card import Card
 from src.core.game.card.effects import flamethrower_effect
+from src.core.game.card.effects import nothing_effect
 from src.core.game.game import Game
 from src.core.game.game_action import GameAction
 
@@ -12,41 +13,91 @@ class TestGameActionCreation(unittest.TestCase):
     def test_creation1(self):
         """Test do_effect method 1."""
         card = Card(
-            1,
-            "Card 1",
-            "Description 1",
-            "Category 1",
-            lambda game, x: GameAction("Action 1", None),
+            number=1,
+            name="Card 1",
+            description="Description 1",
+            category="Category 1",
+            effect=lambda game, x: GameAction("Action 1", None),
         )
         self.assertEqual(
-            str(card.do_effect(None, None)), str(GameAction("Action 1", None))
+            str(card.do_effect(game=None, target=None)),
+            str(GameAction(action="Action 1", target=None)),
         )
 
     def test_creation2(self):
         """Test do_effect method 2."""
         card = Card(
-            2,
-            "Card 2",
-            "Description 2",
-            "Category 2",
-            lambda game, x: GameAction("Action 2", x),
+            number=2,
+            name="Card 2",
+            description="Description 2",
+            category="Category 2",
+            effect=lambda game, x: GameAction("Action 2", x),
         )
         self.assertEqual(
-            str(card.do_effect(None, 2)), str(GameAction("Action 2", 2))
+            str(card.do_effect(game=None, target=2)),
+            str(GameAction(action="Action 2", target=2)),
         )
 
     def test_creation3(self):
         """Test do_effect method 3."""
         card = Card(
-            3,
-            "Card 3",
-            "Description 3",
-            "Category 3",
-            lambda game, x: GameAction("Action 3", x),
+            number=3,
+            name="Card 3",
+            description="Description 3",
+            category="Category 3",
+            effect=lambda game, x: GameAction("Action 3", x),
         )
         self.assertEqual(
-            str(card.do_effect(None, None)), str(GameAction("Action 3", None))
+            str(card.do_effect(game=None, target=None)),
+            str(GameAction(action="Action 3", target=None)),
         )
+
+
+class TestNothingEffect(unittest.TestCase):
+    """Test for nothing_effect method."""
+
+    def test_effect(self):
+        """Test nothing_effect method."""
+        card = Card(
+            number=1,
+            name="Something",
+            description="Something.",
+            category="ACTION",
+            effect=nothing_effect,
+        )
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="PLAY",
+            actual_turn=1,
+        )
+        self.assertEqual(
+            str(card.do_effect(game=game, target=None)),
+            str(GameAction(action="NOTHING", target=None)),
+        )
+
+    def test_assert(self):
+        """Test nothing_effect method assertion (target is None)."""
+        card = Card(
+            number=1,
+            name="Something",
+            description="Something.",
+            category="ACTION",
+            effect=nothing_effect,
+        )
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="DRAW",
+            actual_turn=1,
+        )
+        self.assertRaises(AssertionError, card.do_effect, game=game, target=2)
 
 
 class TestFlamethrowerEffect(unittest.TestCase):
@@ -55,44 +106,107 @@ class TestFlamethrowerEffect(unittest.TestCase):
     def test_effect(self):
         """Test flamethrower_effect method."""
         card = Card(
-            1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
+            number=1,
+            name="Flamethrower",
+            description="Kill a player.",
+            category="ACTION",
+            effect=flamethrower_effect,
         )
-        game = Game(1, "Game 1", [1, 2, 3], 3, True, "PLAY", 1)
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="PLAY",
+            actual_turn=1,
+        )
         self.assertEqual(
-            str(card.do_effect(game, 2)), str(GameAction("KILL", 2))
+            str(card.do_effect(game=game, target=2)),
+            str(GameAction(action="KILL", target=2)),
         )
 
     def test_assert1(self):
         """Test flamethrower_effect method assertion 1 -> act_player = target."""
         card = Card(
-            1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
+            number=1,
+            name="Flamethrower",
+            description="Kill a player.",
+            category="ACTION",
+            effect=flamethrower_effect,
         )
-        game = Game(1, "Game 1", [1, 2, 3], 3, True, "PLAY", 1)
-        self.assertRaises(AssertionError, card.do_effect, game, 1)
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="PLAY",
+            actual_turn=1,
+        )
+        self.assertRaises(AssertionError, card.do_effect, game=game, target=1)
 
     def test_assert2(self):
         """Test flamethrower_effect method assertion 2 -> cnt_player = 1."""
         card = Card(
-            1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
+            number=1,
+            name="Flamethrower",
+            description="Kill a player.",
+            category="ACTION",
+            effect=flamethrower_effect,
         )
-        game = Game(1, "Game 1", [1], 1, True, "PLAY", 1)
-        self.assertRaises(AssertionError, card.do_effect, game, 2)
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1],
+            player_quantity=1,
+            round_direction=True,
+            actual_phase="PLAY",
+            actual_turn=1,
+        )
+        self.assertRaises(AssertionError, card.do_effect, game=game, target=2)
 
     def test_assert3(self):
         """Test flamethrower_effect method assertion 3 -> act_phase != PLAY."""
         card = Card(
-            1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
+            number=1,
+            name="Flamethrower",
+            description="Kill a player.",
+            category="ACTION",
+            effect=flamethrower_effect,
         )
-        game = Game(1, "Game 1", [1, 2, 3], 3, True, "DRAW", 1)
-        self.assertRaises(AssertionError, card.do_effect, game, 2)
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="DRAW",
+            actual_turn=1,
+        )
+        self.assertRaises(AssertionError, card.do_effect, game=game, target=2)
 
     def test_assert4(self):
         """Test flamethrower_effect method assertion 4 -> target is None."""
         card = Card(
-            1, "Flamethrower", "Kill a player.", "ACTION", flamethrower_effect
+            number=1,
+            name="Flamethrower",
+            description="Kill a player.",
+            category="ACTION",
+            effect=flamethrower_effect,
         )
-        game = Game(1, "Game 1", [1, 2, 3], 3, True, "PLAY", 2)
-        self.assertRaises(AssertionError, card.do_effect, game, None)
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="PLAY",
+            actual_turn=2,
+        )
+        self.assertRaises(
+            AssertionError, card.do_effect, game=game, target=None
+        )
 
 
 if __name__ == "__main__":
