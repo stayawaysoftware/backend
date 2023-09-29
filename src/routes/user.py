@@ -1,9 +1,9 @@
 from fastapi import APIRouter
+from fastapi import HTTPException
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.room import UserInDB
-from fastapi import HTTPException
 
 user = APIRouter(tags=["users"])
 
@@ -28,7 +28,9 @@ def get_users():
 def create_user(username: str):
     with db_session:
         if User.exists(username=username):
-            raise HTTPException(status_code=500, detail="Username already exists")
+            raise HTTPException(
+                status_code=500, detail="Username already exists"
+            )
         user = User(username=username)
         user.lobby = None
         commit()

@@ -2,8 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from models import db
-from routes.user import user
 from routes.room import room
+from routes.user import user
 
 app = FastAPI(title="Demo", description="A simple demo", version="demo")
 

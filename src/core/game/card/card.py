@@ -1,8 +1,9 @@
 """Module providing the Card class."""
-from src.core.game.game import Game
-from src.core.game.game_action import GameAction
 from typing import Callable
 from typing import Optional
+
+from src.core.game.game import Game
+from src.core.game.game_action import GameAction
 
 
 class Card:

@@ -13,7 +13,7 @@ If you don't have venv installed you can install it by running:
 After that we will run the autoconfiguration using the Makefile:
 ```make mkenv```
 
-At the end of this task we have our environment configured and it is enough to activate it when we want to use it and deactivate it when we don't want to use it anymore. 
+At the end of this task we have our environment configured and it is enough to activate it when we want to use it and deactivate it when we don't want to use it anymore.
 
 To activate it, inside the src directory, we execute:
 ```source venv/bin/activate```
