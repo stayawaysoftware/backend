@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from models import db
 from routes.user import user
+from routes.room import room
 
 app = FastAPI(title="Demo", description="A simple demo", version="demo")
 
@@ -15,9 +16,10 @@ def redirect_to_docs():
 @app.on_event("startup")
 async def configure_routes():
     # Connect and create db
-    db.bind("sqlite", "db.sqlite", create_db=True)
+    db.bind("sqlite", "example.sqlite", create_db=True)
     db.generate_mapping(create_tables=True)
     app.include_router(user)
+    app.include_router(room)
 
 
 if __name__ == "__main__":
