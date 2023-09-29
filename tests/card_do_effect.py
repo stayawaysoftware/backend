@@ -2,6 +2,7 @@
 import unittest
 from src.core.game.card.card import Card
 from src.core.game.card.effects import flamethrower_effect
+from src.core.game.card.effects import nothing_effect
 from src.core.game.game import Game
 from src.core.game.game_action import GameAction
 
@@ -50,6 +51,53 @@ class TestGameActionCreation(unittest.TestCase):
             str(card.do_effect(game=None, target=None)),
             str(GameAction(action="Action 3", target=None)),
         )
+
+
+class TestNothingEffect(unittest.TestCase):
+    """Test for nothing_effect method."""
+
+    def test_effect(self):
+        """Test nothing_effect method."""
+        card = Card(
+            number=1,
+            name="Something",
+            description="Something.",
+            category="ACTION",
+            effect=nothing_effect,
+        )
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="PLAY",
+            actual_turn=1,
+        )
+        self.assertEqual(
+            str(card.do_effect(game=game, target=None)),
+            str(GameAction(action="NOTHING", target=None)),
+        )
+
+    def test_assert(self):
+        """Test nothing_effect method assertion (target is None)."""
+        card = Card(
+            number=1,
+            name="Something",
+            description="Something.",
+            category="ACTION",
+            effect=nothing_effect,
+        )
+        game = Game(
+            game_id=1,
+            name="Game 1",
+            user_ids=[1, 2, 3],
+            player_quantity=3,
+            round_direction=True,
+            actual_phase="DRAW",
+            actual_turn=1,
+        )
+        self.assertRaises(AssertionError, card.do_effect, game=game, target=2)
 
 
 class TestFlamethrowerEffect(unittest.TestCase):
