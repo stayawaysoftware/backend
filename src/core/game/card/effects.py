@@ -4,6 +4,12 @@ from src.core.game.game_action import GameAction
 from typing import Optional
 
 
+def nothing_effect(game: Game, target: Optional[int]) -> GameAction:
+    """Nothing effect ==> For all the cards except flamethrower type."""
+    assert target is None
+    return GameAction("NOTHING", None)
+
+
 def flamethrower_effect(game: Game, target: Optional[int]) -> GameAction:
     """Flamethrower effect."""
     assert (
