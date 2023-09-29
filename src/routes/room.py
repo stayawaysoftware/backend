@@ -5,7 +5,6 @@ from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.room import RoomOut
-from schemas.room import UserOut
 
 room = APIRouter(tags=["rooms"])
 
@@ -21,7 +20,12 @@ def get_rooms():
         result = [RoomOut.from_orm(u) for u in rooms]
     return result
 
-@room.get("/rooms/{room_id}/users", response_model=list[str], response_description="List the usernames that are in the room")
+
+@room.get(
+    "/rooms/{room_id}/users",
+    response_model=list[str],
+    response_description="List the usernames that are in the room",
+)
 def get_users_in_room(room_id: int):
     with db_session:
         if not Room.exists(id=room_id):

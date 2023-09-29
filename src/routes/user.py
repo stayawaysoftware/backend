@@ -27,11 +27,9 @@ def get_users():
 )
 @db_session
 def create_user(username: str):
-    
+
     if User.exists(username=username):
-        raise HTTPException(
-            status_code=500, detail="Username already exists"
-        )
+        raise HTTPException(status_code=500, detail="Username already exists")
     user = User(username=username)
     commit()
     return user
