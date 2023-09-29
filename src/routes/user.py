@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi import HTTPException
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
@@ -21,12 +22,16 @@ def get_users():
 
 @user.post(
     "/users",
-    response_model=int,
-    response_description="Returns the id of the created user",
+    response_model=UserInDB,
+    response_description="Returns the created user",
 )
-async def create_user(username: str):
+def create_user(username: str):
     with db_session:
+        if User.exists(username=username):
+            raise HTTPException(
+                status_code=500, detail="Username already exists"
+            )
         user = User(username=username)
+        user.lobby = None
         commit()
-        print("CREATED:\t ", user.id, " - ", user.username)
-    return user.id
+    return user

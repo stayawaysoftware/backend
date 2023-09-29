@@ -1,7 +1,8 @@
 """All card effects."""
+from typing import Optional
+
 from src.core.game.game import Game
 from src.core.game.game_action import GameAction
-from typing import Optional
 
 
 def nothing_effect(game: Game, target: Optional[int]) -> GameAction:

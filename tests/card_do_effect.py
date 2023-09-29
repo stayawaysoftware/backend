@@ -1,5 +1,6 @@
 """Test card do_effect method."""
 import unittest
+
 from src.core.game.card.card import Card
 from src.core.game.card.effects import flamethrower_effect
 from src.core.game.card.effects import nothing_effect
