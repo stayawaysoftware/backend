@@ -1,18 +1,21 @@
+from db.database import db
 from pony.orm import Optional
 from pony.orm import PrimaryKey
 from pony.orm import Required
 from pony.orm import Set
 
-from . import db
-
 
 class User(db.Entity):
+    """User entity."""
+
     id = PrimaryKey(int, auto=True, unsigned=True)
     username = Required(str, 30)
     lobby = Optional("Room")
 
 
 class Room(db.Entity):
+    """Room entity."""
+
     id = PrimaryKey(int, auto=True, unsigned=True)
     name = Required(str, 30)
     users = Set("User")
