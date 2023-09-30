@@ -39,11 +39,11 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(user.user_router)
-app.include_router(room.room_router)
-# app.include_router(player.player_router)
-# app.include_router(game.game_router)
-# app.include_router(card.card_router)
+app.include_router(user.users)
+app.include_router(room.rooms)
+# app.include_router(player.players)
+# app.include_router(game.games)
+# app.include_router(card.cards)
 
 
 # Root router
