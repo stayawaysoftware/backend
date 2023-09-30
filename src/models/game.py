@@ -1,8 +1,9 @@
-from db.database import db
 from pony.orm import Optional
 from pony.orm import PrimaryKey
 from pony.orm import Required
 from pony.orm import Set
+
+from . import db
 
 
 class Player(db.Entity):

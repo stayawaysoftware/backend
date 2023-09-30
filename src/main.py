@@ -2,10 +2,10 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from db.database import bind_database
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from models import db
 from routes import room
 from routes import user
 
@@ -15,7 +15,8 @@ from routes import user
 async def lifespan(application: FastAPI):
     """Context manager to start and stop the application."""
     try:
-        bind_database()
+        db.bind(provider="sqlite", filename="database.sqlite", create_db=True)
+        db.generate_mapping(create_tables=True)
         yield
     finally:
         pass
@@ -48,7 +49,6 @@ app.include_router(room.room_router)
 # Root router
 @app.get("/", tags=["root"])
 def redirect_to_docs():
-    """Redirect to the docs -> only for this moment of development."""
     return RedirectResponse(url="/docs/")
 
 

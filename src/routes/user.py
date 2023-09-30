@@ -1,8 +1,8 @@
 """User routes."""
-from db.room import User
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import status
+from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.user import UserOut

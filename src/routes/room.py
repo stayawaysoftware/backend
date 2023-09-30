@@ -1,8 +1,8 @@
 """Room routes"""
-from db.room import Room
-from db.room import User
 from fastapi import APIRouter
 from fastapi import HTTPException
+from models.room import Room
+from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.room import RoomOut
