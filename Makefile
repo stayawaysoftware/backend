@@ -13,6 +13,7 @@ delete-containers:
 
 mkenv:
 	@./configs/setenv.sh
+	@pre-commit install
 
 run: delete-containers build-dev
 	@sudo docker run -it --name devcontainer -p 8000:8000 dev
@@ -25,3 +26,6 @@ run-local:
 
 test: delete-containers build-test
 	@sudo docker run -it --name testcontainer -p 8000:8000 test
+
+run-precommit:
+	@pre-commit run --all-files
