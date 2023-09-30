@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 from pydantic import Field
 
@@ -18,7 +16,6 @@ class RoomOut(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
-    lobby: Optional[RoomOut] = None
 
     class Config:
         from_attributes = True

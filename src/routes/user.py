@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
+from fastapi import status
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
@@ -32,4 +33,20 @@ def create_user(username: str):
         raise HTTPException(status_code=500, detail="Username already exists")
     user = User(username=username)
     commit()
-    return user
+    return UserOut.from_orm(user)
+
+
+@user.delete(
+    "/users/{id}",
+    response_description="Returns 200_OK whit a message when the user is deleted\
+        else returns 500 with a error message",
+    status_code=status.HTTP_200_OK,
+)
+@db_session
+def delete_user(id: int):
+    user = User.get(id=id)
+    if user is None:
+        raise HTTPException(status_code=500, detail="User does not exist")
+    user.delete()
+    commit()
+    return {"message": f"User {id} deleted successfully"}

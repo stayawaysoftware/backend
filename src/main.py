@@ -18,8 +18,12 @@ middleware = [
 ]
 
 
-
-app = FastAPI(title="Demo", description="A simple demo", version="demo", middleware=middleware)
+app = FastAPI(
+    title="Demo",
+    description="A simple demo",
+    version="demo",
+    middleware=middleware,
+)
 
 
 @app.get("/", tags=["root"])
