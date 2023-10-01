@@ -47,6 +47,8 @@ def delete_user(id: int):
     user = User.get(id=id)
     if user is None:
         raise HTTPException(status_code=500, detail="User does not exist")
+    if user.lobby is not None:
+        raise HTTPException(status_code=500, detail="User is in a room")
     user.delete()
     commit()
     return {"message": f"User {id} deleted successfully"}

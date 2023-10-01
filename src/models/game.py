@@ -15,6 +15,9 @@ class Player(db.Entity):
     alive = Required(bool, default=1)
     game = Required("Game")
 
+    game = Required("Game")
+    hand = Set("Card")
+
 
 class Game(db.Entity):
     """Game model."""
@@ -24,25 +27,45 @@ class Game(db.Entity):
     actual_phase = Required(str, default="Draw")  # Draw, Play, Discard
     actual_position = Optional(int, default=1, unsigned=True)
     players = Set("Player")
-    decks = Set("Deck")
+    deck = Required("Deck")
+
 
 
 class Card(db.Entity):
     """Card model."""
 
     id = PrimaryKey(int, auto=True, unsigned=True)
+    idtype = Required(int, unsigned=True)
     name = Required(str, 30)
-    description = Required(str, 100)
     type = Required(
         str, default="Action"
     )  # Action, Defense, Infection, Obstacle, Panic
-    decks = Set("Deck")
+
+    available_deck = Set("AvailableDeck", reverse="cards")
+    disposable_deck = Set("DisposableDeck", reverse="cards")
+    players = Set("Player")
+
+
+class AvailableDeck(db.Entity):
+    """AvailableDeck model."""
+
+    id = PrimaryKey(int)
+    deck = Required("Deck")
+    cards = Set("Card", reverse="available_deck")
+
+
+class DisposableDeck(db.Entity):
+    """DisposableDeck model."""
+
+    id = PrimaryKey(int)
+    deck = Required("Deck")
+    cards = Set("Card", reverse="disposable_deck")
 
 
 class Deck(db.Entity):
     """Deck model."""
 
-    games = Required(Game)
-    cards = Required(Card)
-    is_available_deck = Required(bool)
-    PrimaryKey(games, cards)
+    id = PrimaryKey(int)
+    available_deck = Optional("AvailableDeck")
+    disposable_deck = Optional("DisposableDeck")
+    game = Optional("Game")
