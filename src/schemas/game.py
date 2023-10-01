@@ -11,7 +11,7 @@ class Player(BaseModel):
     role: str
 
 
-class gameStatus(BaseModel):
+class GameStatus(BaseModel):
     alive_players: int
     the_thing_is_alive: bool
     actual_turn: int
