@@ -18,7 +18,7 @@ def get_game_status(game_id: int):
         if not Game.exists(id=game_id):
             raise HTTPException(status_code=500, detail="Game does not exists")
         players = Game.get(id=game_id).players
-        player_list = [Player.from_orm(p) for p in players]
+        player_list = [Player.model_validate(p) for p in players]
         game_status = GameStatus(
             players=player_list,
             alive_players=len(player_list),
