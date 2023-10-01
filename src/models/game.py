@@ -9,19 +9,22 @@ from . import db
 class Player(db.Entity):
     """Player model."""
 
-    user = PrimaryKey("User")
+    id = PrimaryKey(int)
     role = Required(str, default="Human")  # Human, The Thing, Infected
     round_position = Required(int, unique=True, unsigned=True)
     alive = Required(bool, default=1)
+    game = Required("Game")
+    
 
 
 class Game(db.Entity):
     """Game model."""
 
-    room = PrimaryKey("Room")
+    id = PrimaryKey(int)
     round_left_direction = Required(bool, default=0)
     actual_phase = Required(str, default="Draw")  # Draw, Play, Discard
     actual_position = Optional(int, default=1, unsigned=True)
+    players = Set("Player")
     decks = Set("Deck")
 
 
