@@ -7,14 +7,12 @@ from pony.orm import commit
 from pony.orm import db_session
 
 
-@db_session
 def exists_card(id: int):
     """Check if a card exists in the database."""
     with db_session:
         return Card.exists(id=id)
 
 
-@db_session
 def get_card(id: int):
     """Get a card from the database."""
     with db_session:
@@ -23,7 +21,6 @@ def get_card(id: int):
         raise ValueError(f"Card with id {id} doesn't exists.")
 
 
-@db_session
 def create_card(id: int, idtype: int, name: str, type: str):
     """Create a card in the database."""
     with db_session:
@@ -39,7 +36,6 @@ def create_card(id: int, idtype: int, name: str, type: str):
             raise ValueError(f"Card with id {id} already exists.")
 
 
-@db_session
 def add_available_deck_to_card(id: int, deck: AvailableDeck):
     """Add a deck to a card."""
     with db_session:
@@ -52,7 +48,6 @@ def add_available_deck_to_card(id: int, deck: AvailableDeck):
             )
 
 
-@db_session
 def add_disposable_deck_to_card(id: int, deck: DisposableDeck):
     """Add a deck to a card."""
     with db_session:
@@ -65,7 +60,6 @@ def add_disposable_deck_to_card(id: int, deck: DisposableDeck):
             )
 
 
-@db_session
 def add_player_to_card(id: int, player: Player):
     """Add a player to a card."""
     with db_session:
@@ -78,7 +72,6 @@ def add_player_to_card(id: int, player: Player):
             )
 
 
-@db_session
 def remove_available_deck_from_card(id: int, deck: AvailableDeck):
     """Remove a deck from a card."""
     with db_session:
@@ -91,7 +84,6 @@ def remove_available_deck_from_card(id: int, deck: AvailableDeck):
             )
 
 
-@db_session
 def remove_disposable_deck_from_card(id: int, deck: DisposableDeck):
     """Remove a deck from a card."""
     with db_session:
@@ -104,7 +96,6 @@ def remove_disposable_deck_from_card(id: int, deck: DisposableDeck):
             )
 
 
-@db_session
 def remove_player_from_card(id: int, player: Player):
     """Remove a player from a card."""
     with db_session:
