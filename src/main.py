@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from models import db
+from routes import game
 from routes import room
 from routes import user
-from routes import game
 
 
 # https://fastapi.tiangolo.com/advanced/events/
