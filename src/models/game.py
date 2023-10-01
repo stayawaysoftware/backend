@@ -15,7 +15,7 @@ class Player(db.Entity):
     alive = Required(bool, default=1)
 
     game = Required("Game")
-    hand = Required(Set("Card"))
+    hand = Set("Card")
 
 
 class Game(db.Entity):
@@ -34,18 +34,37 @@ class Card(db.Entity):
     """Card model."""
 
     id = PrimaryKey(int, auto=True, unsigned=True)
+    idtype = Required(int, unsigned=True)
     name = Required(str, 30)
     type = Required(
         str, default="Action"
     )  # Action, Defense, Infection, Obstacle, Panic
 
-    decks = Optional(Set("Deck"))
-    players = Optional(Set("Player"))
+    available_deck = Set("AvailableDeck", reverse="cards")
+    disposable_deck = Set("DisposableDeck", reverse="cards")
+    players = Set("Player")
+
+
+class AvailableDeck(db.Entity):
+    """AvailableDeck model."""
+
+    id = PrimaryKey(int)
+    deck = Required("Deck")
+    cards = Set("Card", reverse="available_deck")
+
+
+class DisposableDeck(db.Entity):
+    """DisposableDeck model."""
+
+    id = PrimaryKey(int)
+    deck = Required("Deck")
+    cards = Set("Card", reverse="disposable_deck")
 
 
 class Deck(db.Entity):
     """Deck model."""
 
     id = PrimaryKey(int)
-    available_cards = Optional(Set("Card"))
-    disposable_cards = Optional(Set("Card"))
+    available_deck = Optional("AvailableDeck")
+    disposable_deck = Optional("DisposableDeck")
+    game = Optional("Game")
