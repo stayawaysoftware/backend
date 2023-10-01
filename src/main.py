@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from models import db
+from routes import game
 from routes import room
 from routes import user
 
@@ -42,7 +43,7 @@ app.add_middleware(
 app.include_router(user.user)
 app.include_router(room.room)
 # app.include_router(player.player)
-# app.include_router(game.game)
+app.include_router(game.game)
 # app.include_router(card.card)
 
 

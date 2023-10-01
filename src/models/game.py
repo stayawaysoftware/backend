@@ -13,6 +13,7 @@ class Player(db.Entity):
     role = Required(str, default="Human")  # Human, The Thing, Infected
     round_position = Required(int, unique=True, unsigned=True)
     alive = Required(bool, default=1)
+    game = Required("Game")
 
     game = Required("Game")
     hand = Set("Card")
@@ -25,9 +26,9 @@ class Game(db.Entity):
     round_left_direction = Required(bool, default=0)
     actual_phase = Required(str, default="Draw")  # Draw, Play, Discard
     actual_position = Optional(int, default=1, unsigned=True)
-
     players = Set("Player")
     deck = Required("Deck")
+
 
 
 class Card(db.Entity):
