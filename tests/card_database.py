@@ -3,6 +3,11 @@ import os
 import sys
 import unittest
 
+# Add src to path
+current_dir = os.path.dirname(os.path.realpath(__file__))
+src_dir = os.path.join(current_dir, "..", "src")
+sys.path.append(src_dir)
+
 from core.card import add_available_deck_to_card
 from core.card import add_disposable_deck_to_card
 from core.card import add_player_to_card
@@ -21,11 +26,6 @@ from models.game import Game
 from models.game import Player
 from pony.orm import commit
 from pony.orm import db_session
-
-# Add src to path
-current_dir = os.path.dirname(os.path.realpath(__file__))
-src_dir = os.path.join(current_dir, "..", "src")
-sys.path.append(src_dir)
 
 
 class TestCardDatabase(unittest.TestCase):
