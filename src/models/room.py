@@ -21,5 +21,6 @@ class Room(db.Entity):
     name = Required(str, 30)
     users = Set("User")
     host_id = Required(int)
+    in_game = Required(bool)
     min_users = Required(int, default=4, unsigned=True)
     max_users = Required(int, default=12)
