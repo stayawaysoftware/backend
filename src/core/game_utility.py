@@ -1,6 +1,8 @@
 """This module contains the functions that are used to game operation."""
 from card import add_player_to_card
+from card import remove_player_from_card
 from card_creation import create_card_asociation
+from deck import add_card_to_disposable_deck
 from deck import create_available_deck
 from deck import create_deck
 from deck import create_disposable_deck
@@ -29,3 +31,13 @@ def draw_card_from_deck(id_game: int, player: Player):
     card = get_random_card_from_available_deck(id_game)
     add_player_to_card(card.id, player)
     return card.idtype
+
+
+def discard_card(id_game: int, id_card_type: int, player: Player):
+    """Discard a card from player hand and add to disposable deck."""
+    if player.hand.select(idtype=id_card_type).count() == 0:
+        raise ValueError(f"Player with id {player.id} doesn't have this card.")
+
+    card = player.hand.select(idtype=id_card_type).random(1)[0]
+    remove_player_from_card(card.id, player)
+    add_card_to_disposable_deck(id_game, card)
