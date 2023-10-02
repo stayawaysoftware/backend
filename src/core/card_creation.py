@@ -1,6 +1,6 @@
 """Card creation and asociation module for Stay Away cards."""
-from card import add_available_deck_to_card
-from card import create_card
+from core.card import add_available_deck_to_card
+from core.card import create_card
 from models.game import AvailableDeck
 from models.game import Card
 
@@ -111,6 +111,6 @@ def create_card_asociation(deck: AvailableDeck, cnt_players: int):
         for j in range(4, cnt_players + 1):
             sum += cnt_cards[i][j]
 
-        card_list = Card.select(idtype=i)
+        card_list = list(Card.select(idtype=i))
         for j in range(sum):
             add_available_deck_to_card(card_list[j].id, deck)

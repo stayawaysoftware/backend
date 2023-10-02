@@ -66,10 +66,7 @@ def add_player_to_card(id: int, player: Player):
         if player not in get_card(id).players:
             get_card(id).players.add(player)
             commit()
-        else:
-            raise ValueError(
-                f"Player with id {player.id} doesn't exists in card with id {id}."
-            )
+
 
 
 def remove_available_deck_from_card(id: int, deck: AvailableDeck):

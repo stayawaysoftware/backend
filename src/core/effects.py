@@ -1,8 +1,8 @@
 """Effects of the cards."""
 from typing import Optional
 
-from game_action import ActionType
-from game_action import GameAction
+from core.game_action import ActionType
+from core.game_action import GameAction
 from models.game import Game
 from pony.orm import db_session
 

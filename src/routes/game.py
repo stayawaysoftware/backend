@@ -27,3 +27,4 @@ def get_game_status(game_id: int):
             current_turn=Game.get(id=game_id).current_position,
         )
     return game_status
+
