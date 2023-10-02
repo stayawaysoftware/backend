@@ -16,7 +16,7 @@ game = APIRouter(tags=["game"])
 def get_game_status(game_id: int):
     with db_session:
         if not Game.exists(id=game_id):
-            raise HTTPException(status_code=500, detail="Game does not exists")
+            raise HTTPException(status_code=404, detail="Game not found")
         players = Game.get(id=game_id).players
         player_list = [PlayerOut.from_player(p) for p in players]
         game_status = GameStatus(
