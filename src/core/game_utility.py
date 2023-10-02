@@ -1,4 +1,6 @@
 """This module contains the functions that are used to game operation."""
+from typing import Optional
+
 from card import add_player_to_card
 from card import remove_player_from_card
 from card_creation import create_card_asociation
@@ -9,6 +11,7 @@ from deck import create_disposable_deck
 from deck import get_deck
 from deck import get_random_card_from_available_deck
 from deck import move_discard_cards_to_available_deck
+from effects import do_effect
 from models.game import Player
 
 
@@ -41,3 +44,8 @@ def discard_card(id_game: int, id_card_type: int, player: Player):
     card = player.hand.select(idtype=id_card_type).random(1)[0]
     remove_player_from_card(card.id, player)
     add_card_to_disposable_deck(id_game, card)
+
+
+def play_card(id_game: int, id_card_type: int, target: Optional[int] = None):
+    """Play a card from player hand."""
+    return do_effect(id_game, id_card_type, target)
