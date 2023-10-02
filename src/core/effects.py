@@ -8,14 +8,14 @@ from pony.orm import db_session
 
 
 def do_effect(
-    id_game: int, id_card: int, target: Optional[int] = None
+    id_game: int, id_card_type: int, target: Optional[int] = None
 ) -> GameAction:
     """Do effect."""
     with db_session:
         if not Game.exists(id=id_game):
             raise ValueError("Game doesn't exists.")
 
-    match id_card:
+    match id_card_type:
         case 1:  # The Thing
             return nothing_effect(id_game)
         case 2:  # Infected
