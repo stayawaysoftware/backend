@@ -11,12 +11,10 @@ class Player(db.Entity):
 
     id = PrimaryKey(int)
     role = Required(str, default="Human")  # Human, The Thing, Infected
+    name = Required(str)
     round_position = Required(int, unique=True, unsigned=True)
     alive = Required(bool, default=1)
-    game = Required("Game")
-
-    game = Required("Game")
-    hand = Set("Card")
+    game = Set("Game")
 
 
 class Game(db.Entity):
@@ -24,10 +22,9 @@ class Game(db.Entity):
 
     id = PrimaryKey(int)
     round_left_direction = Required(bool, default=0)
-    actual_phase = Required(str, default="Draw")  # Draw, Play, Discard
-    actual_position = Optional(int, default=1, unsigned=True)
+    current_phase = Required(str, default="Draw")  # Draw, Play, Discard
+    current_position = Optional(int, default=1, unsigned=True)
     players = Set("Player")
-    deck = Optional("Deck")
 
 
 class Card(db.Entity):
@@ -42,7 +39,6 @@ class Card(db.Entity):
 
     available_deck = Set("AvailableDeck", reverse="cards")
     disposable_deck = Set("DisposableDeck", reverse="cards")
-    players = Set("Player")
 
 
 class AvailableDeck(db.Entity):
@@ -67,4 +63,3 @@ class Deck(db.Entity):
     id = PrimaryKey(int)
     available_deck = Optional("AvailableDeck")
     disposable_deck = Optional("DisposableDeck")
-    game = Optional("Game")

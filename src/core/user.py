@@ -2,10 +2,12 @@ from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 
+
 def get_users():
     with db_session:
         users = User.select()
     return users
+
 
 def create_user(username: str):
     with db_session:
@@ -14,6 +16,7 @@ def create_user(username: str):
         user = User(username=username)
         commit()
     return user
+
 
 def delete_user(id: int):
     with db_session:
