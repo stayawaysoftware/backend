@@ -24,6 +24,6 @@ def get_game_status(game_id: int):
             alive_players=len(player_list),
             the_thing_is_alive=True,
             turn_phase="Draw",
-            current_turn=Game.get(id=game_id).current_position
+            current_turn=Game.get(id=game_id).current_position,
         )
     return game_status

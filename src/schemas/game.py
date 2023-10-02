@@ -1,7 +1,7 @@
 from typing import List
-from schemas.player import PlayerOut
-from pydantic import BaseModel
 
+from pydantic import BaseModel
+from schemas.player import PlayerOut
 
 
 class GameStatus(BaseModel):

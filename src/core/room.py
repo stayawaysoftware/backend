@@ -1,8 +1,6 @@
-from random import randint
+from core.game import init_game
 from models.room import Room
 from models.room import User
-from core.game import init_game
-from core.game import init_players
 from pony.orm import commit
 from pony.orm import db_session
 
@@ -16,6 +14,7 @@ def get_rooms():
         result.append(room)
     return result
 
+
 @db_session
 def get_room(id: int):
     room = Room.get(id=id)
@@ -24,8 +23,11 @@ def get_room(id: int):
     room.usernames = [u.username for u in room.users]
     return room
 
+
 @db_session
-def create_room(name: str, host_id: int, min_users: int = 4, max_users: int = 12):
+def create_room(
+    name: str, host_id: int, min_users: int = 4, max_users: int = 12
+):
     with db_session:
 
         if not User.exists(id=host_id):
@@ -90,7 +92,7 @@ def leave_room(room_id: int, user_id: int):
     room.usernames = [u.username for u in room.users]
     commit()
     return room
-        
+
 
 @db_session
 def start_game(room_id: int, host_id: int):
