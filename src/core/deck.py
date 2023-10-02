@@ -41,6 +41,16 @@ def get_available_deck(id: int):
         raise ValueError(f"Available deck with id {id} doesn't exists.")
 
 
+def get_random_card_from_available_deck(id: int):
+    """Get a random card from available deck."""
+    with db_session:
+        if exists_available_deck(id):
+            if len(AvailableDeck[id].cards) > 0:
+                return AvailableDeck[id].cards.random(1)[0]
+            raise ValueError(f"Available deck with id {id} is empty.")
+        raise ValueError(f"Available deck with id {id} doesn't exists.")
+
+
 def get_disposable_deck(id: int):
     """Get a disposable deck from the database."""
     with db_session:
