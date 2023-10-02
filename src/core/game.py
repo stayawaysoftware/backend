@@ -3,15 +3,16 @@ from models.room import Room
 from models.room import User
 from models.game import Game
 from models.game import Player
+from schemas.game import PlayerOut
 from pony.orm import commit
 from pony.orm import db_session
-import asyncio
+import random
 
 
 
 
 @db_session
-async def init_game(room_id: int):
+def init_game(room_id: int):
     room = Room.get(id=room_id)
     if room.in_game:
         raise PermissionError("Game is in progress (iG)")
@@ -29,8 +30,11 @@ def init_players(room_id: int, game: Game):
     
     i = 1
     for user in room.users:
-        player = Player(role="Human", round_position=i, alive=True, game=game)
+        player = Player(name=user.username, id=user.id, round_position=i, game=game)
         i += 1
     
-    game.players[randint(0, len(game.players) - 1)].role = "The Thing"
+    players = list(game.players)
+    player = random.choice(players)
+    player.role = "The Thing"
     commit()
+ 
