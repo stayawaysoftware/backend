@@ -1,5 +1,7 @@
 """Card creation and asociation module for Stay Away cards."""
+from card import add_available_deck_to_card
 from card import create_card
+from models.game import AvailableDeck
 from models.game import Card
 
 # Card names
@@ -83,7 +85,7 @@ def create_all_cards():
     counter = 0
     for i in range(1, len(cnt_cards)):
         sum = 0
-        for j in range(0, len(cnt_cards[i])):
+        for j in range(4, len(cnt_cards[i])):
             sum += cnt_cards[i][j]
         while sum > 0:
             create_card(
@@ -97,3 +99,18 @@ def create_all_cards():
 
     if counter != 104:
         raise ValueError("Wrong number of cards in the database.")
+
+
+def create_card_asociation(deck: AvailableDeck, cnt_players: int):
+    """Create asociation between cards and decks."""
+    if len(Card.select()) == 0:
+        create_all_cards()
+
+    for i in range(1, len(cnt_cards)):
+        sum = 0
+        for j in range(4, cnt_players + 1):
+            sum += cnt_cards[i][j]
+
+        card_list = Card.select(idtype=i)
+        for j in range(sum):
+            add_available_deck_to_card(card_list[j].id, deck)
