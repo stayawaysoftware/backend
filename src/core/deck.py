@@ -171,3 +171,23 @@ def remove_disposable_deck(id: int):
             commit()
         else:
             raise ValueError(f"Disposable deck with id {id} doesn't exists.")
+
+
+def move_discard_cards_to_available_deck(id: int):
+    """Move all cards from disposable deck to available deck."""
+    with db_session:
+        if exists_available_deck(id) and exists_disposable_deck(id):
+            sz_disposable_deck = len(get_disposable_deck(id).cards)
+            sz_available_deck = len(get_available_deck(id).cards)
+
+            if sz_disposable_deck > 0 and sz_available_deck == 0:
+                card_list = get_disposable_deck(id).cards
+                for card in card_list:
+                    add_card_to_available_deck(id, card)
+                    remove_card_from_disposable_deck(id, card)
+            else:
+                raise ValueError(
+                    f"Available deck with id {id} is not empty or Disposable deck with id {id} is empty."
+                )
+        else:
+            raise ValueError(f"Available deck with id {id} doesn't exists.")
