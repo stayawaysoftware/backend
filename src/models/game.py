@@ -27,8 +27,7 @@ class Game(db.Entity):
     actual_phase = Required(str, default="Draw")  # Draw, Play, Discard
     actual_position = Optional(int, default=1, unsigned=True)
     players = Set("Player")
-    deck = Required("Deck")
-
+    deck = Optional("Deck")
 
 
 class Card(db.Entity):
