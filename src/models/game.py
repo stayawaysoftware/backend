@@ -49,7 +49,7 @@ class AvailableDeck(db.Entity):
     """AvailableDeck model."""
 
     id = PrimaryKey(int)
-    deck = Required("Deck")
+    deck = Optional("Deck")
     cards = Set("Card", reverse="available_deck")
 
 
@@ -57,7 +57,7 @@ class DisposableDeck(db.Entity):
     """DisposableDeck model."""
 
     id = PrimaryKey(int)
-    deck = Required("Deck")
+    deck = Optional("Deck")
     cards = Set("Card", reverse="disposable_deck")
 
 
