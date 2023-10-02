@@ -11,6 +11,9 @@ from deck import create_disposable_deck
 from deck import get_deck
 from deck import get_random_card_from_available_deck
 from deck import move_discard_cards_to_available_deck
+from deck import remove_available_deck
+from deck import remove_deck
+from deck import remove_disposable_deck
 from effects import do_effect
 from game_action import GameAction
 from models.game import Deck
@@ -53,3 +56,10 @@ def play_card(
 ) -> GameAction:
     """Play a card from player hand."""
     return do_effect(id_game, id_card_type, target)
+
+
+def erase_deck(id_game: int) -> None:
+    """Erase the deck."""
+    remove_available_deck(id_game)
+    remove_disposable_deck(id_game)
+    remove_deck(id_game)
