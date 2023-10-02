@@ -1,8 +1,11 @@
 from random import randint
 from models.room import Room
 from models.room import User
+from core.game import init_game
+from core.game import init_players
 from pony.orm import commit
 from pony.orm import db_session
+
 
 @db_session
 def get_rooms():
@@ -106,7 +109,7 @@ def start_game(room_id: int, host_id: int):
         raise PermissionError("User is not the host of this room")
     if len(room.users) < room.min_users:
         raise PermissionError("Not enough users in this room")
-    # TODO: instanciate a game and players.
+    init_game(room_id)
     room.in_game = True
     commit()
     room.usernames = [u.username for u in room.users]
