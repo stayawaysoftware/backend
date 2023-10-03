@@ -32,7 +32,7 @@ def create_room(
 
         if not User.exists(id=host_id):
             raise ValueError("User not found")
-        if User.get(id=host_id).lobby is not None:
+        if User.get(id=host_id).room is not None:
             raise PermissionError("User is already in a room")
         if min_users < 4 or min_users > 12 or min_users > max_users:
             raise ValueError("Minimum users invalid value")
@@ -47,7 +47,7 @@ def create_room(
             max_users=max_users,
         )
 
-        User[host_id].lobby = room
+        User[host_id].room = room
         room.usernames = [u.username for u in room.users]
         commit()
     return room
@@ -59,14 +59,14 @@ def join_room(room_id: int, user_id: int):
         raise ValueError("User not found")
     if not Room.exists(id=room_id):
         raise ValueError("Room not found")
-    if User.get(id=user_id).lobby is not None:
+    if User.get(id=user_id).room is not None:
         raise PermissionError("User is already in a room")
     room = Room.get(id=room_id)
     if len(room.users) >= room.max_users:
         raise PermissionError("Room is full")
     if room.in_game:
         raise PermissionError("Game is already in progress")
-    User[user_id].lobby = room
+    User[user_id].room = room
     room.usernames = [u.username for u in room.users]
     commit()
     return room
@@ -78,17 +78,18 @@ def leave_room(room_id: int, user_id: int):
         raise ValueError("User not found")
     if not Room.exists(id=room_id):
         raise ValueError("Room not found")
-    if User.get(id=user_id).lobby is None:
+    if User.get(id=user_id).room is None:
         raise PermissionError("User is not in a room")
     room = Room.get(id=room_id)
     if room.in_game:
         raise PermissionError("Game is already in progress")
     if not User[user_id] in room.users:
         raise PermissionError("User is not in this room")
-    User[user_id].lobby = None
     if len(room.users) == 0 or room.host_id == user_id:
         delete_room(room_id, user_id)
+        User[user_id].room = None
         return None
+    User[user_id].room = None
     room.usernames = [u.username for u in room.users]
     commit()
     return room
@@ -100,10 +101,10 @@ def start_game(room_id: int, host_id: int):
         raise ValueError("User not found")
     if not Room.exists(id=room_id):
         raise ValueError("Room not found")
-    if User.get(id=host_id).lobby is None:
+    if User.get(id=host_id).room is None:
         raise PermissionError("User is not in a room")
     room = Room.get(id=room_id)
-    if room.id != User[host_id].lobby.id:
+    if room.id != User[host_id].room.id:
         raise PermissionError("User is not in this room")
     if room.in_game:
         raise PermissionError("Game is already in progress")
@@ -124,16 +125,16 @@ def delete_room(room_id: int, host_id: int):
         raise ValueError("User not found")
     if not Room.exists(id=room_id):
         raise ValueError("Room not found")
-    if User.get(id=host_id).lobby is None:
+    if User.get(id=host_id).room is None:
         raise PermissionError("User is not in a room")
     room = Room.get(id=room_id)
-    if room.id != User[host_id].lobby.id:
+    if room.id != User[host_id].room.id:
         raise PermissionError("User is not in this room")
     if room.in_game:
         raise PermissionError("Game is already in progress")
     if room.host_id != host_id:
         raise PermissionError("User is not the host of this room")
     for user in room.users:
-        user.lobby = None
+        user.room = None
     room.delete()
     commit()

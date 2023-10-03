@@ -5,7 +5,7 @@ build-test:
 	@sudo docker build --pull --rm -f "Dockerfile.test" -t test .
 
 clean:
-	@rm -rf */__pycache__ */*/__pycache__ src/db/*.sqlite
+	@rm -rf */__pycache__ */*/__pycache__ src/*.sqlite
 
 delete-containers:
 	@sudo docker stop devcontainer || true && sudo docker rm devcontainer || true

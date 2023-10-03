@@ -1,10 +1,13 @@
 FROM python:3.11 AS builder
 
 COPY ./configs/requirements-test.txt /tmp/requirements-test.txt
+COPY ./configs/requirements-dev.txt /tmp/requirements-dev.txt
 RUN pip install -r /tmp/requirements-test.txt
+RUN pip install -r /tmp/requirements-dev.txt
 
 RUN mkdir /app
 COPY ./tests/ /app/backend/tests/
 COPY ./src/ /app/backend/src/
 
-WORKDIR /app/backend/tests
+WORKDIR /app/backend
+CMD ["pytest", "-v", "-s", "--cov=src", "--cov-config=.coveragerc", "--cov-report=xml"]

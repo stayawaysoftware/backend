@@ -23,7 +23,7 @@ def delete_user(id: int):
         user = User.get(id=id)
         if user is None:
             raise ValueError("User not found")
-        if user.lobby is not None:
+        if user.room is not None:
             raise PermissionError("User is in a room")
         user.delete()
         commit()
