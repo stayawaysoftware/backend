@@ -35,7 +35,7 @@ def get_game_status(game_id: int):
         the_thing_player_status = the_thing_player.alive
         game_status = GameStatus(
             players=player_list,
-            alive_players=len(player_list),
+            alive_players=len(list(filter(lambda p: p.alive, players))),
             the_thing_is_alive=the_thing_player_status,
             turn_phase=Game.get(id=game_id).current_phase,
             current_turn=Game.get(id=game_id).current_position,
@@ -77,7 +77,7 @@ def play_turn(
 
         game_status = GameStatus(
             players=player_list,
-            alive_players=len(player_list),
+            alive_players=len(list(filter(lambda p: p.alive, players))),
             the_thing_is_alive=the_thing_player_status,
             turn_phase=Game.get(id=game_id).current_phase,
             current_turn=Game.get(id=game_id).current_position,

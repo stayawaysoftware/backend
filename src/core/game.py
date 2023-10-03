@@ -75,12 +75,14 @@ def calculate_next_turn(game_id: int):
     players = list(game.players)
     current_player_position = game.current_position
     # select as next player the next player alive in the round direction
-    next_player = None
-    next_player_position = current_player_position + 1 % len(players)
-    while next_player is None:
-        if players[next_player_position].alive:
-            next_player = players[next_player_position]
-        else:
-            next_player_position = next_player_position + 1 % len(players)
+    next_player_position = current_player_position
+    while True:
+        next_player_position += 1
+        if next_player_position > len(players):
+            next_player_position = 1
+        next_player = Player.get(round_position=next_player_position)
+        if next_player.alive:
+            break
     game.current_position = next_player_position
+    print("Next player is: " + str(next_player_position))
     commit()
