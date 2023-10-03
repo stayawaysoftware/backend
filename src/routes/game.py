@@ -49,8 +49,9 @@ def play_card(game_id: int, card_idtype: int,current_player_id: int, target_play
         current_player = Player.get(id=current_player_id)
         effect = do_effect(id_game=game_id,id_card_type=card_idtype,target=target_player_id)
         gu.discard_card(id_game=game_id,id_card_type=card_idtype,player=current_player)
-        if effect.get_action().__str__ == "Kill":
-            Player.get(id=target_player_id).alive = False
+        if str(effect.get_action()) == "Kill":
+            target_player = Player.get(id=target_player_id)
+            target_player.alive = False
             commit()
         players = Game.get(id=game_id).players
         player_list = [PlayerOut.from_player(p) for p in players]
@@ -62,7 +63,6 @@ def play_card(game_id: int, card_idtype: int,current_player_id: int, target_play
             current_turn=Game.get(id=game_id).current_position,
         )
     return game_status
-    
 
         
 
