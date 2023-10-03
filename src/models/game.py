@@ -12,7 +12,7 @@ class Player(db.Entity):
     id = PrimaryKey(int)
     role = Required(str, default="Human")  # Human, The Thing, Infected
     name = Required(str)
-    round_position = Required(int, unique=True, unsigned=True)
+    round_position = Required(int, unsigned=True)
     alive = Required(bool, default=1)
     game = Set("Game")
     hand = Set("Card")
