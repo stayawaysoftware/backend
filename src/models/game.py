@@ -28,7 +28,6 @@ class Game(db.Entity):
     players = Set("Player")
     deck = Optional("Deck")
     available_deck = Optional("AvailableDeck")
- 
 
 
 class Card(db.Entity):
@@ -53,6 +52,7 @@ class AvailableDeck(db.Entity):
     deck = Optional("Deck")
     cards = Set("Card", reverse="available_deck")
     game = Optional("Game")
+
 
 class DisposableDeck(db.Entity):
     """DisposableDeck model."""

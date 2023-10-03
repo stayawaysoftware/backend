@@ -29,7 +29,7 @@ class TestDoEffect(unittest.TestCase):
             game = Game(
                 id=1,
                 round_left_direction=0,
-                actual_phase="Play",
+                current_phase="Play",
                 actual_position=1,
             )
             Player(id=1, game=game, round_position=1)
@@ -62,14 +62,14 @@ class TestDoEffect(unittest.TestCase):
         """Test nothing effect with invalid phase."""
         with db_session:
             game = Game[1]
-            game.actual_phase = "Draw"
+            game.current_phase = "Draw"
             commit()
 
         self.assertRaises(ValueError, do_effect, 1, 1)
 
         with db_session:
             game = Game[1]
-            game.actual_phase = "Play"
+            game.current_phase = "Play"
             commit()
 
     # Flamethrower effect
@@ -84,14 +84,14 @@ class TestDoEffect(unittest.TestCase):
         """Test flamethrower effect with invalid phase."""
         with db_session:
             game = Game[1]
-            game.actual_phase = "Draw"
+            game.current_phase = "Draw"
             commit()
 
         self.assertRaises(ValueError, do_effect, 1, 3, 1)
 
         with db_session:
             game = Game[1]
-            game.actual_phase = "Play"
+            game.current_phase = "Play"
             commit()
 
     def test_flamethrower_effect_with_invalid_target(self):
