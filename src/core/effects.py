@@ -87,7 +87,7 @@ def nothing_effect(id_game: int) -> GameAction:
     with db_session:
         game = Game[id_game]
 
-        if game.actual_phase != "Play":
+        if game.current_phase != "Play":
             raise ValueError("You can't use this card in this phase.")
 
         return GameAction(ActionType.NOTHING)
@@ -98,7 +98,7 @@ def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
     with db_session:
         game = Game[id_game]
 
-        if game.actual_phase != "Play":
+        if game.current_phase != "Play":
             raise ValueError("You can't use this card in this phase.")
         if target is None:
             raise ValueError("You must select a target.")
