@@ -34,7 +34,6 @@ def init_players(room_id: int, game: Game, deck: Deck):
         for j in range(4):
             gu.draw_card_from_deck(room_id, player)
         
-        print(player.hand)
         i += 1
 
     players = list(game.players)
