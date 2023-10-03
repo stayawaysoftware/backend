@@ -1,4 +1,3 @@
 fastapi
 uvicorn
 pony
-pre-commit

@@ -11,7 +11,7 @@ class User(db.Entity):
 
     id = PrimaryKey(int, auto=True, unsigned=True)
     username = Required(str, 30)
-    lobby = Optional("Room")
+    room = Optional("Room")
 
 
 class Room(db.Entity):

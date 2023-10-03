@@ -33,7 +33,7 @@ def init_players(room_id: int, game: Game, deck: Deck):
         player = Player(
             name=user.username, id=user.id, round_position=i, game=game
         )
-        if i == 1: #First player
+        if i == 1:  # First player
             gu.draw_card_from_deck(room_id, player)
         for j in range(4):
             gu.draw_card_from_deck(room_id, player)
