@@ -1,10 +1,21 @@
-from pony.orm import (PrimaryKey, Required, Set, Optional)
-from db import db
+from pydantic import BaseModel
+from pydantic import Field
 
-class Room(db.Entity):
-    id = PrimaryKey(int, auto=True)
-    name = Required(str)
-    maxplayers = Required(int)
-    minplayers = Required(int)
-    current_players = Required(int)
-    password = Optional(str)
+
+class RoomOut(BaseModel):
+    id: int
+    name: str = Field(max_length=30)
+    host_id: int
+    in_game: bool
+    usernames: list[str]
+
+    class Config:
+        from_attributes = True
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True

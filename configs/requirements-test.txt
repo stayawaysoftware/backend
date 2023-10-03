@@ -2,5 +2,4 @@ pyflakes
 pytest
 flake8
 pep8
-coverage
-autopep8
+pytest-cov

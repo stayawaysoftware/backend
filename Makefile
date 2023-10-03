@@ -1,24 +1,31 @@
-build:
-	@sudo docker build --pull --rm -f "Dockerfile.dev" -t demo .
+build-dev:
+	@sudo docker build --pull --rm -f "Dockerfile.dev" -t dev .
 
 build-test:
 	@sudo docker build --pull --rm -f "Dockerfile.test" -t test .
 
-run:
-	@sudo docker run -it --name democontainer -p 8000:8000 demo
-	@sudo docker stop democontainer
-	@sudo docker rm democontainer
+clean:
+	@rm -rf */__pycache__ */*/__pycache__ src/*.sqlite
 
-test:
-	@sudo docker run -it --name democontainer -p 8000:8000 test bash
-	@sudo docker stop democontainer
-	@sudo docker rm democontainer
+delete-containers:
+	@sudo docker stop devcontainer || true && sudo docker rm devcontainer || true
+	@sudo docker stop testcontainer || true && sudo docker rm testcontainer || true
 
-run-bash:
-	@sudo docker run -it --name democontainer -p 8000:8000 demo bash
-	@sudo docker stop democontainer
-	@sudo docker rm democontainer
+mkenv:
+	@./configs/setenv.sh
+	@pre-commit install
 
-delete-container:
-	@sudo docker stop democontainer
-	@sudo docker rm democontainer
+run: delete-containers build-dev
+	@sudo docker run -it --name devcontainer -p 8000:8000 dev
+
+run-bash: delete-containers build-dev
+	@sudo docker run -it --name devcontainer -p 8000:8000 dev bash
+
+run-local:
+	@python3 src/main.py
+
+test: delete-containers build-test
+	@sudo docker run -it --name testcontainer -p 8000:8000 test
+
+run-precommit:
+	@pre-commit run --all-files
