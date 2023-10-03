@@ -14,6 +14,7 @@ from core.game import play_card
 from core.game import calculate_next_turn
 from core.game_utility import draw_card_from_deck
 
+
 game = APIRouter(tags=["game"])
 
 
@@ -36,6 +37,7 @@ def get_game_status(game_id: int):
             the_thing_is_alive=the_thing_player_status,
             turn_phase=Game.get(id=game_id).current_phase,
             current_turn=Game.get(id=game_id).current_position,
+            lastPlayedCard= None
         )
     return game_status
 
@@ -65,11 +67,13 @@ def play_turn(
         commit()
         the_thing_player = Player.get(role="The Thing")
         the_thing_player_status = the_thing_player.alive
+        lastPlayedCard = card_idtype
         game_status = GameStatus(
             players=player_list,
             alive_players=len(player_list),
             the_thing_is_alive=the_thing_player_status,
             turn_phase=Game.get(id=game_id).current_phase,
             current_turn=Game.get(id=game_id).current_position,
+            lastPlayedCard= lastPlayedCard
         )
     return game_status
