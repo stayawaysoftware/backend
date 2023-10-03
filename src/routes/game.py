@@ -3,14 +3,18 @@ from typing import Optional
 from core.game import calculate_next_turn
 from core.game import play_card
 from core.game_utility import draw_card_from_deck
+from core.room import delete_room
 from fastapi import APIRouter
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
+from models.room import Room
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
+from fastapi import status
+from fastapi import Response
 
 
 game = APIRouter(tags=["game"])
@@ -80,3 +84,30 @@ def play_turn(
             lastPlayedCard=card_idtype,
         )
     return game_status
+
+@game.delete(
+    "/game/{game_id}/end_game",
+    response_description="Deletes the match",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        404: {"description": "Game not found"},
+        400: {"description": "Game has not finished"},
+    },
+)
+def delete_game(game_id: int):
+    with db_session:
+        game = Game.get(id=game_id)
+        if game is None:
+            raise HTTPException(status_code=404, detail="Game not found")
+        if game.status != "Finished":
+            raise HTTPException(status_code=400, detail="Game has not finished")
+        players = Game.get(id=game_id).players
+        if players is None:
+            raise HTTPException(status_code=404, detail="Players not found")
+        for p in players:
+            p.delete()
+        game.delete()
+        commit()
+        room = Room.get(id=game.id)
+        delete_room(room.id, room.host_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

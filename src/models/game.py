@@ -23,6 +23,7 @@ class Game(db.Entity):
 
     id = PrimaryKey(int)
     round_left_direction = Required(bool, default=0)
+    status = Required(str, default="In progress")
     current_phase = Required(str, default="Draw")  # Draw, Play, Discard
     current_position = Optional(int, default=1, unsigned=True)
     players = Set("Player")
