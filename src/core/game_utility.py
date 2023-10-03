@@ -12,13 +12,13 @@ from core.deck import get_deck
 from core.deck import get_random_card_from_available_deck
 from core.deck import move_discard_cards_to_available_deck
 from core.deck import remove_available_deck
+from core.deck import remove_card_from_available_deck
 from core.deck import remove_deck
 from core.deck import remove_disposable_deck
 from core.effects import do_effect
 from core.game_action import GameAction
 from models.game import Deck
 from models.game import Player
-from models.game import Card
 
 
 def first_deck_creation(id_game: int, cnt_players: int) -> Deck:
@@ -32,14 +32,15 @@ def first_deck_creation(id_game: int, cnt_players: int) -> Deck:
     return get_deck(id_game)
 
 
-def draw_card_from_deck(id_game: int, player: Player) -> Card:
+def draw_card_from_deck(id_game: int, player: Player) -> int:
     """Draw a card from the deck."""
     if len(get_deck(id_game).available_deck.cards) == 0:
         move_discard_cards_to_available_deck(id_game)
 
     card = get_random_card_from_available_deck(id_game)
     add_player_to_card(card.id, player)
-    return card
+    remove_card_from_available_deck(id_game, card)
+    return card.idtype
 
 
 def discard_card(id_game: int, id_card_type: int, player: Player) -> None:
