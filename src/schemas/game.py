@@ -5,8 +5,6 @@ from pydantic import BaseModel
 from schemas.player import PlayerOut
 
 
-
-
 class GameStatus(BaseModel):
     alive_players: int
     the_thing_is_alive: bool
