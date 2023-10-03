@@ -63,8 +63,8 @@ def add_disposable_deck_to_card(id: int, deck: DisposableDeck):
 def add_player_to_card(id: int, player: Player):
     """Add a player to a card."""
     with db_session:
-        if player not in get_card(id).players:
-            get_card(id).players.add(player)
+        if player != get_card(id).player:
+            get_card(id).player = player
             commit()
         else:
             raise ValueError(
@@ -99,8 +99,8 @@ def remove_disposable_deck_from_card(id: int, deck: DisposableDeck):
 def remove_player_from_card(id: int, player: Player):
     """Remove a player from a card."""
     with db_session:
-        if player in get_card(id).players:
-            get_card(id).players.remove(player)
+        if player == get_card(id).player:
+            get_card(id).player = None
             commit()
         else:
             raise ValueError(

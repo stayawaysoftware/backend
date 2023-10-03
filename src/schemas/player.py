@@ -1,5 +1,6 @@
 from models.game import Player
 from pydantic import BaseModel
+from schemas.card import CardOut
 
 
 class PlayerOut(BaseModel):
@@ -8,6 +9,7 @@ class PlayerOut(BaseModel):
     round_position: int
     alive: bool
     role: str
+    hand: list[CardOut] = []
 
     @classmethod
     def from_player(cls, player: Player):
@@ -19,4 +21,7 @@ class PlayerOut(BaseModel):
             game_id=player.game.id,  # Asumiendo que Player tiene una relación con Game
             alive=player.alive,  # Agregar el campo 'alive'
             role=player.role,  # Agregar el campo 'role'
+            hand=[
+                CardOut.from_card(card) for card in player.hand
+            ],  # Agregar el campo 'hand'
         )
