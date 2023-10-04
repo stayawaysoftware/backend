@@ -10,6 +10,7 @@ from . import join_room
 from . import leave_room
 from . import Room
 from . import start_game
+from . import User
 
 
 # Test suite for the room module using pytest
@@ -51,6 +52,8 @@ class TestRoom:
 
     @db_session
     def test_create_room_user_not_found(self):
+        # Assert not exists user with id 1
+        assert User.get(id=1) is None
         # Create a room with a user that does not exist
         with pytest.raises(ValueError):
             create_room("test_room", 1)
@@ -61,6 +64,8 @@ class TestRoom:
         user = create_user("test_user")
         # Create a room
         room = create_room("test_room", user.id)
+        # Asser user is in room
+        assert user.room.id == room.id
         # Create another room with the same user host
         with pytest.raises(PermissionError):
             create_room("test_room", user.id)
