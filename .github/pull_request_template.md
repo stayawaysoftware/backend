@@ -1,7 +1,10 @@
-## Describe your changes
+## Describa sus cambios
 
-## Issue ticket number
+## Tipo de cambios
+- [] Corrección de errores
+- [] Nueva funcionalidad
+- [] Cambios en la documentación
+- [] Testeo
+- [] Otro (especificar)
 
-## Checklist before requesting a review
-- [ ] I have performed a self-review of my code
-- [ ] If it is a core feature, I have added thorough tests.
+## ¿Cómo probar los cambios?

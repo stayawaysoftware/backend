@@ -1,0 +1,26 @@
+site_name: Stay Away! docs
+repo_url: https://github.com/stayawaysoftware/backend
+repo_name: Stay Away! Backend
+docs_dir: ../docs
+site_dir: ../site
+plugins:
+  - search
+
+theme:
+  icon:
+    repo: fontawesome/brands/github
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
