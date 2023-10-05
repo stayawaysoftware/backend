@@ -1,0 +1,24 @@
+name: 00 - Backend Test Workflow
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository content
+        uses: actions/checkout@v3
+
+
+      - name: Setup Python version
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11
+
+      - name: Execute tests
+        run: make test-local

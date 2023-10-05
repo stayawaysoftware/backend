@@ -38,11 +38,7 @@ test: delete-containers build-test
 
 test-local: .venv clean
 	@(. .venv/bin/activate; \
-	pytest -v -s --cov=src --cov-report=html --cov-config=configs/.coveragerc)
-	@read -p "Do you want to open the coverage report? [y/N]: " answer; \
-	if [ "$$answer" != "$${answer#[Yy]}" ]; then \
-		xdg-open htmlcov/index.html; \
-	fi
+	pytest -v -s --cov=src --cov-report=term --cov-config=configs/.coveragerc)
 
 run-precommit: .venv
 	@(. .venv/bin/activate; \
