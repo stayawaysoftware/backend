@@ -40,6 +40,11 @@ test-local: .venv clean
 	@(. .venv/bin/activate; \
 	pytest -v -s --cov=src --cov-report=term --cov-config=configs/.coveragerc)
 
+test-see-coverage: .venv clean
+	@(. .venv/bin/activate; \
+	pytest -v -s --cov=src --cov-report=html --cov-config=configs/.coveragerc)
+	@xdg-open htmlcov/index.html
+
 run-precommit: .venv
 	@(. .venv/bin/activate; \
 	pre-commit install; \
