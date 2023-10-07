@@ -9,6 +9,8 @@ from models.game import Player
 from models.room import Room
 from pony.orm import commit
 from pony.orm import db_session
+from schemas.game import GameStatus
+from schemas.player import PlayerOut
 
 
 @db_session
@@ -20,6 +22,8 @@ def init_game(room_id: int):
     game = Game(id=room_id, deck=deck)
     commit()
     init_players(room_id, game, deck)
+
+
 
 
 @db_session
@@ -45,6 +49,22 @@ def init_players(room_id: int, game: Game, deck: Deck):
     player.role = "The Thing"
     commit()
 
+
+@db_session
+def init_game_status(game_id: int):
+        players = Game.get(id=game_id).players
+        player_list = [PlayerOut.from_player(p) for p in players]
+        the_thing_player = Player.get(role="The Thing")
+        the_thing_player_status = the_thing_player.alive
+        game_status = GameStatus(
+            players=player_list,
+            alive_players=len(list(filter(lambda p: p.alive, players))),
+            the_thing_is_alive=the_thing_player_status,
+            turn_phase=Game.get(id=game_id).current_phase,
+            current_turn=Game.get(id=game_id).current_position,
+            lastPlayedCard=None,
+        )
+        return game_status
 
 @db_session
 def play_card(
