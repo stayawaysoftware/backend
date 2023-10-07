@@ -11,6 +11,7 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
+from core.game_utility import draw_card_from_deck
 
 
 @db_session
@@ -87,6 +88,39 @@ def play_card(
         target_player = Player.get(id=target_player_id)
         target_player.alive = False
         commit()
+
+@db_session
+def turn_game_status(
+                    game: Game,
+                    card_idtype: int, 
+                    current_player_id: int,
+                    target_player_id: Optional[int] = None):
+        play_card(
+            game_id=game.id,
+            card_idtype=card_idtype,
+            current_player_id=current_player_id,
+            target_player_id=target_player_id,
+        )
+        players = Game.get(id=game.id).players
+        player_list = [PlayerOut.from_player(p) for p in players]
+        calculate_next_turn(game_id=game.id)
+        next_player = Player.get(round_position=game.current_position)
+        draw_card_from_deck(id_game=game.id, player=next_player)
+        game.current_phase = "Draw"
+        commit()
+        the_thing_player = Player.get(role="The Thing")
+        the_thing_player_status = the_thing_player.alive
+
+        game_status = GameStatus(
+            players=player_list,
+            alive_players=len(list(filter(lambda p: p.alive, players))),
+            the_thing_is_alive=the_thing_player_status,
+            turn_phase=Game.get(id=game.id).current_phase,
+            current_turn=Game.get(id=game.id).current_position,
+            lastPlayedCard=card_idtype,
+        )
+        return game_status
+
 
 
 @db_session

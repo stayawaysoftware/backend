@@ -5,6 +5,7 @@ from core.game import play_card
 from core.game_utility import draw_card_from_deck
 from core.room import delete_room
 from core.game import init_game_status
+from core.game import turn_game_status
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import Response
@@ -48,30 +49,8 @@ def play_turn(
         current_game = Game.get(id=game_id)
         if not Game.exists(id=game_id):
             raise HTTPException(status_code=404, detail="Game not found")
-        play_card(
-            game_id=game_id,
-            card_idtype=card_idtype,
-            current_player_id=current_player_id,
-            target_player_id=target_player_id,
-        )
-        players = Game.get(id=game_id).players
-        player_list = [PlayerOut.from_player(p) for p in players]
-        calculate_next_turn(game_id=game_id)
-        next_player = Player.get(round_position=current_game.current_position)
-        draw_card_from_deck(id_game=game_id, player=next_player)
-        current_game.current_phase = "Draw"
-        commit()
-        the_thing_player = Player.get(role="The Thing")
-        the_thing_player_status = the_thing_player.alive
+        game_status = turn_game_status(current_game, card_idtype, current_player_id, target_player_id)
 
-        game_status = GameStatus(
-            players=player_list,
-            alive_players=len(list(filter(lambda p: p.alive, players))),
-            the_thing_is_alive=the_thing_player_status,
-            turn_phase=Game.get(id=game_id).current_phase,
-            current_turn=Game.get(id=game_id).current_position,
-            lastPlayedCard=card_idtype,
-        )
     return game_status
 
 
