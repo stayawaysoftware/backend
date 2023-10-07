@@ -1,8 +1,5 @@
 from typing import Optional
 
-from core.game import calculate_next_turn
-from core.game import play_card
-from core.game_utility import draw_card_from_deck
 from core.room import delete_room
 from core.game import init_game_status
 from core.game import turn_game_status
@@ -11,12 +8,11 @@ from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from models.game import Game
-from models.game import Player
 from models.room import Room
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
-from schemas.player import PlayerOut
+
 
 
 game = APIRouter(tags=["game"])
