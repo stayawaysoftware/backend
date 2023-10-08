@@ -3,6 +3,7 @@ from pony.orm import db_session
 
 from . import create_room
 from . import create_user
+from . import db
 from . import delete_room
 from . import delete_user
 from . import get_users
@@ -19,6 +20,10 @@ class TestUser:
         yield user
         # Delete the user
         delete_user(user.id)
+
+    @classmethod
+    def tearDownClass(cls):
+        db.drop_all_tables(with_all_data=True)
 
     # Test the user creation
     @db_session
