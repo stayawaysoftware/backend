@@ -29,6 +29,7 @@ class Game(db.Entity):
     players = Set("Player")
     deck = Required("Deck")
 
+
 class Card(db.Entity):
     """Card model."""
 
