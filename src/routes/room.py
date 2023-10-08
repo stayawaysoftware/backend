@@ -101,8 +101,9 @@ async def join_room(room_id: int, user_id: int):
 
 @room.put(
     "/rooms/{room_id}/leave",
-    response_model=RoomOut,
-    response_description="Returns the left room or an error with details when fail",
+    response_model=RoomOut | None,
+    response_description="Returns the left room, 200 with null when the room was deleted\
+          or an error with details when fail",
     status_code=status.HTTP_200_OK,
     responses={
         403: {

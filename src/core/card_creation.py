@@ -1,10 +1,13 @@
-"""Card creation and asociation module for Stay Away cards."""
-from core.card import add_available_deck_to_card
+"""Card creation and relationship functions for Stay Away!'s cards."""
 from core.card import create_card
-from models.game import AvailableDeck
+from core.card import relate_card_with_available_deck
+from core.deck import get_available_deck
 from models.game import Card
+from pony.orm import db_session
 
-# Card names
+# ===================== CARD DATA =====================
+
+# Card names + category
 card_names = [
     ["None", "None"],
     ["The Thing", "INFECTION"],
@@ -40,15 +43,15 @@ card_names = [
     ["Ups!", "PANIC"],
 ]
 
-# Cnt card of different type for cnt of players
-cnt_cards = [
+# Quantity of cards of different category for quantity of players
+quantity_cards = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # None
     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],  # The Thing
     [0, 0, 0, 0, 8, 0, 2, 2, 1, 2, 2, 3, 0],  # Infected
     [0, 0, 0, 0, 2, 0, 1, 0, 0, 1, 0, 1, 0],  # Flamethrower
-    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0],  # Analysis
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0],  # Analysis
     [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],  # Axe
-    [0, 0, 0, 0, 4, 0, 0, 1, 1, 0, 1, 0, 0],  # Suspicion
+    [0, 0, 0, 0, 4, 0, 0, 1, 1, 1, 1, 0, 0],  # Suspicion
     [0, 0, 0, 0, 2, 0, 1, 0, 0, 1, 1, 0, 0],  # Determination
     [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0],  # Whisky
     [0, 0, 0, 0, 2, 0, 0, 1, 0, 1, 0, 1, 0],  # Change of position
@@ -57,11 +60,11 @@ cnt_cards = [
     [0, 0, 0, 0, 2, 0, 0, 1, 0, 1, 0, 1, 0],  # You better run
     [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0],  # I'm fine here
     [0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0],  # Terrifying
-    [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0],  # No, thanks
+    [0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0],  # No, thanks
     [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0],  # You failed
-    [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],  # No Barbecues
+    [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0],  # No Barbecues
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],  # Quarantine
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0],  # Locked Door
+    [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0],  # Locked Door
     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],  # Revelations
     [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],  # Rotten ropes
     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],  # Get out of here
@@ -76,41 +79,51 @@ cnt_cards = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],  # Ups!
 ]
 
+# ===================== INITIAL CARD FUNCTIONS =====================
 
-def create_all_cards():
+# Create cards
+
+
+def create_all_cards() -> None:
     """Create all cards in the database."""
     if len(Card.select()) > 0:
-        raise ValueError("There are cards in the database.")
+        raise ValueError("Cards already created")
 
     counter = 0
-    for i in range(1, len(cnt_cards)):
+    for i in range(len(card_names)):
         sum = 0
-        for j in range(4, len(cnt_cards[i])):
-            sum += cnt_cards[i][j]
+        for j in range(len(quantity_cards[i])):
+            sum += quantity_cards[i][j]
         while sum > 0:
-            create_card(
-                id=counter,
-                idtype=i,
-                name=card_names[i][0],
-                type=card_names[i][1],
-            )
+            create_card(counter, i, card_names[i][0], card_names[i][1])
             sum -= 1
             counter += 1
 
-    if counter != 104:
-        raise ValueError("Wrong number of cards in the database.")
+    if counter != 109:
+        raise ValueError("Cards not created correctly")
 
 
-def create_card_asociation(deck: AvailableDeck, cnt_players: int):
-    """Create asociation between cards and decks."""
+# Initialize available deck creating relationship with cards
+
+
+def init_available_deck(id_available_deck: int, quantity_players: int) -> None:
+    """Initialize an available deck creating relationship with cards."""
     if len(Card.select()) == 0:
         create_all_cards()
 
-    for i in range(1, len(cnt_cards)):
-        sum = 0
-        for j in range(4, cnt_players + 1):
-            sum += cnt_cards[i][j]
+    available_deck = get_available_deck(id_available_deck)
+    if len(available_deck.cards) > 0:
+        raise ValueError(
+            f"Available deck with id {id_available_deck} already initialized"
+        )
 
-        card_list = list(Card.select(idtype=i))
+    for i in range(len(card_names)):
+        with db_session:
+            card_list = list(Card.select(idtype=i))
+
+        sum = 0
+        for j in range(quantity_players + 1):
+            sum += quantity_cards[i][j]
+
         for j in range(sum):
-            add_available_deck_to_card(card_list[j].id, deck)
+            relate_card_with_available_deck(card_list[j].id, id_available_deck)

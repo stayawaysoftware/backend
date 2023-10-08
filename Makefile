@@ -1,5 +1,5 @@
 .venv:
-	@python3 -m venv .venv
+	@python3.10 -m venv .venv
 	@(. .venv/bin/activate; \
 	pip install -q -r configs/requirements-dev.txt; \
 	pip install -q -r configs/requirements-test.txt; \
@@ -39,6 +39,11 @@ test: delete-containers build-test
 test-local: .venv clean
 	@(. .venv/bin/activate; \
 	pytest -v -s --cov=src --cov-report=term --cov-config=configs/.coveragerc)
+
+test-see-coverage: .venv clean
+	@(. .venv/bin/activate; \
+	pytest -v -s --cov=src --cov-report=html --cov-config=configs/.coveragerc)
+	@xdg-open htmlcov/index.html
 
 run-precommit: .venv
 	@(. .venv/bin/activate; \
