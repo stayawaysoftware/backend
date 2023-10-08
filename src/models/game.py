@@ -27,9 +27,7 @@ class Game(db.Entity):
     current_phase = Required(str, default="Draw")  # Draw, Play, Discard
     current_position = Optional(int, default=1, unsigned=True)
     players = Set("Player")
-    deck = Optional("Deck")
-    available_deck = Optional("AvailableDeck")
-
+    deck = Required("Deck")
 
 class Card(db.Entity):
     """Card model."""
@@ -43,7 +41,7 @@ class Card(db.Entity):
 
     available_deck = Set("AvailableDeck", reverse="cards")
     disposable_deck = Set("DisposableDeck", reverse="cards")
-    player = Optional("Player")
+    players = Set("Player")
 
 
 class AvailableDeck(db.Entity):
@@ -52,7 +50,6 @@ class AvailableDeck(db.Entity):
     id = PrimaryKey(int)
     deck = Optional("Deck")
     cards = Set("Card", reverse="available_deck")
-    game = Optional("Game")
 
 
 class DisposableDeck(db.Entity):
@@ -69,4 +66,4 @@ class Deck(db.Entity):
     id = PrimaryKey(int)
     available_deck = Optional("AvailableDeck")
     disposable_deck = Optional("DisposableDeck")
-    Game = Set("Game")
+    game = Optional("Game")

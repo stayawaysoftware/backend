@@ -6,103 +6,158 @@ from models.game import Player
 from pony.orm import commit
 from pony.orm import db_session
 
+# ===================== BASIC CARD FUNCTIONS =====================
 
-def exists_card(id: int):
-    """Check if a card exists in the database."""
+
+def exists_card(id: int) -> bool:
+    """Check if a card exists in the database"""
     with db_session:
         return Card.exists(id=id)
 
 
-def get_card(id: int):
-    """Get a card from the database."""
+def get_card(id: int) -> Card:
+    """Get a card from the database"""
     with db_session:
         if exists_card(id):
             return Card[id]
-        raise ValueError(f"Card with id {id} doesn't exists.")
+        raise ValueError(f"Card with id {id} doesn't exist")
 
 
-def create_card(id: int, idtype: int, name: str, type: str):
-    """Create a card in the database."""
+def create_card(id: int, idtype: int, name: str, type: str) -> Card:
+    """Create a card in the database"""
     with db_session:
         if not exists_card(id):
-            Card(
-                id=id,
-                idtype=idtype,
-                name=name,
-                type=type,
-            )
+            card = Card(id=id, idtype=idtype, name=name, type=type)
             commit()
-        else:
-            raise ValueError(f"Card with id {id} already exists.")
+            return card
+        raise ValueError(f"Card with id {id} already exists")
 
 
-def add_available_deck_to_card(id: int, deck: AvailableDeck):
-    """Add a deck to a card."""
+# ===================== RELATIONSHIP CARD FUNCTIONS =====================
+
+
+def relate_card_with_available_deck(
+    id_card: int, id_available_deck: int
+) -> None:
+    """Relate a card with an available deck"""
     with db_session:
-        if deck not in get_card(id).available_deck:
-            get_card(id).available_deck.add(deck)
+        if not AvailableDeck.exists(id=id_available_deck):
+            raise ValueError(
+                f"Available deck with id {id_available_deck} doesn't exist"
+            )
+
+        available_deck = AvailableDeck[id_available_deck]
+        card = get_card(id_card)
+
+        if available_deck not in card.available_deck:
+            card.available_deck.add(available_deck)
             commit()
         else:
             raise ValueError(
-                f"Deck with id {deck.id} doesn't exists in card with id {id}."
+                f"Card with id {id_card} already related with available deck with id {id_available_deck}"
             )
 
 
-def add_disposable_deck_to_card(id: int, deck: DisposableDeck):
-    """Add a deck to a card."""
+def relate_card_with_disposable_deck(
+    id_card: int, id_disposable_deck: int
+) -> None:
+    """Relate a card with a disposable deck"""
     with db_session:
-        if deck not in get_card(id).disposable_deck:
-            get_card(id).disposable_deck.add(deck)
+        if not DisposableDeck.exists(id=id_disposable_deck):
+            raise ValueError(
+                f"Disposable deck with id {id_disposable_deck} doesn't exist"
+            )
+
+        disposable_deck = DisposableDeck[id_disposable_deck]
+        card = get_card(id_card)
+
+        if disposable_deck not in card.disposable_deck:
+            card.disposable_deck.add(disposable_deck)
             commit()
         else:
             raise ValueError(
-                f"Deck with id {deck.id} doesn't exists in card with id {id}."
+                f"Card with id {id_card} already related with disposable deck with id {id_disposable_deck}"
             )
 
 
-def add_player_to_card(id: int, player: Player):
-    """Add a player to a card."""
+def relate_card_with_player(id_card: int, id_player: int) -> None:
+    """Relate a card with a player"""
     with db_session:
-        if player != get_card(id).player:
-            get_card(id).player = player
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+
+        player = Player[id_player]
+        card = get_card(id_card)
+
+        if player not in card.players:
+            card.players.add(player)
             commit()
         else:
             raise ValueError(
-                f"Player with id {player.id} doesn't exists in card with id {id}."
+                f"Card with id {id_card} already related with player with id {id_player}"
             )
 
 
-def remove_available_deck_from_card(id: int, deck: AvailableDeck):
-    """Remove a deck from a card."""
+# ===================== UNRELATIONSHIP CARD FUNCTIONS =====================
+
+
+def unrelate_card_with_available_deck(
+    id_card: int, id_available_deck: int
+) -> None:
+    """Unrelate a card with an available deck"""
     with db_session:
-        if deck in get_card(id).available_deck:
-            get_card(id).available_deck.remove(deck)
+        if not AvailableDeck.exists(id=id_available_deck):
+            raise ValueError(
+                f"Available deck with id {id_available_deck} doesn't exist"
+            )
+
+        available_deck = AvailableDeck[id_available_deck]
+        card = get_card(id_card)
+
+        if available_deck in card.available_deck:
+            card.available_deck.remove(available_deck)
             commit()
         else:
             raise ValueError(
-                f"Deck with id {deck.id} doesn't exists in card with id {id}."
+                f"Card with id {id_card} not related with available deck with id {id_available_deck}"
             )
 
 
-def remove_disposable_deck_from_card(id: int, deck: DisposableDeck):
-    """Remove a deck from a card."""
+def unrelate_card_with_disposable_deck(
+    id_card: int, id_disposable_deck: int
+) -> None:
+    """Unrelate a card with a disposable deck"""
     with db_session:
-        if deck in get_card(id).disposable_deck:
-            get_card(id).disposable_deck.remove(deck)
+        if not DisposableDeck.exists(id=id_disposable_deck):
+            raise ValueError(
+                f"Disposable deck with id {id_disposable_deck} doesn't exist"
+            )
+
+        disposable_deck = DisposableDeck[id_disposable_deck]
+        card = get_card(id_card)
+
+        if disposable_deck in card.disposable_deck:
+            card.disposable_deck.remove(disposable_deck)
             commit()
         else:
             raise ValueError(
-                f"Deck with id {deck.id} doesn't exists in card with id {id}."
+                f"Card with id {id_card} not related with disposable deck with id {id_disposable_deck}"
             )
 
 
-def remove_player_from_card(id: int, player: Player):
-    """Remove a player from a card."""
+def unrelate_card_with_player(id_card: int, id_player: int) -> None:
+    """Unrelate a card with a player"""
     with db_session:
-        if player == get_card(id).player:
-            get_card(id).player = None
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+
+        player = Player[id_player]
+        card = get_card(id_card)
+
+        if player in card.players:
+            card.players.remove(player)
             commit()
         else:
             raise ValueError(
-                f"Player with id {player.id} doesn't exists in card with id {id}."
+                f"Card with id {id_card} not related with player with id {id_player}"
             )
