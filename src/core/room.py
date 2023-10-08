@@ -6,12 +6,22 @@ from pony.orm import db_session
 
 
 @db_session
+def update_usernames(room: Room):
+    dict_users = {u.username: u.id for u in room.users}
+    room.usernames = [u.username for u in room.users]
+    # sort usernames by your id
+    room.usernames.sort(key=lambda x: dict_users[x])
+
+
+@db_session
 def get_rooms():
     rooms = Room.select()
     result = []
     for room in rooms:
         room.usernames = [u.username for u in room.users]
         result.append(room)
+    # sort result by id
+    result.sort(key=lambda x: x.id)
     return result
 
 
@@ -20,7 +30,7 @@ def get_room(id: int):
     room = Room.get(id=id)
     if room is None:
         raise ValueError("Room not found")
-    room.usernames = [u.username for u in room.users]
+    update_usernames(room)
     return room
 
 
@@ -48,7 +58,7 @@ def create_room(
         )
 
         User[host_id].room = room
-        room.usernames = [u.username for u in room.users]
+        update_usernames(room)
         commit()
     return room
 
@@ -67,7 +77,7 @@ def join_room(room_id: int, user_id: int):
     if room.in_game:
         raise PermissionError("Game is already in progress")
     User[user_id].room = room
-    room.usernames = [u.username for u in room.users]
+    update_usernames(room)
     commit()
     return room
 
@@ -90,7 +100,7 @@ def leave_room(room_id: int, user_id: int):
         User[user_id].room = None
         return None
     User[user_id].room = None
-    room.usernames = [u.username for u in room.users]
+    update_usernames(room)
     commit()
     return room
 
@@ -114,8 +124,8 @@ def start_game(room_id: int, host_id: int):
         raise PermissionError("Not enough users in this room")
     init_game(room_id)
     room.in_game = True
+    update_usernames(room)
     commit()
-    room.usernames = [u.username for u in room.users]
     return room
 
 

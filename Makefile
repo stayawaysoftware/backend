@@ -1,5 +1,5 @@
 .venv:
-	@python3 -m venv .venv
+	@python3.10 -m venv .venv
 	@(. .venv/bin/activate; \
 	pip install -q -r configs/requirements-dev.txt; \
 	pip install -q -r configs/requirements-test.txt; \

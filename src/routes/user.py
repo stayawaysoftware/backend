@@ -18,6 +18,8 @@ def get_users():
     with db_session:
         result = users.get_users()
         result = [UserOut.model_validate(user) for user in result]
+    # sort result by id
+    result.sort(key=lambda x: x.id)
     return result
 
 
@@ -62,4 +64,3 @@ def delete_user(id: int):
         raise HTTPException(status_code=404, detail=str(error))
     except PermissionError as error:
         raise HTTPException(status_code=403, detail=str(error))
-    return {"message": f"User {id} deleted successfully"}
