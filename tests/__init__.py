@@ -10,6 +10,7 @@ sys.path.append(src_dir)
 from core.user import *  # noqa : F401
 from core.room import *  # noqa : F401
 from core.game import *  # noqa : F401
+from core.player import *  # noqa : F401
 from models import db  # noqa : F401
 from models.room import Room  # noqa : F401
 from models.room import User  # noqa : F401

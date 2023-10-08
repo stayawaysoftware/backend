@@ -1,6 +1,7 @@
 
 from typing import Optional
 
+import random
 import core.game_utility as gu
 from core.effects import do_effect
 from models.game import Deck
@@ -12,6 +13,25 @@ from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
 from core.game_utility import draw_card_from_deck
+from core.player import create_player
+from core.player import dealing_cards
+
+@db_session
+def init_players(room_id: int, game: Game):
+    room = Room.get(id=room_id)
+    if room.in_game:
+        raise PermissionError("Game is in progress (iP)")
+
+    i = 1
+    for user in room.users:
+        player = create_player(room_id, game, user.id, i)
+        dealing_cards(room_id, player, i)
+        i += 1
+
+    players = list(game.players)
+    player = random.choice(players)
+    player.role = "The Thing"
+    commit()
 
 
 @db_session
@@ -22,7 +42,9 @@ def init_game(room_id: int):
     deck = gu.first_deck_creation(room_id, len(list(room.users)))
     game = Game(id=room_id, deck=deck)
     commit()
-    init_players(room_id, game, deck)
+    init_players(room_id, game)
+
+
 
 @db_session
 def init_game_status(game_id: int):

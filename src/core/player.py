@@ -1,4 +1,3 @@
-import random
 from pony.orm import db_session, commit
 from models.game import Deck
 from models.game import Game
@@ -8,24 +7,31 @@ import core.game_utility as gu
 
 
 @db_session
-def init_players(room_id: int, game: Game, deck: Deck):
+def create_player(room_id: int, game: Game, user_id: int, p_round_position: int):
     room = Room.get(id=room_id)
     if room.in_game:
-        raise PermissionError("Game is in progress (iP)")
+        raise PermissionError("Game is in progress (cP)")
 
-    i = 1
-    for user in room.users:
-        player = Player(
-            name=user.username, id=user.id, round_position=i, game=game
-        )
-        if i == 1:  # First player
-            gu.draw_card_from_deck(room_id, player)
-        for j in range(4):
-            gu.draw_card_from_deck(room_id, player)
-
-        i += 1
-
-    players = list(game.players)
-    player = random.choice(players)
-    player.role = "The Thing"
+    #get a user in a room by id
+    user = None
+    for u in room.users:
+        if u.id == user_id:
+            user = u
+            break
+    if user is None:
+        raise ValueError("User does not exist")
+    player = Player(
+        name=user.username, id=user.id, round_position=p_round_position, game=game
+    )
     commit()
+    return player
+
+@db_session
+def dealing_cards(room_id: int, player: Player, index: int):
+    room = Room.get(id=room_id)
+    if room.in_game:
+        raise PermissionError("Game is in progress (dC)")
+    if index == 1:
+        gu.draw_card_from_deck(room_id, player)
+    for i in range(4):
+        gu.draw_card_from_deck(room_id, player)
