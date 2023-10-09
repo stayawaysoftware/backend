@@ -13,6 +13,7 @@ from core.game import *  # noqa : F401
 from core.game_action import *  # noqa : F401
 from core.effects import *  # noqa : F401
 from core.card import *  # noqa : F401
+from core.deck import *  # noqa : F401
 from models import db  # noqa : F401
 from models.room import Room  # noqa : F401
 from models.room import User  # noqa : F401
