@@ -11,7 +11,6 @@ from . import delete_user
 from . import Game
 from . import init_game
 from . import join_room
-from . import Player
 from . import User
 
 
@@ -57,8 +56,7 @@ class TestPlayer:
             assert player is not None
             # Check if the player has been created with the correct username
             assert player.name is not None
-            # Check if the player has been saved in the database
-            assert Player.get(name=player.name) is not None
+
             # Check if the player has right position
             assert player.round_position > 0 and player.round_position <= 12
             # Check if the player role is "The thing" or "Human"

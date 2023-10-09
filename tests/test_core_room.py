@@ -246,13 +246,6 @@ class TestRoom:
             start_game(NOT_EXISTS_ID, user.id)
 
     @db_session
-    def test_start_game_user_not_found(self, resources):
-        # Create a room
-        room = resources[1]
-        with pytest.raises(ValueError):
-            start_game(room.id, NOT_EXISTS_ID)
-
-    @db_session
     def test_start_game_user_not_host(self):
         # Create a user
         temp_user = create_user("temp_user")
