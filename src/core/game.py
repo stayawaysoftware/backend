@@ -50,7 +50,7 @@ def init_game(room_id: int):
 def init_game_status(game_id: int):
     players = Game.get(id=game_id).players
     player_list = [PlayerOut.from_player(p) for p in players]
-    the_thing_player = Player.get(role="The Thing")
+    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
     the_thing_player_status = the_thing_player.alive
     game_status = GameStatus(
         players=player_list,
@@ -102,11 +102,13 @@ def turn_game_status(
     players = Game.get(id=game.id).players
     player_list = [PlayerOut.from_player(p) for p in players]
     calculate_next_turn(game_id=game.id)
-    next_player = Player.get(round_position=game.current_position)
+    next_player = Player.select(
+        lambda p: p.round_position == game.current_position
+    ).first()
     gu.draw(id_game=game.id, id_player=next_player.id)
     game.current_phase = "Draw"
     commit()
-    the_thing_player = Player.get(role="The Thing")
+    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
     the_thing_player_status = the_thing_player.alive
 
     game_status = GameStatus(
@@ -131,7 +133,9 @@ def calculate_next_turn(game_id: int):
         next_player_position += 1
         if next_player_position > len(players):
             next_player_position = 1
-        next_player = Player.get(round_position=next_player_position)
+        next_player = Player.select(
+            lambda p: p.round_position == next_player_position
+        ).first()
         if next_player.alive:
             break
     game.current_position = next_player_position
