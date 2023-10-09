@@ -11,12 +11,13 @@ from core.user import *  # noqa : F401
 from core.room import *  # noqa : F401
 from core.game import *  # noqa : F401
 from core.game_action import *  # noqa : F401
+from core.effects import *  # noqa : F401
 from models import db  # noqa : F401
 from models.room import Room  # noqa : F401
 from models.room import User  # noqa : F401
 from models.game import Game  # noqa : F401
 from models.game import Player  # noqa : F401
-from pony.orm import db_session  # noqa : F401
+from pony.orm import db_session, commit  # noqa : F401
 
 
 # Generate the database mapping
