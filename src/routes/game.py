@@ -5,7 +5,6 @@ from core.game import init_game_status
 from core.game import turn_game_status
 from fastapi import APIRouter
 from fastapi import HTTPException
-from fastapi import Response
 from fastapi import status
 from models.game import Game
 from pony.orm import db_session
@@ -68,4 +67,3 @@ def end_game(game_id: int):
                 status_code=400, detail="Game has not finished"
             )
         delete_game(game_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
