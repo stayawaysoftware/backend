@@ -27,6 +27,10 @@ from models.room import Room  # noqa : F401
 from models.room import User  # noqa : F401
 from models.game import Game  # noqa : F401
 from models.game import Player  # noqa : F401
+from models.game import Deck  # noqa : F401
+from models.game import Card  # noqa : F401
+from models.game import AvailableDeck  # noqa : F401
+from models.game import DisposableDeck  # noqa : F401
 from pony.orm import db_session  # noqa : F401
 from pony.orm import commit  # noqa : F401
 
@@ -34,3 +38,27 @@ from pony.orm import commit  # noqa : F401
 # Generate the database mapping
 db.bind(provider="sqlite", filename=":memory:", create_db=True)
 db.generate_mapping(create_tables=True)
+
+# Clean DB
+
+
+@db_session
+def clean_db():
+    """Clean DB."""
+    for x in Card.select():
+        x.delete()
+    for x in Deck.select():
+        x.delete()
+    for x in AvailableDeck.select():
+        x.delete()
+    for x in DisposableDeck.select():
+        x.delete()
+    for x in Game.select():
+        x.delete()
+    for x in Player.select():
+        x.delete()
+    for x in User.select():
+        x.delete()
+    for x in Room.select():
+        x.delete()
+    commit()
