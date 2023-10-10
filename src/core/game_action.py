@@ -13,9 +13,8 @@ class ActionType(Enum):
         """Return string representation."""
         if self == ActionType.NOTHING:
             return "Nothing"
-        if self == ActionType.KILL:
+        elif self == ActionType.KILL:
             return "Kill"
-        return "Unknown"
 
 
 class GameAction:
