@@ -27,7 +27,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 @room.get(
     "/room/list",
     response_model=list[RoomOut],
-    response_description="List the rooms available in the database",
+    response_description="Returns 200 OK with a list of rooms\
+          available in the database",
     status_code=status.HTTP_200_OK,
 )
 def get_rooms():
@@ -39,8 +40,9 @@ def get_rooms():
 
 @room.post(
     "/room/new",
+    response_model=dict[str, int],
     name="Create a new room",
-    response_description="Returns the created room or an error with details when fail",
+    response_description="Returns 201 Created with the room id",
     status_code=status.HTTP_201_CREATED,
     responses={
         400: {
@@ -68,15 +70,15 @@ async def new_room(
                 raise HTTPException(status_code=404, detail=str(error))
             else:
                 raise HTTPException(status_code=400, detail=str(error))
-        room = RoomOut.model_validate(room)
     # Post to subscribers that a new room has been created
-    await room_manager.room_broadcast(room.id, "new")
+    return {"room_id": room.id}
 
 
 @room.put(
     "/room/join",
+    response_model=dict[str, int],
     name="Join a room",
-    response_description="Returns 200 OK or an error with msg when fail",
+    response_description="Returns 200 OK with the room id",
     status_code=status.HTTP_200_OK,
     responses={
         403: {
@@ -98,11 +100,12 @@ async def join_room(room_id: int = Form(...), user_id: int = Form(...)):
             raise HTTPException(status_code=404, detail=str(error))
     # Post to subscribers that a user has joined the room
     await room_manager.room_broadcast(room_id, "join")
+    return {"room_id": room_id}
 
 
 @room.put(
     "/room/leave",
-    response_description="Returns 200 OK or an error with details when fail",
+    response_description="Returns 200 OK",
     status_code=status.HTTP_200_OK,
     responses={
         403: {
@@ -129,7 +132,7 @@ async def leave_room(room_id: int = Form(...), user_id: int = Form(...)):
 
 @room.put(
     "/room/start",
-    response_description="Returns 200 OK or an error with details when fail",
+    response_description="Returns 200 OK",
     status_code=status.HTTP_200_OK,
     responses={
         403: {
@@ -155,7 +158,7 @@ async def play_game(room_id: int = Form(...), host_id: int = Form(...)):
 
 @room.delete(
     "/room/delete",
-    response_description="Returns 204 or an error with details when fail",
+    response_description="Returns 204",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         403: {
