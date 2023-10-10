@@ -4,6 +4,7 @@ import pytest
 from . import AvailableDeck
 from . import Card
 from . import card_names
+from . import clean_db
 from . import create_all_cards
 from . import db_session
 from . import init_available_deck
@@ -14,6 +15,17 @@ from . import quantity_cards
 
 class TestCardCreation:
     """Test card creation"""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     # Create cards
     @db_session

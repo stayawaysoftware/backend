@@ -3,6 +3,7 @@ import pytest
 
 from . import AvailableDeck
 from . import Card
+from . import clean_db
 from . import commit
 from . import create_available_deck
 from . import create_deck
@@ -27,6 +28,17 @@ from . import move_disposable_to_available_deck
 
 class TestDeckBasic:
     """Test deck basic functions."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     @db_session
     def init_db(self):
@@ -187,6 +199,17 @@ class TestDeckBasic:
 class TestDeckCard:
     """Test deck - card functions."""
 
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
     @db_session
     def init_db(self):
         """Init DB."""
@@ -274,6 +297,17 @@ class TestDeckCard:
 
 class TestDeckDelete:
     """Test deck delete functions."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     @db_session
     def test_delete_deck(self):
