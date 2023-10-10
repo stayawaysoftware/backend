@@ -16,9 +16,15 @@ room_manager = RoomConnectionManager()
 @room.websocket("/ws/{room_id}/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
     await room_manager.connect(websocket, room_id, user_id)
+    room_info = room_manager.create_response(room_id, "info")
+    await room_manager.send_to(websocket, room_info)
     try:
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await websocket.receive_json()
+            except ValueError:
+                # Not implemented yet
+                continue
             await room_manager.room_broadcast(room_id, data)
     except WebSocketDisconnect:
         room_manager.disconnect(websocket, room_id, user_id)
