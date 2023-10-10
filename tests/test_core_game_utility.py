@@ -336,6 +336,57 @@ class TestGameUtilityPhases:
                 id_player = 1
 
     @db_session
+    def test_draw_and_discard_with_hand_of_4_max(self):
+        """Test draw and discard interactions with hand of 4 max."""
+        id_player = 1
+        for _ in range(2 * 109 + 1):
+            Game[1].current_phase = "Draw"
+            card = draw(1, id_player)
+
+            assert Card.exists(id=card)
+            assert (
+                len(Card[card].players) == 1
+                and Player[id_player] in Card[card].players  # noqa : W503
+            )
+            assert (
+                len(Player[id_player].hand) <= 5
+                and len(Player[id_player].hand) > 0  # noqa : W503
+                and Card[card] in Player[id_player].hand  # noqa : W503
+            )
+            assert len(Card[card].available_deck) == 0
+            assert len(Card[card].disposable_deck) == 0
+            for i in range(1, 13):
+                if i != id_player:
+                    assert Card[card] not in Player[i].hand
+
+            if len(Player[id_player].hand) > 4:
+                possible_cards = []
+                for x in Player[id_player].hand.select(
+                    idtype=Card[card].idtype
+                ):
+                    possible_cards.append(x.id)
+
+                Game[1].current_phase = "Discard"
+                card_removed = discard(1, Card[card].idtype, id_player)
+
+                assert card_removed in possible_cards
+                assert len(Card[card_removed].players) == 0
+                assert len(Player[id_player].hand) == 4
+                assert len(Card[card_removed].available_deck) == 0
+                assert (
+                    len(Card[card_removed].disposable_deck) == 1
+                    and Card[card_removed]  # noqa : W503
+                    in DisposableDeck[1].cards  # noqa : W503
+                )
+                for i in range(1, 13):
+                    if i != id_player:
+                        assert Card[card_removed] not in Player[i].hand
+
+            id_player += 1
+            if id_player > 12:
+                id_player = 1
+
+    @db_session
     def test_play(self):
         """Test play function."""
         Game[1].current_phase = "Play"
