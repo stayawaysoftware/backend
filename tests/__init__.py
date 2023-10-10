@@ -25,7 +25,8 @@ from models.room import Room  # noqa : F401
 from models.room import User  # noqa : F401
 from models.game import Game  # noqa : F401
 from models.game import Player  # noqa : F401
-from pony.orm import db_session, commit  # noqa : F401
+from pony.orm import db_session  # noqa : F401
+from pony.orm import commit  # noqa : F401
 
 
 # Generate the database mapping
