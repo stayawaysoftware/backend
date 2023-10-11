@@ -1,33 +1,14 @@
 import core.room as rooms
-from core.connections import RoomConnectionManager
 from fastapi import APIRouter
 from fastapi import Form
 from fastapi import HTTPException
 from fastapi import status
-from fastapi import WebSocket
-from fastapi import WebSocketDisconnect
 from pony.orm import db_session
 from schemas.room import RoomOut
 
+from .socket import connection_manager
+
 room = APIRouter(tags=["rooms"])
-room_manager = RoomConnectionManager()
-
-
-@room.websocket("/ws/{room_id}/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
-    await room_manager.connect(websocket, room_id, user_id)
-    room_info = room_manager.create_response(room_id, "info")
-    await room_manager.send_to(websocket, room_info)
-    try:
-        while True:
-            try:
-                data = await websocket.receive_json()
-            except ValueError:
-                # Not implemented yet
-                continue
-            await room_manager.room_broadcast(room_id, data)
-    except WebSocketDisconnect:
-        room_manager.disconnect(websocket, room_id, user_id)
 
 
 @room.get(
@@ -105,7 +86,8 @@ async def join_room(room_id: int = Form(...), user_id: int = Form(...)):
         except ValueError as error:
             raise HTTPException(status_code=404, detail=str(error))
     # Post to subscribers that a user has joined the room
-    await room_manager.room_broadcast(room_id, "join")
+    response = connection_manager.make_room_response(room_id, "join")
+    await connection_manager.broadcast(room_id, response)
     return {"room_id": room_id}
 
 
@@ -133,7 +115,8 @@ async def leave_room(room_id: int = Form(...), user_id: int = Form(...)):
             raise HTTPException(status_code=404, detail=str(error))
     # Post to subscribers that a user has left the room
     if room is not None:
-        await room_manager.room_broadcast(room_id, "leave")
+        response = connection_manager.make_room_response(room_id, "leave")
+        await connection_manager.broadcast(room_id, response)
 
 
 @room.put(
@@ -159,7 +142,8 @@ async def play_game(room_id: int = Form(...), host_id: int = Form(...)):
         except ValueError as error:
             raise HTTPException(status_code=404, detail=str(error))
     # Post to subscribers that a game has started
-    await room_manager.room_broadcast(room_id, "start")
+    response = connection_manager.make_room_response(room_id, "start")
+    await connection_manager.broadcast(room_id, response)
 
 
 @room.delete(
@@ -184,4 +168,5 @@ async def delete_room(room_id: int = Form(...), host_id: int = Form(...)):
         except ValueError as error:
             raise HTTPException(status_code=404, detail=str(error))
     # Post to subscribers that a room has been deleted
-    await room_manager.room_broadcast(room_id, "delete")
+    response = connection_manager.make_room_response(room_id, "delete")
+    await connection_manager.broadcast(room_id, response)
