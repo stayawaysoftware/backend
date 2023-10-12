@@ -424,19 +424,3 @@ class TestGameUtilityPhases:
 
         with pytest.raises(ValueError):
             play(1, 0, 13)
-
-    @db_session
-    def test_play_with_player_without_card(self):
-        """Test play function with player without card."""
-        Game[1].current_phase = "Play"
-        with pytest.raises(ValueError):
-            play(1, 0, 1)
-
-    @db_session
-    def test_play_with_player_without_card_of_that_type(self):
-        """Test play function with player without card."""
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[1].hand.add(Card.select(idtype=3).first())
-        with pytest.raises(ValueError):
-            play(1, 1, 1)

@@ -90,8 +90,7 @@ def play(
             )
         if not Player.exists(id=target):
             raise ValueError(f"Player with id {target} doesn't exist")
-        if len(Player[target].hand) == 0:
-            raise ValueError(f"Player with id {target} has no cards in hand")
+
     return do_effect(id_game, idtype_card, target)
 
 
