@@ -3,13 +3,13 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import status
 from pony.orm import db_session
-from schemas.room import UserOut
+from schemas.user import UserOut
 
 user = APIRouter(tags=["users"])
 
 
-@user.get(
-    "/users",
+@user.get(  # ONLY FOR DEBUG
+    "/user/list",
     response_model=list[UserOut],
     response_description="List the users that were uploaded to the database",
     status_code=status.HTTP_200_OK,
@@ -17,14 +17,11 @@ user = APIRouter(tags=["users"])
 def get_users():
     with db_session:
         result = users.get_users()
-        result = [UserOut.model_validate(user) for user in result]
-    # sort result by id
-    result.sort(key=lambda x: x.id)
     return result
 
 
 @user.post(
-    "/users",
+    "/user/new",
     response_model=UserOut,
     response_description="Returns the created user",
     status_code=status.HTTP_201_CREATED,
@@ -40,12 +37,12 @@ def create_user(username: str):
         user = users.create_user(username)
     except PermissionError as error:
         raise HTTPException(status_code=403, detail=str(error))
-    return UserOut.model_validate(user)
+    return UserOut.from_user(user)
 
 
 @user.delete(
-    "/users/{id}",
-    response_description="Deletes the user with the given id",
+    "/user/delete",
+    response_description="Returns 204 No Content",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         404: {
