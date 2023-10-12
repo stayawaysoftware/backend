@@ -394,7 +394,7 @@ class TestGameUtilityPhases:
             Player[1].hand.add(Card[i])
 
         for i in range(0, 109):
-            assert str(play(1, Card[i].idtype, 1)) == str(
+            assert str(play(1, 1, Card[i].idtype, 1)) == str(
                 do_effect(1, Card[i].idtype, 1)
             )
 
@@ -402,25 +402,40 @@ class TestGameUtilityPhases:
     def test_play_with_invalid_game(self):
         """Test play function with invalid game."""
         with pytest.raises(ValueError):
-            play(2, 0, 1)
+            play(2, 1, 0, 1)
 
     @db_session
     def test_play_with_invalid_phase(self):
         """Test play function with invalid phase."""
         Game[1].current_phase = "Draw"
         with pytest.raises(ValueError):
-            play(1, 0, 1)
+            play(1, 1, 0, 1)
 
         Game[1].current_phase = "Discard"
         with pytest.raises(ValueError):
-            play(1, 0, 1)
+            play(1, 1, 0, 1)
 
     @db_session
     def test_play_with_invalid_player(self):
         """Test play function with invalid player."""
         Game[1].current_phase = "Play"
         with pytest.raises(ValueError):
-            play(1, 0, 0)
+            play(1, 1, 0, 0)
 
         with pytest.raises(ValueError):
-            play(1, 0, 13)
+            play(1, 1, 0, 13)
+
+    @db_session
+    def test_play_with_invalid_card(self):
+        """Test play function with invalid card."""
+        Game[1].current_phase = "Play"
+        with pytest.raises(ValueError):
+            play(1, 1, 0, 1)
+
+    @db_session
+    def test_play_with_card_that_player_doesnt_have(self):
+        """Test play function with invalid card."""
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=1).first())
+        with pytest.raises(ValueError):
+            play(1, 1, 2, 1)

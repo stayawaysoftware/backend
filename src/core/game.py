@@ -75,7 +75,10 @@ def play_card(
     commit()
     current_player = Player.get(id=current_player_id)
     effect = gu.play(
-        id_game=game_id, idtype_card=card_idtype, target=target_player_id
+        id_game=game_id,
+        id_player=current_player_id,
+        idtype_card=card_idtype,
+        target=target_player_id,
     )
     game.current_phase = "Discard"
     commit()

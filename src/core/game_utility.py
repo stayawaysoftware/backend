@@ -78,7 +78,10 @@ def draw(id_game: int, id_player: int) -> int:
 
 
 def play(
-    id_game: int, idtype_card: int, target: Optional[int] = None
+    id_game: int,
+    id_player: int,
+    idtype_card: int,
+    target: Optional[int] = None,
 ) -> GameAction:
     """Play a card from player hand."""
     with db_session:
@@ -90,6 +93,12 @@ def play(
             )
         if not Player.exists(id=target):
             raise ValueError(f"Player with id {target} doesn't exist")
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+        if len(Player[id_player].hand.select(idtype=idtype_card)) == 0:
+            raise ValueError(
+                f"Player with id {id_player} has no card with idtype {idtype_card} in hand"
+            )
 
     return do_effect(id_game, idtype_card, target)
 
