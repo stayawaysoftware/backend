@@ -1,4 +1,4 @@
-import core.game as cg
+import core.game as game
 from models.room import Room
 from models.room import User
 from pony.orm import commit
@@ -122,7 +122,7 @@ def start_game(room_id: int, host_id: int):
         raise PermissionError("User is not the host of this room")
     if len(room.users) < room.min_users:
         raise PermissionError("Not enough users in this room")
-    cg.init_game(room_id)
+    game.init_game(room_id)
     room.in_game = True
     update_usernames(room)
     commit()
