@@ -2,10 +2,10 @@ import pytest
 from pony.orm import db_session
 
 from . import Card
+from . import clean_db
 from . import commit
 from . import create_room
 from . import create_user
-from . import db
 from . import delete_game
 from . import delete_user
 from . import Game
@@ -38,10 +38,17 @@ class TestPlayer:
         # delete deck
         commit()
 
-    # Test teardown
     @classmethod
-    def tearDownClass(cls):
-        db.drop_all_tables(with_all_data=True)
+    @db_session
+    def setup_class(cls):
+        clean_db()
+
+        # Create game
+        Game(id=1)
+
+    @classmethod
+    def teardown_class(cls):
+        clean_db()
 
     # Test the player creation
     @db_session

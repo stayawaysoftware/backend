@@ -1,9 +1,9 @@
 import pytest
 from pony.orm import db_session
 
+from . import clean_db
 from . import create_room
 from . import create_user
-from . import db
 from . import delete_room
 from . import delete_user
 from . import get_rooms
@@ -12,7 +12,6 @@ from . import leave_room
 from . import Room
 from . import start_game
 from . import User
-
 
 # Create the needed constants for the tests
 ROOM_NAME = "test_room"
@@ -35,8 +34,12 @@ class TestRoom:
         delete_user(user.id)
 
     @classmethod
-    def tearDownClass(cls):
-        db.drop_all_tables(with_all_data=True)
+    def setup_class(cls):
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        clean_db()
 
     # Test the room creation
     @db_session

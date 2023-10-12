@@ -41,14 +41,11 @@ class TestGame:
         commit()
 
     @classmethod
-    @db_session
     def setup_class(cls):
-        """Setup class."""
         clean_db()
 
     @classmethod
     def teardown_class(cls):
-        """Teardown class."""
         clean_db()
 
     # Test init_game
