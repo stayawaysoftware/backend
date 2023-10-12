@@ -1,11 +1,14 @@
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
+from schemas.user import UserOut
 
 
 def get_users():
     with db_session:
         users = User.select()
+    users = [UserOut.from_user(user) for user in users]
+    users.sort(key=lambda x: x.id)
     return users
 
 

@@ -4,6 +4,7 @@ from core.connections import ROOM_EVENT_TYPES
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from models.room import User
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])
@@ -11,6 +12,7 @@ ws = APIRouter(tags=["websocket"])
 
 @ws.websocket("/ws/{room_id}/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
+    # On new or join connect and get info
     await connection_manager.connect(websocket, room_id, user_id)
     room_info = connection_manager.make_room_response(room_id, "info")
     await connection_manager.send_to(websocket, room_info)
@@ -19,6 +21,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
             try:
                 data = await websocket.receive_json()
                 if data["type"] == "message":
+                    data["sender"] = User.get(id=user_id)
                     await connection_manager.broadcast(room_id, data)
                 elif data["type"] in ROOM_EVENT_TYPES:
                     # TODO: Implement room events

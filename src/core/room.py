@@ -1,8 +1,11 @@
+from typing import Optional
+
 import core.game as game
 from models.room import Room
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
+from schemas.room import RoomOut
 
 
 @db_session
@@ -16,12 +19,7 @@ def update_usernames(room: Room):
 @db_session
 def get_rooms():
     rooms = Room.select()
-    result = []
-    for room in rooms:
-        room.usernames = [u.username for u in room.users]
-        result.append(room)
-    # sort result by id
-    result.sort(key=lambda x: x.id)
+    result = [RoomOut.from_room(room) for room in rooms]
     return result
 
 
@@ -36,7 +34,11 @@ def get_room(id: int):
 
 @db_session
 def create_room(
-    name: str, host_id: int, min_users: int = 4, max_users: int = 12
+    name: str,
+    host_id: int,
+    min_users: int = 4,
+    max_users: int = 12,
+    password: Optional[str] = None,
 ):
     with db_session:
 
@@ -51,6 +53,7 @@ def create_room(
 
         room = Room(
             name=name,
+            passw=password,
             host_id=host_id,
             in_game=False,
             min_users=min_users,
@@ -58,13 +61,14 @@ def create_room(
         )
 
         User[host_id].room = room
-        update_usernames(room)
         commit()
+        room = RoomOut.from_room(room)
+
     return room
 
 
 @db_session
-def join_room(room_id: int, user_id: int):
+def join_room(room_id: int, user_id: int, password: Optional[str] = None):
     if not User.exists(id=user_id):
         raise ValueError("User not found")
     if not Room.exists(id=room_id):
@@ -77,7 +81,7 @@ def join_room(room_id: int, user_id: int):
     if room.in_game:
         raise PermissionError("Game is already in progress")
     User[user_id].room = room
-    update_usernames(room)
+    room = RoomOut.from_room(room)
     commit()
     return room
 
@@ -100,8 +104,8 @@ def leave_room(room_id: int, user_id: int):
         User[user_id].room = None
         return None
     User[user_id].room = None
-    update_usernames(room)
     commit()
+    room = RoomOut.from_room(room)
     return room
 
 
@@ -124,8 +128,8 @@ def start_game(room_id: int, host_id: int):
         raise PermissionError("Not enough users in this room")
     game.init_game(room_id)
     room.in_game = True
-    update_usernames(room)
     commit()
+    room = RoomOut.from_room(room)
     return room
 
 

@@ -21,7 +21,6 @@ room = APIRouter(tags=["rooms"])
 def get_rooms():
     with db_session:
         result = rooms.get_rooms()
-        result = [RoomOut.model_validate(room) for room in result]
     return result
 
 
@@ -49,7 +48,9 @@ async def new_room(
 ):
     with db_session:
         try:
-            room = rooms.create_room(name, host_id, min_users, max_users)
+            room = rooms.create_room(
+                name, host_id, min_users, max_users, password
+            )
         except PermissionError as error:
             raise HTTPException(status_code=403, detail=str(error))
         except ValueError as error:
@@ -146,6 +147,7 @@ async def play_game(room_id: int = Form(...), host_id: int = Form(...)):
     await connection_manager.broadcast(room_id, response)
 
 
+"""
 @room.delete(
     "/room/delete",
     response_description="Returns 204",
@@ -170,3 +172,4 @@ async def delete_room(room_id: int = Form(...), host_id: int = Form(...)):
     # Post to subscribers that a room has been deleted
     response = connection_manager.make_room_response(room_id, "delete")
     await connection_manager.broadcast(room_id, response)
+"""

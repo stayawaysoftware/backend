@@ -13,7 +13,7 @@ build-test:
 
 .PHONY: clean
 clean:
-	@rm -rf */__pycache__ */*/__pycache__ src/*.sqlite */.coverage \
+	@rm -rf */__pycache__ */*/__pycache__ src/*.sqlite .coverage \
 	 */.*_cache coverage.xml .*_cache htmlcov/ site/
 
 delete-containers:

@@ -5,7 +5,7 @@ from fastapi import WebSocket
 from models.room import Room
 from pony.orm import db_session
 
-ROOM_EVENT_TYPES = ["join", "leave", "start", "delete"]
+ROOM_EVENT_TYPES = ["leave", "start"]  # "join" is handled by the HTTP endpoint
 GAME_EVENT_TYPES = ["play", "defend", "pass"]
 
 
