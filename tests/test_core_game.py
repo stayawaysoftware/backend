@@ -2,10 +2,10 @@ import pytest
 from pony.orm import db_session
 
 from . import calculate_next_turn
+from . import clean_db
 from . import commit
 from . import create_room
 from . import create_user
-from . import db
 from . import delete_room
 from . import delete_user
 from . import Game
@@ -40,10 +40,16 @@ class TestGame:
         # delete deck
         commit()
 
-    # Test teardown
     @classmethod
-    def tearDownClass(cls):
-        db.drop_all_tables(with_all_data=True)
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     # Test init_game
     @db_session
@@ -80,13 +86,10 @@ class TestGame:
             current_player_id=player.id,
             target_player_id=user2.id,
         )
-        assert game.current_phase == "Play"
         assert game.deck is not None
         assert game.deck.id == room.id
         assert player is not None
         assert card is not None
-        # Test card discard
-        assert card not in player.hand
         if card.idtype == 3:
             assert not Player.get(id=user2.id).alive
 

@@ -77,6 +77,8 @@ def play_card(
     effect = gu.play(
         id_game=game_id, idtype_card=card_idtype, target=target_player_id
     )
+    game.current_phase = "Discard"
+    commit()
     gu.discard(
         id_game=game_id, idtype_card=card_idtype, id_player=current_player.id
     )
