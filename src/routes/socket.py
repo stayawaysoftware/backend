@@ -7,6 +7,7 @@ from schemas.socket import ChatMessageIn
 from schemas.socket import ChatMessageOut
 from schemas.socket import GameEventTypes
 from schemas.socket import RoomEventTypes
+from schemas.socket import RoomMessage
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])
@@ -16,9 +17,9 @@ ws = APIRouter(tags=["websocket"])
 async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
     # On new or join connect and get info
     await connection_manager.connect(websocket, room_id, user_id)
-    room_info = connection_manager.make_room_response(room_id, "info")
-    await connection_manager.send_to(websocket, room_info)
     try:
+        room_info = RoomMessage.create("info", room_id)
+        await connection_manager.send_to(websocket, room_info)
         while True:
             try:
                 data = await websocket.receive_json()
@@ -48,3 +49,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket, room_id, user_id)
+
+    except AttributeError:
+        # If the data is not a valid json close the connection
+        await websocket.close()
