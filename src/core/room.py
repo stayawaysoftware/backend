@@ -9,27 +9,10 @@ from schemas.room import RoomOut
 
 
 @db_session
-def update_usernames(room: Room):
-    dict_users = {u.username: u.id for u in room.users}
-    room.usernames = [u.username for u in room.users]
-    # sort usernames by your id
-    room.usernames.sort(key=lambda x: dict_users[x])
-
-
-@db_session
 def get_rooms():
     rooms = Room.select()
-    result = [RoomOut.from_room(room) for room in rooms]
+    result = [RoomOut.from_db(room) for room in rooms]
     return result
-
-
-@db_session
-def get_room(id: int):
-    room = Room.get(id=id)
-    if room is None:
-        raise ValueError("Room not found")
-    update_usernames(room)
-    return room
 
 
 @db_session
@@ -41,16 +24,6 @@ def create_room(
     password: Optional[str] = None,
 ):
     with db_session:
-
-        if not User.exists(id=host_id):
-            raise ValueError("User not found")
-        if User.get(id=host_id).room is not None:
-            raise PermissionError("User is already in a room")
-        if min_users < 4 or min_users > 12 or min_users > max_users:
-            raise ValueError("Minimum users invalid value")
-        if max_users < 4 or max_users > 12 or max_users < min_users:
-            raise ValueError("Maximum users invalid value")
-
         room = Room(
             name=name,
             passw=password,
@@ -62,7 +35,7 @@ def create_room(
 
         User[host_id].room = room
         commit()
-        room = RoomOut.from_room(room)
+        room = RoomOut.from_db(room)
 
     return room
 
@@ -81,7 +54,7 @@ def join_room(room_id: int, user_id: int, password: Optional[str] = None):
     if room.in_game:
         raise PermissionError("Game is already in progress")
     User[user_id].room = room
-    room = RoomOut.from_room(room)
+    room = RoomOut.from_db(room)
     commit()
     return room
 
@@ -105,7 +78,7 @@ def leave_room(room_id: int, user_id: int):
         return None
     User[user_id].room = None
     commit()
-    room = RoomOut.from_room(room)
+    room = RoomOut.from_db(room)
     return room
 
 
@@ -129,7 +102,7 @@ def start_game(room_id: int, host_id: int):
     game.init_game(room_id)
     room.in_game = True
     commit()
-    room = RoomOut.from_room(room)
+    room = RoomOut.from_db(room)
     return room
 
 

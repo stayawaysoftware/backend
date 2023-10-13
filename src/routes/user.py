@@ -1,8 +1,9 @@
 import core.user as users
 from fastapi import APIRouter
-from fastapi import HTTPException
 from fastapi import status
 from pony.orm import db_session
+from schemas.user import UserId
+from schemas.user import Username
 from schemas.user import UserOut
 
 user = APIRouter(tags=["users"])
@@ -32,12 +33,9 @@ def get_users():
     },
 )
 @db_session
-def create_user(username: str):
-    try:
-        user = users.create_user(username)
-    except PermissionError as error:
-        raise HTTPException(status_code=403, detail=str(error))
-    return UserOut.from_user(user)
+def create_user(username: Username):
+    user = users.create_user(username.username)
+    return UserOut.from_db(user)
 
 
 @user.delete(
@@ -54,10 +52,5 @@ def create_user(username: str):
     },
 )
 @db_session
-def delete_user(id: int):
-    try:
-        users.delete_user(id)
-    except ValueError as error:
-        raise HTTPException(status_code=404, detail=str(error))
-    except PermissionError as error:
-        raise HTTPException(status_code=403, detail=str(error))
+def delete_user(id: UserId):
+    users.delete_user(id.id)
