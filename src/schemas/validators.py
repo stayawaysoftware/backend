@@ -102,12 +102,12 @@ class ValidatorsErrorMessageMaker:
     @validator("user_id", pre=True, allow_reuse=True)
     def validate_user_exists(cls, user_id):
         if not User.exists(id=user_id):
-
+            # TODO: Raise error with error message
             return user_id
 
     @classmethod
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_exists(cls, room_id):
         if not Room.exists(id=room_id):
-            raise HTTPException(status_code=404, detail="Room not found")
-        return room_id
+            # TODO: Raise error with error message
+            return room_id

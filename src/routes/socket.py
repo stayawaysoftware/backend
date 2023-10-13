@@ -5,6 +5,7 @@ from fastapi import WebSocketDisconnect
 from pydantic import ValidationError
 from schemas.socket import ChatMessageIn
 from schemas.socket import ChatMessageOut
+from schemas.socket import ErrorMessage
 from schemas.socket import GameEventTypes
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
@@ -33,7 +34,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                     except ValidationError:
                         await connection_manager.send_to(
                             websocket,
-                            connection_manager.make_error("Invalid message"),
+                            ErrorMessage.create("DEBUGGING: Invalid message"),
                         )
                         continue
                 elif RoomEventTypes.has_type(data["type"]):
@@ -43,9 +44,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                     # TODO: Implement this
                     pass
             except ValueError:
-                # If the data is not a valid json close the connection
-                await websocket.close()
-                break
+                # If the data is not a valid json
+                # For now send an error message
+                await connection_manager.send_to(
+                    websocket, ErrorMessage.create("DEBUGGING: Invalid format")
+                )
 
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket, room_id, user_id)
