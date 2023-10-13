@@ -4,6 +4,9 @@ from fastapi import Form
 from fastapi import HTTPException
 from fastapi import status
 from pony.orm import db_session
+from schemas.room import RoomCreateForm
+from schemas.room import RoomId
+from schemas.room import RoomJoinForm
 from schemas.room import RoomOut
 
 from .socket import connection_manager
@@ -26,7 +29,7 @@ def get_rooms():
 
 @room.post(
     "/room/new",
-    response_model=dict[str, int],
+    response_model=RoomId,
     name="Create a new room",
     response_description="Returns 201 Created with the room id",
     status_code=status.HTTP_201_CREATED,
@@ -39,32 +42,22 @@ def get_rooms():
         },
     },
 )
-async def new_room(
-    name: str = Form(...),
-    password: str = Form(None),
-    host_id: int = Form(...),
-    min_users: int = Form(4),
-    max_users: int = Form(12),
-):
+async def new_room(room_form_data: RoomCreateForm):
     with db_session:
-        try:
-            room = rooms.create_room(
-                name, host_id, min_users, max_users, password
-            )
-        except PermissionError as error:
-            raise HTTPException(status_code=403, detail=str(error))
-        except ValueError as error:
-            if str(error) == "User not found":
-                raise HTTPException(status_code=404, detail=str(error))
-            else:
-                raise HTTPException(status_code=400, detail=str(error))
-    # Post to subscribers that a new room has been created
-    return {"room_id": room.id}
+        print(room_form_data)
+        room = rooms.create_room(
+            room_form_data.name,
+            room_form_data.host_id,
+            room_form_data.min_users,
+            room_form_data.max_users,
+            room_form_data.password,
+        )
+    return RoomId.create(room.id)
 
 
 @room.put(
     "/room/join",
-    response_model=dict[str, int],
+    response_model=RoomId,
     name="Join a room",
     response_description="Returns 200 OK with the room id",
     status_code=status.HTTP_200_OK,
@@ -78,18 +71,17 @@ async def new_room(
         },
     },
 )
-async def join_room(room_id: int = Form(...), user_id: int = Form(...)):
+async def join_room(join_form_data: RoomJoinForm):
     with db_session:
-        try:
-            rooms.join_room(room_id, user_id)
-        except PermissionError as error:
-            raise HTTPException(status_code=403, detail=str(error))
-        except ValueError as error:
-            raise HTTPException(status_code=404, detail=str(error))
+        rooms.join_room(
+            join_form_data.room_id,
+            join_form_data.user_id,
+            join_form_data.password,
+        )
     # Post to subscribers that a user has joined the room
-    response = connection_manager.make_room_response(room_id, "join")
-    await connection_manager.broadcast(room_id, response)
-    return {"room_id": room_id}
+    # response = connection_manager.make_room_response(room_id, "join")
+    # await connection_manager.broadcast(room_id, response)
+    return RoomId.create(join_form_data.room_id)
 
 
 @room.put(
