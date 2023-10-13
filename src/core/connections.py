@@ -2,11 +2,6 @@ from typing import Dict
 from typing import List
 
 from fastapi import WebSocket
-from models.room import Room
-from pony.orm import db_session
-
-ROOM_EVENT_TYPES = ["join", "leave", "start", "delete"]
-GAME_EVENT_TYPES = ["play", "defend", "pass"]
 
 
 class ConnectionManager:
@@ -21,8 +16,8 @@ class ConnectionManager:
     # ===================== CONNECTION METHODS =====================
 
     async def connect(self, websocket: WebSocket, room_id: int, user_id: int):
-        # Check if the user is already in another room
-        if user_id in self.user_rooms and self.user_rooms[user_id] != room_id:
+        # Check if the user is already in a room
+        if user_id in self.user_rooms:
             await websocket.close()
 
         await websocket.accept()
@@ -39,35 +34,7 @@ class ConnectionManager:
         if user_id in self.user_rooms:
             del self.user_rooms[user_id]
 
-    # ===================== MAKE RESPONSE METHODS =====================
-
-    def make_room_response(self, room_id: int, type: str):
-        with db_session:
-            room = Room.get(id=room_id)
-            users = list(room.users)
-            users.sort(key=lambda x: x.id)
-            usernames = [u.username for u in users]
-            response = {
-                "type": type,
-                "room": {
-                    "id": room_id,
-                    "name": room.name,
-                    "host": room.host_id,
-                    "users": {
-                        "min": room.min_users,
-                        "max": room.max_users,
-                        "names": usernames,
-                    },
-                },
-            }
-        return response
-
-    def make_game_response(self, room_id: int, type: str):
-        # TODO: Implement this method with game needed data
-        pass
-
-    def make_error(self, message: str):
-        return {"type": "error", "error": message}
+        websocket.close()
 
     # ===================== SEND METHODS =====================
 
