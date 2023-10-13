@@ -40,10 +40,6 @@ class EventInRoom(BaseModel):
     model_config = ConfigDict(title="EventInRoom")
     type: RoomEventTypes = Field(...)
 
-    @classmethod
-    def create_response(cls, type: RoomEventTypes, room_id: RoomId):
-        return RoomMessage.create(type=type, room_id=room_id)
-
 
 class EventInGame(BaseModel):
     pass
@@ -65,7 +61,10 @@ class ErrorMessage(BaseModel):
 
     @classmethod
     def create(cls, message: str):
-        return cls(message=message)
+        return {
+            "type": "error",
+            "description": message,
+        }
 
 
 class RoomMessage(BaseModel):

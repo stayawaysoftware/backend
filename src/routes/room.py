@@ -1,7 +1,5 @@
 import core.room as rooms
 from fastapi import APIRouter
-from fastapi import Form
-from fastapi import HTTPException
 from fastapi import status
 from pony.orm import db_session
 from schemas.room import RoomCreateForm
@@ -84,6 +82,7 @@ async def join_room(join_form_data: RoomJoinForm):
     return RoomId.create(join_form_data.room_id)
 
 
+"""
 @room.put(
     "/room/leave",
     response_description="Returns 200 OK",
@@ -139,7 +138,6 @@ async def play_game(room_id: int = Form(...), host_id: int = Form(...)):
     await connection_manager.broadcast(room_id, response)
 
 
-"""
 @room.delete(
     "/room/delete",
     response_description="Returns 204",
