@@ -13,9 +13,11 @@ from .room import RoomOut
 # ======================= Auxiliar Enums =======================
 
 
-class RoomEventTypes(str, Enum):
+class RoomEventTypes(Enum):
     leave = "leave"
     start = "start"
+    join = "join"
+    delete = "delete"
 
     @classmethod
     def has_type(cls, key):
@@ -40,7 +42,7 @@ class EventInRoom(BaseModel):
 
     @classmethod
     def create_response(cls, type: RoomEventTypes, room_id: RoomId):
-        return RoomMessage.create(type=type, room=Room.get(id=room_id))
+        return RoomMessage.create(type=type, room_id=room_id)
 
 
 class EventInGame(BaseModel):
@@ -73,8 +75,8 @@ class RoomMessage(BaseModel):
     room: RoomOut = Field(...)
 
     @classmethod
-    def create(cls, type: RoomEventTypes, room: Room):
-        return cls(type=type, room=RoomOut.from_db(room))
+    def create(cls, type: RoomEventTypes, room_id: RoomId):
+        return {"type": type, "room": RoomOut.from_db(Room.get(id=room_id))}
 
 
 class ChatMessageOut(BaseModel):

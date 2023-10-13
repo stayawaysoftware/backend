@@ -8,6 +8,7 @@ from schemas.room import RoomCreateForm
 from schemas.room import RoomId
 from schemas.room import RoomJoinForm
 from schemas.room import RoomOut
+from schemas.socket import RoomMessage
 
 from .socket import connection_manager
 
@@ -44,7 +45,6 @@ def get_rooms():
 )
 async def new_room(room_form_data: RoomCreateForm):
     with db_session:
-        print(room_form_data)
         room = rooms.create_room(
             room_form_data.name,
             room_form_data.host_id,
@@ -52,7 +52,7 @@ async def new_room(room_form_data: RoomCreateForm):
             room_form_data.max_users,
             room_form_data.password,
         )
-    return RoomId.create(room.id)
+    return RoomId.create(room["id"])
 
 
 @room.put(
@@ -79,8 +79,8 @@ async def join_room(join_form_data: RoomJoinForm):
             join_form_data.password,
         )
     # Post to subscribers that a user has joined the room
-    # response = connection_manager.make_room_response(room_id, "join")
-    # await connection_manager.broadcast(room_id, response)
+    response = RoomMessage.create("join", join_form_data.room_id)
+    await connection_manager.broadcast(join_form_data.room_id, response)
     return RoomId.create(join_form_data.room_id)
 
 
