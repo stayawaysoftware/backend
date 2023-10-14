@@ -98,8 +98,6 @@ def start_game(room_id: int, host_id: int):
     game.init_game(room_id)
     room.in_game = True
     commit()
-    room = RoomOut.from_db(room)
-    return room
 
 
 @db_session

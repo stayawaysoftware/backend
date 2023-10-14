@@ -1,8 +1,11 @@
+import core.room as rooms
 from core.connections import ConnectionManager
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from pony.orm import db_session
 from pydantic import ValidationError
+from schemas.room import StartGameIn
 from schemas.socket import ChatMessageIn
 from schemas.socket import ChatMessageOut
 from schemas.socket import ErrorMessage
@@ -38,11 +41,41 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                         )
                         continue
                 elif RoomEventTypes.has_type(data["type"]):
-                    # TODO: Implement this
-                    pass
+                    match data["type"]:
+                        case "start":
+                            try:
+                                data = StartGameIn.create(
+                                    data["type"], room_id, user_id
+                                )
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    RoomMessage.create(data.type, room_id),
+                                )
+                                with db_session:
+                                    rooms.start_game(room_id, user_id)
+                            except ValidationError as error:
+                                await connection_manager.send_to(
+                                    websocket,
+                                    ErrorMessage.create(
+                                        error.errors()[0]["msg"]
+                                    ),
+                                )
+                        case _:
+                            await connection_manager.send_to(
+                                websocket,
+                                ErrorMessage.create(
+                                    "DEBUGGING: Invalid room event"
+                                ),
+                            )
                 elif GameEventTypes.has_type(data["type"]):
-                    # TODO: Implement this
                     pass
+
+                else:
+                    await connection_manager.send_to(
+                        websocket,
+                        ErrorMessage.create("DEBUGGING: Invalid event"),
+                    )
+
             except ValueError:
                 # If the data is not a valid json
                 # For now send an error message
@@ -52,7 +85,3 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket, room_id, user_id)
-
-    except AttributeError:
-        # If the data is not a valid json close the connection
-        await websocket.close()

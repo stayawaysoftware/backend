@@ -61,6 +61,9 @@ class ErrorMessage(BaseModel):
 
     @classmethod
     def create(cls, message: str):
+        # if message contains "Assertion failed," cut it
+        if "Assertion failed, " in message:
+            message = message.split("Assertion failed, ")[1]
         return {
             "type": "error",
             "description": message,
