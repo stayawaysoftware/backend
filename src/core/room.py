@@ -5,13 +5,13 @@ from models.room import Room
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
-from schemas.room import RoomOut
+from schemas.room import RoomListItem
 
 
 @db_session
 def get_rooms():
     rooms = Room.select()
-    result = [RoomOut.from_db(room) for room in rooms]
+    result = [RoomListItem.from_db(room) for room in rooms]
     return result
 
 
@@ -35,18 +35,16 @@ def create_room(
 
         User[host_id].room = room
         commit()
-        room = RoomOut.from_db(room)
+        room_id = room.id
 
-    return room
+    return room_id
 
 
 @db_session
-def join_room(room_id: int, user_id: int, password: Optional[str] = None):
+def join_room(room_id: int, user_id: int):
     room = Room.get(id=room_id)
     User[user_id].room = room
-    room = RoomOut.from_db(room)
     commit()
-    return room
 
 
 @db_session
@@ -71,7 +69,7 @@ def leave_room(room_id: int, user_id: int):
         return None
     User[user_id].room = None
     commit()
-    room = RoomOut.from_db(room)
+    room = RoomListItem.from_db(room)
     return room
 
 

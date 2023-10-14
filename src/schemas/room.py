@@ -1,5 +1,3 @@
-from typing import Literal
-
 from models.room import Room
 from pydantic import BaseModel
 from pydantic import Field
@@ -57,11 +55,12 @@ class RoomJoinForm(BaseModel):
         user_id = EndpointValidators.validate_user_not_in_room(user_id)
         return user_id
 
+    # TODO: Validate password if room is private
 
-class StartGameIn(BaseModel):
-    model_config = ConfigDict(title="StartGame", from_attributes=True)
 
-    type: str = Field(Literal["start"])
+class StartGameValidator(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     room_id: int = Field(gt=0)
     host_id: int = Field(gt=0)
 
@@ -87,12 +86,9 @@ class StartGameIn(BaseModel):
         return host_id
 
     @classmethod
-    def create(cls, type, room_id, host_id):
-        return cls(
-            type=type,
-            room_id=room_id,
-            host_id=host_id,
-        )
+    def validate(cls, room_id, host_id):
+        validated_data = cls(room_id=room_id, host_id=host_id)
+        return validated_data
 
 
 # ======================= Output Schemas =======================
@@ -127,12 +123,11 @@ class UsersInfo(BaseModel):
         }
 
 
-class RoomOut(BaseModel):
+class RoomListItem(BaseModel):
     model_config = ConfigDict(title="Room", from_attributes=True)
 
     id: int
     name: str = Field(max_length=32)
-    host_id: int = Field(gt=0)
     in_game: bool = Field(default=False)
     is_private: bool = Field(default=False)
     users: UsersInfo
@@ -142,8 +137,23 @@ class RoomOut(BaseModel):
         return {
             "id": room.id,
             "name": room.name,
-            "host_id": room.host_id,
             "in_game": room.in_game,
             "is_private": room.passw is not None,
+            "users": UsersInfo.get_users_info(room),
+        }
+
+
+class RoomInfo(BaseModel):
+    model_config = ConfigDict(title="Room", from_attributes=True)
+
+    name: str = Field(max_length=32)
+    host_id: int = Field(gt=0)
+    users: UsersInfo
+
+    @classmethod
+    def from_db(cls, room: Room):
+        return {
+            "name": room.name,
+            "host_id": room.host_id,
             "users": UsersInfo.get_users_info(room),
         }
