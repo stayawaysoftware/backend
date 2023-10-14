@@ -5,6 +5,10 @@ import core.game_utility as gu
 import core.room as Iroom
 from core.player import create_player
 from core.player import dealing_cards
+from core.connections import ConnectionManager
+from core.game_utility import discard
+from core.game_utility import draw
+
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
@@ -155,3 +159,65 @@ def delete_game(game_id: int):
     commit()
     room = Room.get(id=game.id)
     Iroom.delete_room(room.id, room.host_id)
+
+@db_session
+async def handle_play(
+    game_id: int,
+    card_type_id: int,
+    current_player_id: int,
+    target_player_id: int,
+):
+    game = Game.get(id=game_id)
+    if game.current_phase != "Play":
+        raise ValueError("Invalid game phase")
+    if game.current_position != current_player_id:
+        raise ValueError("Invalid player turn")
+    response = ConnectionManager.make_game_response(game_id, "play")
+    await ConnectionManager.broadcast(game_id, response)
+
+
+@db_session
+async def handle_defense(
+    game_id: int,
+    card_type_id: int,
+    defense_player_id: int,
+    last_card_played_id: int,
+    attacker_id: int,
+):
+    # TODO: implement defense effect handler
+    if card_type_id is None:
+        play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
+    else:
+        discard(game_id, last_card_played_id, attacker_id)
+        discard(game_id, card_type_id, defense_player_id)
+        draw(game_id, defense_player_id)
+        calculate_next_turn(game_id)
+    response = ConnectionManager.make_game_response(game_id, "defense")
+    await ConnectionManager.broadcast(game_id, response)
+
+
+@db_session
+def handle_game_event(data: dict, room_id: int, user_id: int):
+    if data["type"] == "play":
+        handle_play(
+            game_id=room_id,
+            card_type_id=data["card_type_id"],
+            current_player_id=user_id,
+            target_player_id=data["target_player_id"],
+        )
+    elif data["type"] == "defense":
+        handle_defense(
+            game_id=room_id,
+            card_type_id=data["card_type_id"],
+            defense_player_id=user_id,
+            last_card_played_id=data["last_card_played_id"],
+            attacker_id=data["attacker_id"],
+        )
+    elif data["type"] == "exchange":
+        # TODO: implement exchange
+        pass
+    elif data["type"] == "game_over":
+        # TODO: implement game over
+        pass
+    else:
+        raise ValueError("Invalid game event")

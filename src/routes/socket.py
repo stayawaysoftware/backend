@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from pydantic import ValidationError
+from core.game import handle_game_event
 from schemas.socket import ChatMessageIn
 from schemas.socket import ChatMessageOut
 from schemas.socket import ErrorMessage
@@ -41,8 +42,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                     # TODO: Implement this
                     pass
                 elif GameEventTypes.has_type(data["type"]):
-                    # TODO: Implement this
-                    pass
+                    handle_game_event(
+                        data=data, room_id=room_id, user_id=user_id
+                    )
             except ValueError:
                 # If the data is not a valid json
                 # For now send an error message
