@@ -60,10 +60,16 @@ class ErrorMessage(BaseModel):
     message: str = Field(...)
 
     @classmethod
-    def create(cls, message: str):
-        # if message contains "Assertion failed," cut it
+    def format(cls, message: str):
+        print(message)
         if "Assertion failed, " in message:
             message = message.split("Assertion failed, ")[1]
+            message = message.split(" [")[0]
+        return message
+
+    @classmethod
+    def create(cls, message: str):
+        message = cls.format(message)
         return {
             "type": "error",
             "description": message,
