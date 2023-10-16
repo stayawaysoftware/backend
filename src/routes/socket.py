@@ -78,9 +78,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
-                    handle_game_event(
-                        data=data, room_id=room_id, user_id=user_id
-                    )
+                    while True:
+                        try:
+                            handle_game_event(
+                            data=data, room_id=room_id, user_id=user_id
+                            )
+                        except ValidationError as error:
+                            await connection_manager.send_to(
+                                websocket,
+                                ErrorMessage.create(str(error)),
+                            )
             except ValueError:
                 # If the data is not a valid json
                 # For now send an error message

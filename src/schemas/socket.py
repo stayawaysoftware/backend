@@ -30,6 +30,10 @@ class RoomEventTypes(Enum):
 
 class GameEventTypes(str, Enum):
     start = "start"
+    draw = "draw"
+    play = "play"
+    discard = "discard"
+    defense = "defense"
     end = "end"
 
     @classmethod
@@ -117,6 +121,37 @@ class RoomMessage(BaseModel):
 
     @classmethod
     def create(cls, type: RoomEventTypes, room_id: RoomId):
+        room = Room.get(id=room_id)
+        match type:
+            case "info":
+                return {
+                    "type": type,
+                    "room": RoomInfo.from_db(room),
+                }
+            case "delete":
+                return {
+                    "type": type,
+                }
+            case _:
+                return {
+                    "type": type,
+                    "room": {
+                        "users": UsersInfo.get_users_info(room),
+                    },
+                }
+
+class GameMessage(BaseModel):
+    model_config = ConfigDict(title="GameMessage")
+
+    type: GameEventTypes = Field(...)
+
+    @validator("type", pre=True, allow_reuse=True)
+    def validate_type(cls, type):
+        assert GameEventTypes.has_type(type), "Invalid type"
+        return type
+
+    @classmethod
+    def create(cls, type: GameEventTypes, room_id: RoomId):
         room = Room.get(id=room_id)
         match type:
             case "info":

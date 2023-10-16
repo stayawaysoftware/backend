@@ -12,3 +12,5 @@ class GameStatus(BaseModel):
     turn_phase: str
     players: List[PlayerOut]
     lastPlayedCard: Optional[int]
+
+
