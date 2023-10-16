@@ -6,6 +6,7 @@ from fastapi import WebSocketDisconnect
 from pony.orm import db_session
 from pydantic import ValidationError
 from core.game import handle_game_event
+from schemas.socket  import GameMessage
 from schemas.room import StartGameValidator
 from schemas.socket import ChatMessage
 from schemas.socket import ErrorMessage
@@ -79,6 +80,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                             )
                 elif GameEventTypes.has_type(data["type"]):
                     while True:
+                        game_info = GameMessage.create("info", room_id)
+                        await connection_manager.send_to(websocket, game_info)
                         try:
                             handle_game_event(
                             data=data, room_id=room_id, user_id=user_id

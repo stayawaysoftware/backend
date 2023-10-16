@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
-
+from .game import GameInfo
 from .room import RoomId
 from .room import RoomInfo
 from .room import UsersInfo
@@ -157,16 +157,5 @@ class GameMessage(BaseModel):
             case "info":
                 return {
                     "type": type,
-                    "room": RoomInfo.from_db(room),
-                }
-            case "delete":
-                return {
-                    "type": type,
-                }
-            case _:
-                return {
-                    "type": type,
-                    "room": {
-                        "users": UsersInfo.get_users_info(room),
-                    },
+                    "game": GameInfo.from_db(room),
                 }
