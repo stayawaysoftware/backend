@@ -123,7 +123,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     await connection_manager.broadcast(
                                         room_id,
                                         GameMessage.create(
-                                            data["type"], room_id
+                                            "info", room_id
                                         ),
                                     )
                                 case _:
