@@ -5,7 +5,8 @@ from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from pony.orm import db_session
 from pydantic import ValidationError
-from core.game import handle_game_event
+from core.game import handle_play
+from core.game import handle_defense
 from schemas.socket  import GameMessage
 from schemas.room import RoomEventValidator
 from schemas.socket import ChatMessage
@@ -30,6 +31,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                 data = await websocket.receive_json()
                 if data["type"] == "message":
                     try:
+                        ChatMessage.validate(user_id, room_id)
                         message = ChatMessage.create(
                             data["message"], user_id, room_id
                         )
@@ -102,13 +104,35 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
-                        game_info = GameMessage.create("info", room_id)
-                        await connection_manager.send_to(websocket, game_info)
                         try:
-                            data = await websocket.receive_json()
-                            handle_game_event(
-                            data=data, room_id=room_id, user_id=user_id
-                            )
+                            match data["type"]:
+                                case "play":
+                                    response = handle_play(
+                                        data["played_card"],
+                                        data["card_target"],
+                                    )
+                                    await connection_manager.broadcast(room_id, response)
+                                case "defense":
+                                    await handle_defense(
+                                        room_id,
+                                        data["card_type_id"],
+                                        user_id,
+                                        data["last_card_played_id"],
+                                        data["attacker_id"],
+                                    )
+                                    await connection_manager.broadcast(
+                                        room_id,
+                                        GameMessage.create(
+                                            data["type"], room_id
+                                        ),
+                                    )
+                                case _:
+                                    await connection_manager.send_to(
+                                        websocket,
+                                        ErrorMessage.create(
+                                            "DEBUGGING: Invalid game event"
+                                        ),
+                                    )
                         except ValidationError as error:
                             await connection_manager.send_to(
                                 websocket,

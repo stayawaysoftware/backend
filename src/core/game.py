@@ -19,6 +19,8 @@ from schemas.game import GameStatus
 from schemas.player import PlayerOut
 from schemas.socket import GameMessage
 
+connection_manager = ConnectionManager()
+
 @db_session
 def init_players(room_id: int, game: Game):
     room = Room.get(id=room_id)
@@ -160,21 +162,16 @@ def delete_game(game_id: int):
     room = Room.get(id=game.id)
     Iroom.delete_room(room.id, room.host_id)
 
-@db_session
-async def handle_play(
-    game_id: int,
+def handle_play(
     card_type_id: int,
-    current_player_id: int,
     target_player_id: int,
 ):
-    game = Game.get(id=game_id)
-    if game.current_phase != "Play":
-        raise ValueError("Invalid game phase")
-    if game.current_position != current_player_id:
-        raise ValueError("Invalid player turn")
-    response = ConnectionManager.make_game_response(game_id, "play")
-    await ConnectionManager.broadcast(game_id, response)
-
+    response = {
+                "type" : "play",
+                "played_card" : card_type_id,
+                "card_target" : target_player_id
+    }
+    return response
 
 @db_session
 async def handle_defense(

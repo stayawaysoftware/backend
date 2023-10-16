@@ -30,7 +30,7 @@ class RoomEventTypes(Enum):
 
 
 class GameEventTypes(str, Enum):
-    start = "start"
+    new_turn = "new_turn"
     draw = "draw"
     play = "play"
     discard = "discard"
