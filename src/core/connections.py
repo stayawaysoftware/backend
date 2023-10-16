@@ -28,13 +28,15 @@ class ConnectionManager:
         # Associate the user with the current room
         self.user_rooms[user_id] = room_id
 
-    def disconnect(self, websocket: WebSocket, room_id: int, user_id: int):
+    async def disconnect(
+        self, websocket: WebSocket, room_id: int, user_id: int
+    ):
         self.active_connections[room_id].remove(websocket)
         # Delete the user-room association
         if user_id in self.user_rooms:
             del self.user_rooms[user_id]
 
-        websocket.close()
+        await websocket.close()
 
     # ===================== SEND METHODS =====================
 
