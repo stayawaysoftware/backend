@@ -4,7 +4,8 @@ from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
 
-from .validators import ValidatorsHttpRaise
+from .validators import EndpointValidators
+from .validators import SocketValidators
 
 
 # ======================= Input Schemas =======================
@@ -21,9 +22,9 @@ class RoomCreateForm(BaseModel):
     def validate_max_min_users(cls, max_users, values):
         max_users = max_users
         min_users = values["min_users"]
-        max_users = ValidatorsHttpRaise.validate_max_users(max_users)
-        min_users = ValidatorsHttpRaise.validate_min_users(min_users)
-        max_users, values = ValidatorsHttpRaise.validate_max_min_users(
+        max_users = EndpointValidators.validate_max_users(max_users)
+        min_users = EndpointValidators.validate_min_users(min_users)
+        max_users, values = EndpointValidators.validate_max_min_users(
             max_users, values
         )
         return max_users
@@ -31,8 +32,8 @@ class RoomCreateForm(BaseModel):
     @validator("host_id", pre=True, allow_reuse=True)
     def validate_host_id(cls, host_id):
         user_id = host_id  # Rename to reuse validator
-        user_id = ValidatorsHttpRaise.validate_user_exists(user_id)
-        user_id = ValidatorsHttpRaise.validate_user_not_in_room(user_id)
+        user_id = EndpointValidators.validate_user_exists(user_id)
+        user_id = EndpointValidators.validate_user_not_in_room(user_id)
         return user_id
 
 
@@ -43,16 +44,51 @@ class RoomJoinForm(BaseModel):
 
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_id(cls, room_id):
-        room_id = ValidatorsHttpRaise.validate_room_exists(room_id)
-        room_id = ValidatorsHttpRaise.validate_room_not_full(room_id)
-        room_id = ValidatorsHttpRaise.validate_room_not_in_game(room_id)
+        room_id = EndpointValidators.validate_room_exists(room_id)
+        room_id = EndpointValidators.validate_room_not_full(room_id)
+        room_id = EndpointValidators.validate_room_not_in_game(room_id)
         return room_id
 
     @validator("user_id", pre=True, allow_reuse=True)
     def validate_user_id(cls, user_id):
-        user_id = ValidatorsHttpRaise.validate_user_exists(user_id)
-        user_id = ValidatorsHttpRaise.validate_user_not_in_room(user_id)
+        user_id = EndpointValidators.validate_user_exists(user_id)
+        user_id = EndpointValidators.validate_user_not_in_room(user_id)
         return user_id
+
+    # TODO: Validate password if room is private
+
+
+class StartGameValidator(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    room_id: int = Field(gt=0)
+    host_id: int = Field(gt=0)
+
+    @validator("room_id", pre=True, allow_reuse=True)
+    def validate_room_id(cls, room_id):
+        room_id = SocketValidators.validate_room_exists(room_id)
+        room_id = SocketValidators.validate_room_not_in_game(room_id)
+        room_id = SocketValidators.validate_room_have_almost_min_users(room_id)
+        return room_id
+
+    @validator("host_id", pre=True, allow_reuse=True)
+    def validate_host_id(cls, host_id, values):
+        user_id = host_id  # Rename to reuse validator
+
+        user_id = SocketValidators.validate_user_exists(user_id)
+        if "room_id" in values:
+            host_id, values = SocketValidators.validate_user_in_room(
+                user_id, values
+            )
+            host_id, values = SocketValidators.validate_user_is_host(
+                user_id, values
+            )
+        return host_id
+
+    @classmethod
+    def validate(cls, room_id, host_id):
+        validated_data = cls(room_id=room_id, host_id=host_id)
+        return validated_data
 
 
 # ======================= Output Schemas =======================
@@ -87,12 +123,11 @@ class UsersInfo(BaseModel):
         }
 
 
-class RoomOut(BaseModel):
+class RoomListItem(BaseModel):
     model_config = ConfigDict(title="Room", from_attributes=True)
 
     id: int
     name: str = Field(max_length=32)
-    host_id: int = Field(gt=0)
     in_game: bool = Field(default=False)
     is_private: bool = Field(default=False)
     users: UsersInfo
@@ -102,8 +137,23 @@ class RoomOut(BaseModel):
         return {
             "id": room.id,
             "name": room.name,
-            "host_id": room.host_id,
             "in_game": room.in_game,
             "is_private": room.passw is not None,
+            "users": UsersInfo.get_users_info(room),
+        }
+
+
+class RoomInfo(BaseModel):
+    model_config = ConfigDict(title="Room", from_attributes=True)
+
+    name: str = Field(max_length=32)
+    host_id: int = Field(gt=0)
+    users: UsersInfo
+
+    @classmethod
+    def from_db(cls, room: Room):
+        return {
+            "name": room.name,
+            "host_id": room.host_id,
             "users": UsersInfo.get_users_info(room),
         }
