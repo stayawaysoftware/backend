@@ -28,6 +28,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                 data = await websocket.receive_json()
                 if data["type"] == "message":
                     try:
+                        ChatMessage.validate(user_id, room_id)
                         message = ChatMessage.create(
                             data["message"], user_id, room_id
                         )
@@ -52,7 +53,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 with db_session:
                                     rooms.start_game(
                                         validated_data.room_id,
-                                        validated_data.user_id,
+                                        validated_data.host_id,
                                     )
 
                                 await connection_manager.broadcast(
@@ -85,7 +86,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                         ErrorMessage.create("DEBUGGING: Invalid event"),
                     )
 
-            except ValueError:
+            except KeyError:
                 # If the data is not a valid json
                 # For now send an error message
                 await connection_manager.send_to(
