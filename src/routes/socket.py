@@ -5,6 +5,7 @@ from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from pony.orm import db_session
 from pydantic import ValidationError
+from core.game import handle_game_event
 from schemas.room import StartGameValidator
 from schemas.socket import ChatMessage
 from schemas.socket import ErrorMessage
