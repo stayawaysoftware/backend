@@ -65,8 +65,7 @@ def leave_room(room_id: int, user_id: int):
         return None
     User[user_id].room = None
     commit()
-    room = RoomListItem.from_db(room)
-    return room
+    return room_id
 
 
 @db_session

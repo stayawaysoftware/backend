@@ -74,20 +74,23 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     data["type"], room_id, user_id
                                 )
                                 with db_session:
-                                    rooms.leave_room(
+                                    if rooms.leave_room(
                                         validated_data.room_id,
                                         validated_data.user_id,
-                                    )
-                                    await connection_manager.disconnect(
-                                        websocket, room_id, user_id
-                                    )
-                                    await connection_manager.broadcast(
-                                        validated_data.room_id,
-                                        RoomMessage.create(
-                                            data["type"],
+                                    ):
+                                        await connection_manager.disconnect(
+                                            websocket,
                                             validated_data.room_id,
-                                        ),
-                                    )
+                                            validated_data.user_id,
+                                        )
+                                        await connection_manager.broadcast(
+                                            validated_data.room_id,
+                                            RoomMessage.create(
+                                                data["type"],
+                                                validated_data.room_id,
+                                            ),
+                                        )
+
                             except ValidationError as error:
                                 await connection_manager.send_to(
                                     websocket,

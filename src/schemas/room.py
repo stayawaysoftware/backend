@@ -13,7 +13,7 @@ from .validators import SocketValidators
 
 class RoomCreateForm(BaseModel):
     name: str = Field(max_length=32)
-    password: str = Field(max_length=32, nullable=True)
+    password: str | None = Field(max_length=32, nullable=True)
     host_id: int = Field(gt=0)
     min_users: int
     max_users: int
@@ -40,7 +40,7 @@ class RoomCreateForm(BaseModel):
 class RoomJoinForm(BaseModel):
     room_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
-    password: str = Field(max_length=32, nullable=True)
+    password: str | None = Field(max_length=32, nullable=True)
 
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_id(cls, room_id):
