@@ -83,6 +83,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                         game_info = GameMessage.create("info", room_id)
                         await connection_manager.send_to(websocket, game_info)
                         try:
+                            data = await websocket.receive_json()
                             handle_game_event(
                             data=data, room_id=room_id, user_id=user_id
                             )
