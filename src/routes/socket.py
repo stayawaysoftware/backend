@@ -7,7 +7,7 @@ from pony.orm import db_session
 from pydantic import ValidationError
 from core.game import handle_game_event
 from schemas.socket  import GameMessage
-from schemas.room import StartGameValidator
+from schemas.room import RoomEventValidator
 from schemas.socket import ChatMessage
 from schemas.socket import ErrorMessage
 from schemas.socket import GameEventTypes
@@ -48,9 +48,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                     match data["type"]:
                         case "start":
                             try:
-                                validated_data = StartGameValidator.validate(
-                                    room_id, user_id
+                                validated_data = RoomEventValidator.validate(
+                                    data["type"], room_id, user_id
                                 )
+
                                 with db_session:
                                     rooms.start_game(
                                         validated_data.room_id,
@@ -58,7 +59,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     )
 
                                 await connection_manager.broadcast(
-                                    room_id,
+                                    validated_data.room_id,
                                     RoomMessage.create(
                                         data["type"], validated_data.room_id
                                     ),
@@ -69,8 +70,30 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     ErrorMessage.create(str(error)),
                                 )
                         case "leave":
-                            pass
-
+                            try:
+                                validated_data = RoomEventValidator.validate(
+                                    data["type"], room_id, user_id
+                                )
+                                with db_session:
+                                    rooms.leave_room(
+                                        validated_data.room_id,
+                                        validated_data.user_id,
+                                    )
+                                    await connection_manager.disconnect(
+                                        websocket, room_id, user_id
+                                    )
+                                    await connection_manager.broadcast(
+                                        validated_data.room_id,
+                                        RoomMessage.create(
+                                            data["type"],
+                                            validated_data.room_id,
+                                        ),
+                                    )
+                            except ValidationError as error:
+                                await connection_manager.send_to(
+                                    websocket,
+                                    ErrorMessage.create(str(error)),
+                                )
                         case _:
                             await connection_manager.send_to(
                                 websocket,
@@ -79,7 +102,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
-                    while True:
                         game_info = GameMessage.create("info", room_id)
                         await connection_manager.send_to(websocket, game_info)
                         try:

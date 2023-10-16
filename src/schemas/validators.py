@@ -1,3 +1,4 @@
+import core.room as rooms
 from fastapi import HTTPException
 from models.room import Room
 from models.room import User
@@ -45,14 +46,14 @@ class EndpointValidators:
     @classmethod
     @validator("user_id", pre=True, allow_reuse=True)
     def validate_user_exists(cls, user_id):
-        if not User.exists(id=user_id):
+        if not User.get(id=user_id):
             raise HTTPException(status_code=404, detail="User not found")
         return user_id
 
     @classmethod
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_exists(cls, room_id):
-        if not Room.exists(id=room_id):
+        if not Room.get(id=room_id):
             raise HTTPException(status_code=404, detail="Room not found")
         return room_id
 
@@ -69,7 +70,7 @@ class EndpointValidators:
     @classmethod
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_not_full(cls, room_id):
-        if Room.exists(id=room_id):
+        if Room.get(id=room_id):
             room = Room.get(id=room_id)
             if len(room.users) >= room.max_users:
                 raise HTTPException(status_code=403, detail="Room is full")
@@ -78,7 +79,7 @@ class EndpointValidators:
     @classmethod
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_not_in_game(cls, room_id):
-        if Room.exists(id=room_id):
+        if Room.get(id=room_id):
             if Room.get(id=room_id).in_game:
                 raise HTTPException(
                     status_code=403, detail="Game is already in progress"
@@ -88,9 +89,22 @@ class EndpointValidators:
     @classmethod
     @validator("username", pre=True, allow_reuse=True)
     def validate_username_not_exists(cls, username):
-        if User.exists(username=username):
+        if User.get(username=username):
             raise HTTPException(status_code=403, detail="User already exists")
         return username
+
+    @classmethod
+    @validator("password", pre=True, allow_reuse=True)
+    def validate_password(cls, password, values):
+        room_id = values["room_id"]
+        if Room.get(id=room_id):
+            room = Room.get(id=room_id)
+            if room.pwd is not None:
+                if rooms.hashing(password) != room.pwd:
+                    raise HTTPException(
+                        status_code=403, detail="Wrong password"
+                    )
+        return password
 
 
 class SocketValidators:
@@ -101,13 +115,13 @@ class SocketValidators:
     @classmethod
     @validator("user_id", pre=True, allow_reuse=True)
     def validate_user_exists(cls, user_id):
-        assert User.exists(id=user_id), "User not found"
+        assert User.get(id=user_id), "User not found"
         return user_id
 
     @classmethod
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_exists(cls, room_id):
-        assert Room.exists(id=room_id), "Room not found"
+        assert Room.get(id=room_id), "Room not found"
         return room_id
 
     @classmethod

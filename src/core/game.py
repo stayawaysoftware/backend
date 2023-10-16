@@ -17,7 +17,7 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
-
+from schemas.socket import GameMessage
 
 @db_session
 def init_players(room_id: int, game: Game):
@@ -197,7 +197,7 @@ async def handle_defense(
 
 
 @db_session
-def handle_game_event(data: dict, room_id: int, user_id: int):
+async def handle_game_event(data: dict, room_id: int, user_id: int):
     if data["type"] == "play":
         handle_play(
             game_id=room_id,

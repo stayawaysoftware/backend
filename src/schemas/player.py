@@ -25,3 +25,17 @@ class PlayerOut(BaseModel):
                 CardOut.from_card(card) for card in player.hand
             ],  # Agregar el campo 'hand'
         )
+    @classmethod
+    def json(self, player: Player):
+        # Return a JSON-serializable representation of the Player object
+        cls = PlayerOut.from_player(player)
+        return {
+            "id": cls.id,
+            "name": cls.name,
+            "round_position": cls.round_position,
+            "alive": cls.alive,
+            "role": cls.role,
+            "hand": [
+                card.json(card) for card in cls.hand
+            ]
+        }

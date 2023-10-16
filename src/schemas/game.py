@@ -19,17 +19,12 @@ class GameStatus(BaseModel):
 class PlayersInfo(BaseModel):
     model_config = ConfigDict(title="Users", from_attributes=True)
 
-    min: int = Field(gt=3, lt=13)
-    max: int = Field(gt=3, lt=13)
-    names: list[str]
-
     @classmethod
     def get_players_info(cls, game: Game):
-        players = list(game.users)
-        #remove player.hand from the response
-        for player in players:
-            del player.hand
+        players = list(game.players)
         players.sort(key=lambda player: player.id)
+        # Crear una instancia de PlayerOut jsonificado
+        players = [PlayerOut.json(player) for player in players]
         return {
             "players" : players
         }

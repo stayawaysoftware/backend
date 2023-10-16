@@ -55,39 +55,51 @@ class RoomJoinForm(BaseModel):
         user_id = EndpointValidators.validate_user_not_in_room(user_id)
         return user_id
 
-    # TODO: Validate password if room is private
+    @validator("password", pre=True, allow_reuse=True)
+    def validate_password(cls, password, values):
+        password = EndpointValidators.validate_password(password, values)
+        return password
 
 
-class StartGameValidator(BaseModel):
+class RoomEventValidator(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    type: str = Field(...)
     room_id: int = Field(gt=0)
-    host_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
 
     @validator("room_id", pre=True, allow_reuse=True)
-    def validate_room_id(cls, room_id):
+    def validate_room_id(cls, room_id, values):
+        type = values["type"]
         room_id = SocketValidators.validate_room_exists(room_id)
         room_id = SocketValidators.validate_room_not_in_game(room_id)
-        room_id = SocketValidators.validate_room_have_almost_min_users(room_id)
+        if type == "start":
+            room_id = SocketValidators.validate_room_have_almost_min_users(
+                room_id
+            )
         return room_id
 
-    @validator("host_id", pre=True, allow_reuse=True)
-    def validate_host_id(cls, host_id, values):
-        user_id = host_id  # Rename to reuse validator
-
+    @validator("user_id", pre=True, allow_reuse=True)
+    def validate_user_id(cls, user_id, values):
         user_id = SocketValidators.validate_user_exists(user_id)
         if "room_id" in values:
-            host_id, values = SocketValidators.validate_user_in_room(
+            type = values["type"]
+            user_id, values = SocketValidators.validate_user_in_room(
                 user_id, values
             )
-            host_id, values = SocketValidators.validate_user_is_host(
-                user_id, values
-            )
-        return host_id
+            if type == "start":
+                user_id, values = SocketValidators.validate_user_is_host(
+                    user_id, values
+                )
+        return user_id
 
     @classmethod
-    def validate(cls, room_id, host_id):
-        validated_data = cls(room_id=room_id, host_id=host_id)
+    def validate(cls, type, room_id, user_id):
+        validated_data = cls(
+            type=type,
+            room_id=room_id,
+            user_id=user_id,
+        )
         return validated_data
 
 
@@ -138,7 +150,7 @@ class RoomListItem(BaseModel):
             "id": room.id,
             "name": room.name,
             "in_game": room.in_game,
-            "is_private": room.passw is not None,
+            "is_private": room.pwd is not None,
             "users": UsersInfo.get_users_info(room),
         }
 
@@ -152,6 +164,7 @@ class RoomInfo(BaseModel):
 
     @classmethod
     def from_db(cls, room: Room):
+        assert room is not None
         return {
             "name": room.name,
             "host_id": room.host_id,

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
+from models.game import Game
 from .game import GameInfo
 from .room import RoomId
 from .room import RoomInfo
@@ -59,27 +60,21 @@ class ChatMessage(BaseModel):
     sender: int = Field(...)
     room_id: int = Field(...)
 
-    @validator("sender", pre=True, allow_reuse=True)
-    def validate_sender(cls, sender, values):
-        user_id = sender
+    @classmethod
+    def validate(cls, sender, room_id):
+        user_id = sender  # Rename to reuse validator
         sender = SocketValidators.validate_user_exists(user_id)
-        if "room_id" in values:
-            sender, values = SocketValidators.validate_user_in_room(
-                user_id, values
-            )
-        return sender
-
-    # TODO: HACER ANDAR ESTE VALIDADOR.
+        values = {"room_id": room_id}  # Rename to reuse validator
+        sender, values = SocketValidators.validate_user_in_room(
+            user_id, values
+        )
 
     @classmethod
     def create(cls, message: str, sender: int, room_id: int):
-        validated_message = cls(
-            type="message", message=message, sender=sender, room_id=room_id
-        )
         sendername = User.get(id=sender).username
         return {
             "type": "message",
-            "message": validated_message.message,
+            "message": message,
             "sender": sendername,
         }
 
@@ -152,10 +147,10 @@ class GameMessage(BaseModel):
 
     @classmethod
     def create(cls, type: GameEventTypes, room_id: RoomId):
-        room = Room.get(id=room_id)
+        game = Game.get(id=room_id)
         match type:
             case "info":
                 return {
                     "type": type,
-                    "game": GameInfo.from_db(room),
+                    "game": GameInfo.from_db(game),
                 }
