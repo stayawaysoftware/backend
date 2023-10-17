@@ -38,6 +38,22 @@ class ConnectionManager:
 
         await websocket.close()
 
+    async def disconnect_all(self, room_id: int):
+        if room_id in self.active_connections:
+            for connection in self.active_connections[room_id]:
+                await connection.close()
+            del self.active_connections[room_id]
+
+        # Delete all user-room associations for the room
+        users_to_remove = [
+            user_id
+            for user_id, room in self.user_rooms.items()
+            if room == room_id
+        ]
+        print(users_to_remove)
+        for user_id in users_to_remove:
+            del self.user_rooms[user_id]
+
     # ===================== SEND METHODS =====================
 
     async def send_to(self, websocket: WebSocket, message: str):

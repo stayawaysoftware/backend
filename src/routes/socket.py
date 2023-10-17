@@ -90,6 +90,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                                 validated_data.room_id,
                                             ),
                                         )
+                                    else:
+                                        await connection_manager.disconnect_all(
+                                            validated_data.room_id
+                                        )
 
                             except ValidationError as error:
                                 await connection_manager.send_to(
