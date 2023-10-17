@@ -3,6 +3,7 @@ import pytest
 
 from . import AvailableDeck
 from . import Card
+from . import clean_db
 from . import commit
 from . import create_card
 from . import db_session
@@ -24,6 +25,17 @@ from . import unrelate_card_with_player
 
 class TestCardBasic:
     """Test basic card database functions."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     def init_db(self):
         """Init DB."""
@@ -92,6 +104,17 @@ class TestCardBasic:
 
 class TestCardRelationship:
     """Test relationship card database functions."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     def init_db(self):
         """Init DB."""
@@ -206,6 +229,17 @@ class TestCardRelationship:
 
 class TestCardUnrelationship:
     """Test unrelationship card database functions."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     def init_db(self):
         """Init DB."""
