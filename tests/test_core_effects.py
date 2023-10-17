@@ -2,6 +2,7 @@
 import pytest
 
 from . import ActionType
+from . import clean_db
 from . import commit
 from . import db_session
 from . import Deck
@@ -15,6 +16,17 @@ from . import Player
 
 class TestDoEffectInvalid:
     """Tests for invalid calls."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     def init_db(self):
         """Init DB."""
@@ -54,6 +66,17 @@ class TestDoEffectInvalid:
 
 class TestDoEffectNothing:
     """Tests for nothing effects."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     def init_db(self):
         """Init DB."""
@@ -95,6 +118,17 @@ class TestDoEffectNothing:
 
 class TestDoEffectFlamethrower:
     """Tests for flamethrower effects."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
 
     def init_db(self):
         """Init DB."""

@@ -86,8 +86,9 @@ quantity_cards = [
 
 def create_all_cards() -> None:
     """Create all cards in the database."""
-    if len(Card.select()) > 0:
-        raise ValueError("Cards already created")
+    with db_session:
+        if len(Card.select()) > 0:
+            raise ValueError("Cards already created")
 
     counter = 0
     for i in range(len(card_names)):
@@ -99,8 +100,7 @@ def create_all_cards() -> None:
             sum -= 1
             counter += 1
 
-    if counter != 109:
-        raise ValueError("Cards not created correctly")
+    assert len(Card.select()) == 109
 
 
 # Initialize available deck creating relationship with cards
@@ -108,8 +108,9 @@ def create_all_cards() -> None:
 
 def init_available_deck(id_available_deck: int, quantity_players: int) -> None:
     """Initialize an available deck creating relationship with cards."""
-    if len(Card.select()) == 0:
-        create_all_cards()
+    with db_session:
+        if len(Card.select()) == 0:
+            create_all_cards()
 
     available_deck = get_available_deck(id_available_deck)
     if len(available_deck.cards) > 0:
