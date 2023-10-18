@@ -4,16 +4,20 @@ from models.room import Room
 from models.room import User
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import validator
 from pydantic.config import ConfigDict
 
 from .room import RoomId
-from .room import RoomOut
+from .room import RoomInfo
+from .room import UsersInfo
+from .validators import SocketValidators
 
 
 # ======================= Auxiliar Enums =======================
 
 
 class RoomEventTypes(Enum):
+    info = "info"
     leave = "leave"
     start = "start"
     join = "join"
@@ -45,9 +49,29 @@ class EventInGame(BaseModel):
     pass
 
 
-class ChatMessageIn(BaseModel):
+class ChatMessage(BaseModel):
     type: str = Field("message")
     message: str = Field(...)
+    sender: int = Field(...)
+    room_id: int = Field(...)
+
+    @classmethod
+    def validate(cls, sender, room_id):
+        user_id = sender  # Rename to reuse validator
+        sender = SocketValidators.validate_user_exists(user_id)
+        values = {"room_id": room_id}  # Rename to reuse validator
+        sender, values = SocketValidators.validate_user_in_room(
+            user_id, values
+        )
+
+    @classmethod
+    def create(cls, message: str, sender: int, room_id: int):
+        sendername = User.get(id=sender).username
+        return {
+            "type": "message",
+            "message": message,
+            "sender": sendername,
+        }
 
 
 # ======================= Output Schemas =======================
@@ -60,7 +84,15 @@ class ErrorMessage(BaseModel):
     message: str = Field(...)
 
     @classmethod
+    def format(cls, message: str):
+        if "Assertion failed, " in message:
+            message = message.split("Assertion failed, ")[1]
+            message = message.split(" [")[0]
+        return message
+
+    @classmethod
     def create(cls, message: str):
+        message = cls.format(message)
         return {
             "type": "error",
             "description": message,
@@ -71,20 +103,29 @@ class RoomMessage(BaseModel):
     model_config = ConfigDict(title="RoomMessage")
 
     type: RoomEventTypes = Field(...)
-    room: RoomOut = Field(...)
+
+    @validator("type", pre=True, allow_reuse=True)
+    def validate_type(cls, type):
+        assert RoomEventTypes.has_type(type), "Invalid type"
+        return type
 
     @classmethod
     def create(cls, type: RoomEventTypes, room_id: RoomId):
-        return {"type": type, "room": RoomOut.from_db(Room.get(id=room_id))}
-
-
-class ChatMessageOut(BaseModel):
-    model_config = ConfigDict(title="ChatMessage")
-    type: str = Field("message")
-    message: str = Field(...)
-    sender: str = Field(...)
-
-    @classmethod
-    def create(cls, message: str, user_id: int):
-        sender = User.get(id=user_id).username
-        return {"type": "message", "message": message, "sender": sender}
+        room = Room.get(id=room_id)
+        match type:
+            case "info":
+                return {
+                    "type": type,
+                    "room": RoomInfo.from_db(room),
+                }
+            case "delete":
+                return {
+                    "type": type,
+                }
+            case _:
+                return {
+                    "type": type,
+                    "room": {
+                        "users": UsersInfo.get_users_info(room),
+                    },
+                }
