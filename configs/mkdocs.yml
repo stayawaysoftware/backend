@@ -24,3 +24,11 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Utils:
+    - makefile-usage.md
+    - run-project.md
+  - Game Logic:
+    - card.md
