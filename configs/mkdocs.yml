@@ -5,6 +5,10 @@ docs_dir: ../docs
 site_dir: ../site
 plugins:
   - search
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+markdown_extensions:
+  - mdx_math
 
 theme:
   icon:
@@ -24,3 +28,11 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Utils:
+    - makefile-usage.md
+    - run-project.md
+  - Game Logic:
+    - deck.md
