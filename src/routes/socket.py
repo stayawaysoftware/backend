@@ -14,9 +14,7 @@ from schemas.socket import ErrorMessage
 from schemas.socket import GameEventTypes
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
-from models.game import Player
-from schemas.card import CardOut
-from schemas.player import PlayerOut
+
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])

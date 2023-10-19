@@ -6,12 +6,14 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
+
 from models.game import Game
-from .game import GameInfo
+from schemas.game import GameInfo
+
 from .room import RoomId
 from .room import RoomInfo
 from .room import UsersInfo
-from .validators import SocketValidators
+import schemas.validators
 
 
 # ======================= Auxiliar Enums =======================
@@ -30,11 +32,7 @@ class RoomEventTypes(Enum):
 
 
 class GameEventTypes(str, Enum):
-    new_turn = "new_turn"
-    draw = "draw"
-    play = "play"
-    discard = "discard"
-    defense = "defense"
+    start = "start"
     end = "end"
 
     @classmethod
@@ -63,9 +61,9 @@ class ChatMessage(BaseModel):
     @classmethod
     def validate(cls, sender, room_id):
         user_id = sender  # Rename to reuse validator
-        sender = SocketValidators.validate_user_exists(user_id)
+        sender = validators.SocketValidators.validate_user_exists(user_id)
         values = {"room_id": room_id}  # Rename to reuse validator
-        sender, values = SocketValidators.validate_user_in_room(
+        sender, values = validators.SocketValidators.validate_user_in_room(
             user_id, values
         )
 
