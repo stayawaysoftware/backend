@@ -233,6 +233,17 @@ def vigila_tus_espaldas_effect(game_id: int):
 
 @db_session
 def cambio_de_lugar_effect(target_id: int, user_id: int):
+    #TODO: implementar que si hay obstaculos o cuarentena no se puede usar y verificar que sea adyacente
+
+    target = Player.get(id=target_id)
+    user = Player.get(id=user_id)
+    user_position = user.round_position
+    user.round_position = target.round_position
+    target.round_position = user_position
+    commit()
+
+@db_session
+def mas_vale_que_corras_effect(target_id: int, user_id: int):
     target = Player.get(id=target_id)
     user = Player.get(id=user_id)
     user_position = user.round_position
