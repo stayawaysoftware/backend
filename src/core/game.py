@@ -179,6 +179,20 @@ def handle_play(
     return response
 
 @db_session
+def try_defense(
+    played_card: int,
+    card_target: int
+):
+    with db_session:
+        player = Player.get(id=card_target)
+        player = PlayerOut.json(player)
+        res = {
+            "type":"try_defense",
+            "played_card": played_card,
+            "defended_by": player["hand"]
+        }
+    return res
+@db_session
 async def handle_defense(
     game_id: int,
     card_type_id: int,
