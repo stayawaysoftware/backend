@@ -230,3 +230,12 @@ def vigila_tus_espaldas_effect(game_id: int):
     game.round_left_direction = not game.round_left_direction
     commit()
 
+
+@db_session
+def cambio_de_lugar_effect(target_id: int, user_id: int):
+    target = Player.get(id=target_id)
+    user = Player.get(id=user_id)
+    user_position = user.round_position
+    user.round_position = target.round_position
+    target.round_position = user_position
+    commit()
