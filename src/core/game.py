@@ -192,6 +192,7 @@ def try_defense(
             "defended_by": player["hand"]
         }
     return res
+
 @db_session
 async def handle_defense(
     game_id: int,
@@ -212,3 +213,13 @@ async def handle_defense(
     await ConnectionManager.broadcast(game_id, response)
 
 
+@db_session
+def analisis_effect(adyacent_id: int):
+    adyacent_player  = Player.get(id=adyacent_id)
+    adyacent_player = PlayerOut.json(adyacent_player)
+    cards = adyacent_player["hand"]
+    response = {
+        "type": "analisis_effect",
+        "hand": cards
+    }
+    return response
