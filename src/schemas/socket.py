@@ -149,7 +149,7 @@ class GameMessage(BaseModel):
     def create(cls, type: GameEventTypes, room_id: RoomId):
         game = Game.get(id=room_id)
         match type:
-            case "info":
+            case "game_info":
                 return {
                     "type": type,
                     "game": GameInfo.from_db(game),

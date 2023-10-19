@@ -69,7 +69,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                         room_id,
                                         GameMessage.create(
-                                            "info", room_id
+                                            "game_info", room_id
                                         ),
                                 )
                             except ValidationError as error:
@@ -136,7 +136,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     await connection_manager.broadcast(
                                         room_id,
                                         GameMessage.create(
-                                            "info", room_id
+                                            "game_info", room_id
                                         ),
                                     )
                                 case _:
