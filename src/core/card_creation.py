@@ -43,6 +43,44 @@ card_names = [
     ["Ups!", "PANIC"],
 ]
 
+# Cards id that defends the card
+
+card_defense = [
+    [],  # None 0 --> Fictional card
+    [],  # The Thing 1
+    [],  # Infected 2
+    [17],  # Flamethrower 3
+    [],  # Analysis 4
+    [],  # Axe 5
+    [],  # Suspicion 6
+    [],  # Determination 7
+    [],  # Whisky 8
+    [],  # Change of position 9
+    [],  # Watch your back 10
+    [],  # Seduction 11
+    [],  # You better run 12
+    [],  # I'm fine here 13
+    [],  # Terrifying 14
+    [],  # No, thanks 15
+    [],  # You failed 16
+    [],  # No Barbecues 17
+    [],  # Quarantine 18
+    [],  # Locked Door 19
+    [],  # Revelations 20
+    [],  # Rotten ropes 21
+    [],  # Get out of here 22
+    [],  # Forgetful 23
+    [],  # One, two... 24
+    [],  # Three, four... 25
+    [],  # Is the party here? 26
+    [],  # Let it stay between us 27
+    [],  # Turn and turn 28
+    [],  # Can't we be friends? 29
+    [],  # Blind date 30
+    [],  # Ups! 31
+    [],  # Exchange 32 --> Fictional card
+]
+
 # Quantity of cards of different category for quantity of players
 quantity_cards = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # None
