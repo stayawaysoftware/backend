@@ -18,6 +18,7 @@ from core.deck import move_disposable_to_available_deck
 from core.effects import do_effect
 from core.game_action import GameAction
 from models.game import Deck
+from models.game import Game
 from models.game import Player
 from pony.orm import db_session
 
@@ -57,6 +58,12 @@ def draw(id_game: int, id_player: int) -> int:
     with db_session:
         if not Player.exists(id=id_player):
             raise ValueError(f"Player with id {id_player} doesn't exist")
+        if not Game.exists(id=id_game):
+            raise ValueError(f"Game with id {id_game} doesn't exist")
+        if Game[1].current_phase != "Draw":
+            raise ValueError(
+                f"Game with id {id_game} is not in the Draw phase"
+            )
 
     if len(get_deck(id_game).available_deck.cards) == 0:
         move_disposable_to_available_deck(id_game)
@@ -64,25 +71,50 @@ def draw(id_game: int, id_player: int) -> int:
     card = get_random_card_from_available_deck(id_game)
     unrelate_card_with_available_deck(card.id, id_game)
     relate_card_with_player(card.id, id_player)
-    return card.idtype
+    return card.id
 
 
 # PLAY phase
 
 
 def play(
-    id_game: int, idtype_card: int, target: Optional[int] = None
+    id_game: int,
+    id_player: int,
+    idtype_card: int,
+    target: Optional[int] = None,
 ) -> GameAction:
     """Play a card from player hand."""
+    with db_session:
+        if not Game.exists(id=id_game):
+            raise ValueError(f"Game with id {id_game} doesn't exist")
+        if Game[id_game].current_phase != "Play":
+            raise ValueError(
+                f"Game with id {id_game} is not in the Play phase"
+            )
+        if not Player.exists(id=target):
+            raise ValueError(f"Player with id {target} doesn't exist")
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+        if len(Player[id_player].hand.select(idtype=idtype_card)) == 0:
+            raise ValueError(
+                f"Player with id {id_player} has no card with idtype {idtype_card} in hand"
+            )
+
     return do_effect(id_game, idtype_card, target)
 
 
 # DISCARD phase
 
 
-def discard(id_game: int, idtype_card: int, id_player: int) -> None:
+def discard(id_game: int, idtype_card: int, id_player: int) -> int:
     """Discard a card from player hand."""
     with db_session:
+        if not Game.exists(id=id_game):
+            raise ValueError(f"Game with id {id_game} doesn't exist")
+        if Game[id_game].current_phase != "Discard":
+            raise ValueError(
+                f"Game with id {id_game} is not in the Discard phase"
+            )
         if not Player.exists(id=id_player):
             raise ValueError(f"Player with id {id_player} doesn't exist")
         if len(Player[id_player].hand) == 0:
@@ -98,3 +130,5 @@ def discard(id_game: int, idtype_card: int, id_player: int) -> None:
 
     unrelate_card_with_player(card.id, id_player)
     relate_card_with_disposable_deck(card.id, id_game)
+
+    return card.id

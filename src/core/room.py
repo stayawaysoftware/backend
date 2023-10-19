@@ -61,12 +61,11 @@ def leave_room(room_id: int, user_id: int):
     room = Room.get(id=room_id)
     if len(room.users) == 0 or room.host_id == user_id:
         delete_room(room_id, user_id)
-        User[user_id].room = None
+        commit()
         return None
     User[user_id].room = None
     commit()
-    room = RoomListItem.from_db(room)
-    return room
+    return room_id
 
 
 @db_session
