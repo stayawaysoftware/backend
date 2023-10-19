@@ -212,28 +212,3 @@ async def handle_defense(
     await ConnectionManager.broadcast(game_id, response)
 
 
-@db_session
-async def handle_game_event(data: dict, room_id: int, user_id: int):
-    if data["type"] == "play":
-        handle_play(
-            game_id=room_id,
-            card_type_id=data["card_type_id"],
-            current_player_id=user_id,
-            target_player_id=data["target_player_id"],
-        )
-    elif data["type"] == "defense":
-        handle_defense(
-            game_id=room_id,
-            card_type_id=data["card_type_id"],
-            defense_player_id=user_id,
-            last_card_played_id=data["last_card_played_id"],
-            attacker_id=data["attacker_id"],
-        )
-    elif data["type"] == "exchange":
-        # TODO: implement exchange
-        pass
-    elif data["type"] == "game_over":
-        # TODO: implement game over
-        pass
-    else:
-        raise ValueError("Invalid game event")
