@@ -32,3 +32,5 @@ nav:
     - run-project.md
   - Game Logic:
     - deck.md
+    - effects.md
+    - game_utility.md
