@@ -215,6 +215,7 @@ async def handle_defense(
 
 @db_session
 def analisis_effect(adyacent_id: int):
+    #TODO: Revisar que sea adyacente
     adyacent_player  = Player.get(id=adyacent_id)
     adyacent_player = PlayerOut.json(adyacent_player)
     cards = adyacent_player["hand"]
@@ -250,3 +251,24 @@ def mas_vale_que_corras_effect(target_id: int, user_id: int):
     user.round_position = target.round_position
     target.round_position = user_position
     commit()
+
+@db_session
+def seduccion_effect(target_id: int, user_id: int):
+    #TODO: Dejar hasta que este el intercambio de cartas
+    pass
+
+@db_session
+def sospecha_effect(target_id: int, user_id: int):
+    #TODO: Mirar una carta aleatoria de un jugador adyacente
+    pass
+
+@db_session
+def whisky_effect(user_id: int):
+    player = Player.get(id=user_id)
+    player = PlayerOut.json(player)
+    cards = player["hand"]
+    response = {
+        "type": "whisky_effect",
+        "hand": cards
+    }
+    return response
