@@ -223,3 +223,10 @@ def analisis_effect(adyacent_id: int):
         "hand": cards
     }
     return response
+
+@db_session
+def vigila_tus_espaldas_effect(game_id: int):
+    game = Game.get(id=game_id)
+    game.round_left_direction = not game.round_left_direction
+    commit()
+
