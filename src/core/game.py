@@ -5,6 +5,10 @@ import core.game_utility as gu
 import core.room as Iroom
 from core.player import create_player
 from core.player import dealing_cards
+from core.connections import ConnectionManager
+from core.game_utility import discard
+from core.game_utility import draw
+
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
@@ -13,7 +17,9 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
+from schemas.socket import GameMessage
 
+connection_manager = ConnectionManager()
 
 @db_session
 def init_players(room_id: int, game: Game):
@@ -160,3 +166,49 @@ def delete_game(game_id: int):
     commit()
     room = Room.get(id=game.id)
     Iroom.delete_room(room.id, room.host_id)
+
+def handle_play(
+    card_type_id: int,
+    target_player_id: int,
+):
+    response = {
+                "type" : "play",
+                "played_card" : card_type_id,
+                "card_target" : target_player_id
+    }
+    return response
+
+@db_session
+def try_defense(
+    played_card: int,
+    card_target: int
+):
+    with db_session:
+        player = Player.get(id=card_target)
+        player = PlayerOut.json(player)
+        res = {
+            "type":"try_defense",
+            "played_card": played_card,
+            "defended_by": player["hand"]
+        }
+    return res
+@db_session
+async def handle_defense(
+    game_id: int,
+    card_type_id: int,
+    defense_player_id: int,
+    last_card_played_id: int,
+    attacker_id: int,
+):
+    # TODO: implement defense effect handler
+    if card_type_id is None:
+        play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
+    else:
+        discard(game_id, last_card_played_id, attacker_id)
+        discard(game_id, card_type_id, defense_player_id)
+        draw(game_id, defense_player_id)
+        calculate_next_turn(game_id)
+    response = ConnectionManager.make_game_response(game_id, "defense")
+    await ConnectionManager.broadcast(game_id, response)
+
+

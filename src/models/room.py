@@ -24,4 +24,4 @@ class Room(db.Entity):
     in_game = Required(bool)
     min_users = Required(int, default=4, unsigned=True)
     max_users = Required(int, default=12, unsigned=True)
-    passw = Optional(str, nullable=True)
+    pwd = Optional(str, nullable=True)
