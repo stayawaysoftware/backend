@@ -66,6 +66,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         data["type"], validated_data.room_id
                                     ),
                                 )
+                                await connection_manager.broadcast(
+                                        room_id,
+                                        GameMessage.create(
+                                            "info", room_id
+                                        ),
+                                )
                             except ValidationError as error:
                                 await connection_manager.send_to(
                                     websocket,
