@@ -7,10 +7,13 @@ from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
 
+from models.game import Game
+from schemas.game import GameInfo
+
 from .room import RoomId
 from .room import RoomInfo
 from .room import UsersInfo
-from .validators import SocketValidators
+import schemas.validators
 
 
 # ======================= Auxiliar Enums =======================
@@ -58,9 +61,9 @@ class ChatMessage(BaseModel):
     @classmethod
     def validate(cls, sender, room_id):
         user_id = sender  # Rename to reuse validator
-        sender = SocketValidators.validate_user_exists(user_id)
+        sender = validators.SocketValidators.validate_user_exists(user_id)
         values = {"room_id": room_id}  # Rename to reuse validator
-        sender, values = SocketValidators.validate_user_in_room(
+        sender, values = validators.SocketValidators.validate_user_in_room(
             user_id, values
         )
 
@@ -128,4 +131,24 @@ class RoomMessage(BaseModel):
                     "room": {
                         "users": UsersInfo.get_users_info(room),
                     },
+                }
+
+class GameMessage(BaseModel):
+    model_config = ConfigDict(title="GameMessage")
+
+    type: GameEventTypes = Field(...)
+
+    @validator("type", pre=True, allow_reuse=True)
+    def validate_type(cls, type):
+        assert GameEventTypes.has_type(type), "Invalid type"
+        return type
+
+    @classmethod
+    def create(cls, type: GameEventTypes, room_id: RoomId):
+        game = Game.get(id=room_id)
+        match type:
+            case "game_info":
+                return {
+                    "type": type,
+                    "game": GameInfo.from_db(game),
                 }
