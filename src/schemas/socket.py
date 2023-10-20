@@ -31,6 +31,8 @@ class RoomEventTypes(Enum):
 
 class GameEventTypes(str, Enum):
     start = "start"
+    play = "play"
+    game_status = "game_status"
     end = "end"
 
     @classmethod

@@ -136,28 +136,38 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
                             case "defense":
                                 await handle_defense(
-                                    room_id,
-                                    data["card_type_id"],
-                                    user_id,
-                                    data["last_card_played_id"],
-                                    data["attacker_id"],
+                                room_id,
+                                data["card_type_id"],
+                                user_id,
+                                data["last_card_played_id"],
+                                data["attacker_id"],
+                               )
+                                await connection_manager.broadcast(
+                                room_id,
+                                GameMessage.create(
+                                        "game_info", room_id
+                                    ),
                                 )
+
+                            case "game_status":
                                 await connection_manager.broadcast(
                                     room_id,
-                                    GameMessage.create("game_info", room_id),
+                                    GameMessage.create(
+                                        "game_info", room_id
+                                    ),
                                 )
                             case _:
                                 await connection_manager.send_to(
                                     websocket,
                                     ErrorMessage.create(
                                         "DEBUGGING: Invalid game event"
-                                    ),
-                                )
+                                        ),
+                                    )
                     except ValidationError as error:
-                        await connection_manager.send_to(
-                            websocket,
-                            ErrorMessage.create(str(error)),
-                        )
+                            await connection_manager.send_to(
+                                websocket,
+                                ErrorMessage.create(str(error)),
+                            )
             except ValueError:
                 # If the data is not a valid json
                 # For now send an error message
