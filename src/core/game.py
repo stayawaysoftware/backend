@@ -4,8 +4,6 @@ from typing import Optional
 import core.game_utility as gu
 import core.room as Iroom
 from core.connections import ConnectionManager
-from core.game_utility import discard
-from core.game_utility import draw
 from core.player import create_player
 from core.player import dealing_cards
 from fastapi import HTTPException
@@ -84,6 +82,7 @@ def play_card(
         id_player=current_player_id,
         idtype_card=card_idtype,
         target=target_player_id,
+        first_play=False
     )
     game.current_phase = "Discard"
     commit()
@@ -186,27 +185,48 @@ def try_defense(played_card: int, card_target: int):
         player = PlayerOut.json(player)
         res = {
             "type": "try_defense",
+            "target_player": card_target,
             "played_card": played_card,
-            "defended_by": player["hand"],
+            "defended_by": player["hand"]
         }
     return res
 
 
 @db_session
-async def handle_defense(
+def handle_defense(
     game_id: int,
     card_type_id: int,
     defense_player_id: int,
     last_card_played_id: int,
-    attacker_id: int,
+    attacker_id: int
 ):
-    # TODO: implement defense effect handler
+    print("IF interno del handle")
     if card_type_id is None:
         play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
     else:
-        discard(game_id, last_card_played_id, attacker_id)
-        discard(game_id, card_type_id, defense_player_id)
-        draw(game_id, defense_player_id)
-        calculate_next_turn(game_id)
-    response = ConnectionManager.make_game_response(game_id, "defense")
-    await ConnectionManager.broadcast(game_id, response)
+        game = Game.get(id=game_id)
+        try:
+            print("ENTRA AL ELSE")
+            game.current_phase = "Discard"
+            commit()
+            id = gu.discard(game_id, last_card_played_id, attacker_id)
+            print(id, "PRIMER ID")
+            id = gu.discard(game_id, card_type_id, defense_player_id)
+            print(id, "SEGUNDO ID")
+            game.current_phase="Draw"
+            commit()
+            id = gu.draw(game_id, defense_player_id)
+            print("SALE DEL ELSE")
+        except ValueError as e:
+            print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
+
+    
+
+    current_turn = Game.get(id=game_id).current_position
+
+    response = {
+        "type": "new_turn",
+         "current_turn":current_turn
+    }
+
+    return response

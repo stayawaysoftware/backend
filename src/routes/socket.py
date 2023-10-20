@@ -127,27 +127,36 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
-                                res = try_defense(
+
+                                defense_response = try_defense(
                                     data["played_card"], data["card_target"]
                                 )
                                 await connection_manager.broadcast(
-                                    room_id, res
+                                    room_id, defense_response
                                 )
 
+
                             case "defense":
-                                await handle_defense(
-                                room_id,
-                                data["card_type_id"],
-                                user_id,
-                                data["last_card_played_id"],
-                                data["attacker_id"],
-                               )
+                                print("Si entra a defensa")
+                                response = handle_defense(
+                                        room_id,
+                                        data["played_defense"],
+                                        data["target_player"],
+                                        data["last_played_card"],
+                                        user_id
+                                    )
+                                print("Aca no se rompio")
+                                await connection_manager.broadcast(
+                                    room_id, response
+                                )
+                                print ("No llega nada")
                                 await connection_manager.broadcast(
                                 room_id,
                                 GameMessage.create(
                                         "game_info", room_id
-                                    ),
+                                    )
                                 )
+                                
 
                             case "game_status":
                                 await connection_manager.broadcast(
