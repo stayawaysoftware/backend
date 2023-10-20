@@ -203,23 +203,19 @@ def handle_defense(
     last_card_played_id: int,
     attacker_id: int
 ):
-    print("IF interno del handle")
+
     if card_type_id is None:
         play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
     else:
         game = Game.get(id=game_id)
         try:
-            print("ENTRA AL ELSE")
             game.current_phase = "Discard"
             commit()
             id = gu.discard(game_id, last_card_played_id, attacker_id)
-            print(id, "PRIMER ID")
             id = gu.discard(game_id, card_type_id, defense_player_id)
-            print(id, "SEGUNDO ID")
             game.current_phase="Draw"
             commit()
             id = gu.draw(game_id, defense_player_id)
-            print("SALE DEL ELSE")
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
