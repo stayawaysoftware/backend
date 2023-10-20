@@ -103,7 +103,5 @@
     - Acción -> CHANGE_POSITION
     - Personas que se mueven -> target[0], target[1]
 
-- _CAMBIO DE LUGAR_
-    - Acción -> NOTHING
-- _MÁS VALE QUE CORRAS_
+- _AQUÍ ESTOY BIEN_
     - Acción -> NOTHING
