@@ -143,6 +143,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                             "game_info", room_id
                                         ),
                                     )
+
+                                case "game_status":
+                                    await connection_manager.broadcast(
+                                        room_id,
+                                        GameMessage.create(
+                                            "game_info", room_id
+                                        ),
+                                    )
                                 case _:
                                     await connection_manager.send_to(
                                         websocket,
