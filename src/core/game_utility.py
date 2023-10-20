@@ -98,7 +98,7 @@ def play(
             raise ValueError(f"Player with id {target} doesn't exist")
         if not Player.exists(id=id_player):
             raise ValueError(f"Player with id {id_player} doesn't exist")
-        if idtype_card not in [0]:
+        if idtype_card not in [0, 32]:
             if len(Player[id_player].hand.select(idtype=idtype_card)) == 0:
                 raise ValueError(
                     f"Player with id {id_player} has no card with idtype {idtype_card} in hand"
@@ -106,7 +106,7 @@ def play(
         if card_chosen_by_player is not None:
             if (
                 len(Player[id_player].hand.select(id=card_chosen_by_player))
-                == 0  # noqa
+                == 0
             ):
                 raise ValueError(
                     f"Player with id {id_player} has no card with id {card_chosen_by_player} in hand"
