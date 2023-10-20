@@ -14,6 +14,8 @@ def do_effect(
     id_card_type: int,
     target: Optional[int] = None,
     id_card_type_before: Optional[int] = None,
+    card_chosen_by_player: Optional[int] = None,
+    card_chosen_by_target: Optional[int] = None,
     first_play: bool = True,
 ) -> GameAction:
     """Do effect."""
@@ -26,7 +28,12 @@ def do_effect(
     match id_card_type:
         case 0:  # None --> Without defense (Fictional card)
             return without_defense_effect(
-                id_game, id_player, target, id_card_type_before
+                id_game,
+                id_player,
+                target,
+                id_card_type_before,
+                card_chosen_by_player,
+                card_chosen_by_target,
             )
         case 1:  # The Thing
             raise ValueError("You can't play The Thing card.")
@@ -108,6 +115,8 @@ def without_defense_effect(
     id_player: int,
     target: Optional[int],
     id_card_type_before: Optional[int],
+    card_chosen_by_player: Optional[int],
+    card_chosen_by_target: Optional[int],
 ) -> GameAction:
     """Without defense effect."""
     with db_session:
@@ -133,6 +142,8 @@ def without_defense_effect(
             id_player=target,
             id_card_type=id_card_type_before,
             target=id_player,
+            card_chosen_by_player=card_chosen_by_target,
+            card_chosen_by_target=card_chosen_by_player,
             first_play=False,
         )
 
