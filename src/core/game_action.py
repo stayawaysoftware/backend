@@ -54,7 +54,7 @@ class GameAction:
             action (str): Action (Nothing, Kill).
             action2 (str): Action (Infect).
         Optional:
-            target (int): Action target (player id).
+            target (list): Action targets (player ids).
             defense_cards (list): List of defense cards.
             card_target (list): List of cards.
 
@@ -62,12 +62,12 @@ class GameAction:
         Get methods:
             get_action(): Return action.
             get_action2(): Return action2.
-            get_target(): Return target.
+            get_target(): Return targets.
             get_defense_cards(): Return defense cards.
             get_card_target(): Return cards target.
         Set methods:
             set_action(): Set action.
-            set_target(): Set target.
+            set_target(): Set targets.
             set_defense_cards(): Set defense cards.
             set_card_target(): Set cards target.
     """
@@ -76,7 +76,7 @@ class GameAction:
         self,
         action: ActionType,
         action2: Optional[ActionType] = None,
-        target: Optional[int] = None,
+        target: Optional[list[int]] = None,
         defense_cards: Optional[list[int]] = None,
         card_target: Optional[list[int]] = None,
     ):
@@ -99,7 +99,7 @@ class GameAction:
         """Return action2."""
         return self.action2
 
-    def get_target(self) -> Optional[int]:
+    def get_target(self) -> Optional[list[int]]:
         """Return target."""
         return self.target
 
@@ -119,7 +119,7 @@ class GameAction:
         """Set action2."""
         self.action2 = action2
 
-    def set_target(self, target: Optional[int]):
+    def set_target(self, target: Optional[list[int]]):
         """Set target."""
         self.target = target
 
