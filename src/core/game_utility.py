@@ -83,6 +83,8 @@ def play(
     idtype_card: int,
     idtype_card_before: Optional[int] = None,
     target: Optional[int] = None,
+    card_chosen_by_player: Optional[int] = None,
+    card_chosen_by_target: Optional[int] = None,
 ) -> GameAction:
     """Play a card from player hand."""
     with db_session:
@@ -101,6 +103,19 @@ def play(
                 raise ValueError(
                     f"Player with id {id_player} has no card with idtype {idtype_card} in hand"
                 )
+        if card_chosen_by_player is not None:
+            if (
+                len(Player[id_player].hand.select(id=card_chosen_by_player))
+                == 0  # noqa
+            ):
+                raise ValueError(
+                    f"Player with id {id_player} has no card with id {card_chosen_by_player} in hand"
+                )
+        if card_chosen_by_target is not None:
+            if len(Player[target].hand.select(id=card_chosen_by_target)) == 0:
+                raise ValueError(
+                    f"Player with id {target} has no card with id {card_chosen_by_target} in hand"
+                )
 
     return do_effect(
         id_game=id_game,
@@ -108,6 +123,8 @@ def play(
         id_card_type=idtype_card,
         id_card_type_before=idtype_card_before,
         target=target,
+        card_chosen_by_player=card_chosen_by_player,
+        card_chosen_by_target=card_chosen_by_target,
     )
 
 
