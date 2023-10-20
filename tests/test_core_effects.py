@@ -149,7 +149,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Discard"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=1, target=2, id_card_type_before=3
+                id_game=1,
+                id_player=1,
+                target=2,
+                id_card_type_before=3,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
@@ -162,7 +167,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Defense"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=1, id_card_type_before=3, target=None
+                id_game=1,
+                id_player=1,
+                id_card_type_before=3,
+                target=None,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
@@ -175,7 +185,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Defense"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=1, id_card_type_before=3, target=100
+                id_game=1,
+                id_player=1,
+                id_card_type_before=3,
+                target=100,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
@@ -190,7 +205,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Defense"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=1, id_card_type_before=3, target=2
+                id_game=1,
+                id_player=1,
+                id_card_type_before=3,
+                target=2,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
@@ -203,7 +223,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Defense"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=100, id_card_type_before=3, target=2
+                id_game=1,
+                id_player=100,
+                id_card_type_before=3,
+                target=2,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
@@ -216,7 +241,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Defense"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=1, id_card_type_before=3, target=1
+                id_game=1,
+                id_player=1,
+                id_card_type_before=3,
+                target=1,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
@@ -229,7 +259,12 @@ class TestWithoutDefenseEffectInvalid:
         Game[1].current_phase = "Defense"
         with pytest.raises(ValueError):
             without_defense_effect(
-                id_game=1, id_player=1, id_card_type_before=None, target=2
+                id_game=1,
+                id_player=1,
+                id_card_type_before=None,
+                target=2,
+                card_chosen_by_player=None,
+                card_chosen_by_target=None,
             )
 
         self.end_db()
