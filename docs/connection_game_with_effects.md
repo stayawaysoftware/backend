@@ -15,8 +15,8 @@
 - `idtype_card`: Id de tipo de la carta jugada
 - `idtype_card_before`: Id de la carta jugada en el paso anterior
 - `target`: Persona a la que se le quiere aplicar esa carta
-- `card_choose_player`: Carta elegida por el jugador (pej. en intercambio)
-- `card_choose_target`: Carta elegida por el target (pej. en intercambio), o que eligió el player para ver (pej. en sospecha)
+- `card_chosen_by_player`: Carta elegida por el jugador (pej. en intercambio)
+- `card_chosen_by_target`: Carta elegida por el target (pej. en intercambio), o que eligió el player para ver (pej. en sospecha)
 
 ## **POSIBLES RETORNOS**
 
