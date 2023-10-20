@@ -3,113 +3,213 @@ from . import ActionType
 from . import GameAction
 
 
-class TestGameAction:
-    """Test game_action module."""
+class TestActionType:
+    """Test ActionType enum."""
 
-    def test_init(self):
-        """Test initialization."""
-        action = GameAction(ActionType.NOTHING)
+    def test_action_type(self):
+        """Test ActionType enum."""
+        assert str(ActionType.NOTHING) == "NOTHING"
+        assert str(ActionType.ASK_DEFENSE) == "ASK_DEFENSE"
+        assert str(ActionType.ASK_EXCHANGE) == "ASK_EXCHANGE"
+        assert str(ActionType.EXCHANGE) == "EXCHANGE"
+        assert str(ActionType.INFECT) == "INFECT"
+        assert str(ActionType.KILL) == "KILL"
+        assert str(ActionType.SHOW) == "SHOW"
+        assert str(ActionType.SHOW_ALL) == "SHOW_ALL"
+        assert str(ActionType.SHOW_ALL_TO_ALL) == "SHOW_ALL_TO_ALL"
+        assert str(ActionType.REVERSE_ORDER) == "REVERSE_ORDER"
+        assert str(ActionType.CHANGE_POSITION) == "CHANGE_POSITION"
+
+
+class TestGameAction:
+    """Test GameAction class."""
+
+    def test_get_functions_and_initialization(self):
+        """Test get functions and initialization."""
+
+        action = GameAction(action=ActionType.NOTHING)
         assert action.get_action() == ActionType.NOTHING
+        assert action.get_action2() is None
         assert action.get_target() is None
         assert action.get_defense_cards() is None
+        assert action.get_card_target() is None
 
-        action = GameAction(ActionType.KILL, 1)
-        assert action.get_action() == ActionType.KILL
-        assert action.get_target() == 1
-        assert action.get_defense_cards() is None
-
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
+        action = GameAction(
+            action=ActionType.ASK_DEFENSE, target=[1], defense_cards=[1, 2]
+        )
         assert action.get_action() == ActionType.ASK_DEFENSE
-        assert action.get_target() == 1
+        assert action.get_action2() is None
+        assert action.get_target() == [1]
         assert action.get_defense_cards() == [1, 2]
+        assert action.get_card_target() is None
+
+        action = GameAction(
+            action=ActionType.ASK_EXCHANGE, target=[1, 2], card_target=[1]
+        )
+        assert action.get_action() == ActionType.ASK_EXCHANGE
+        assert action.get_action2() is None
+        assert action.get_target() == [1, 2]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() == [1]
+
+        action = GameAction(
+            action=ActionType.EXCHANGE, target=[1, 2], card_target=[1, 2]
+        )
+        assert action.get_action() == ActionType.EXCHANGE
+        assert action.get_action2() is None
+        assert action.get_target() == [1, 2]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() == [1, 2]
+
+        action = GameAction(
+            action=ActionType.EXCHANGE,
+            action2=ActionType.INFECT,
+            target=[1, 2, 1],
+            card_target=[1, 2],
+        )
+        assert action.get_action() == ActionType.EXCHANGE
+        assert action.get_action2() == ActionType.INFECT
+        assert action.get_target() == [1, 2, 1]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() == [1, 2]
+
+        action = GameAction(action=ActionType.KILL, target=[1])
+        assert action.get_action() == ActionType.KILL
+        assert action.get_action2() is None
+        assert action.get_target() == [1]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() is None
+
+        action = GameAction(
+            action=ActionType.SHOW, target=[1, 2], card_target=[1]
+        )
+        assert action.get_action() == ActionType.SHOW
+        assert action.get_action2() is None
+        assert action.get_target() == [1, 2]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() == [1]
+
+        action = GameAction(action=ActionType.SHOW_ALL, target=[1, 2])
+        assert action.get_action() == ActionType.SHOW_ALL
+        assert action.get_action2() is None
+        assert action.get_target() == [1, 2]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() is None
+
+        action = GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[1])
+        assert action.get_action() == ActionType.SHOW_ALL_TO_ALL
+        assert action.get_action2() is None
+        assert action.get_target() == [1]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() is None
+
+        action = GameAction(action=ActionType.REVERSE_ORDER)
+        assert action.get_action() == ActionType.REVERSE_ORDER
+        assert action.get_action2() is None
+        assert action.get_target() is None
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() is None
+
+        action = GameAction(action=ActionType.CHANGE_POSITION, target=[1, 2])
+        assert action.get_action() == ActionType.CHANGE_POSITION
+        assert action.get_action2() is None
+        assert action.get_target() == [1, 2]
+        assert action.get_defense_cards() is None
+        assert action.get_card_target() is None
+
+    def test_set_functions(self):
+        """Test set functions."""
+
+        action = GameAction(action=ActionType.NOTHING)
+        action.set_action(ActionType.ASK_DEFENSE)
+        assert action.get_action() == ActionType.ASK_DEFENSE
+        action.set_action2(ActionType.INFECT)
+        assert action.get_action2() == ActionType.INFECT
+        action.set_target([1, 2])
+        assert action.get_target() == [1, 2]
+        action.set_defense_cards([1, 2])
+        assert action.get_defense_cards() == [1, 2]
+        action.set_card_target([1, 2])
+        assert action.get_card_target() == [1, 2]
 
     def test_str(self):
-        """Test string representation."""
-        action = GameAction(ActionType.NOTHING)
-        assert (
-            str(action) == "Action: NOTHING, Target: None, Defense cards: None"
-        )
+        """Test str function."""
 
-        action = GameAction(ActionType.KILL, 1)
-        assert str(action) == "Action: KILL, Target: 1, Defense cards: None"
-
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
+        action = GameAction(action=ActionType.NOTHING)
         assert (
             str(action)
-            == "Action: ASK_DEFENSE, Target: 1, Defense cards: [1, 2]"  # noqa W503
+            == "Action: NOTHING, Action2: None, Target: None, Defense cards: None, Card target: None"
         )
 
-    def test_get_action(self):
-        """Test get_action()."""
-        action = GameAction(ActionType.NOTHING)
-        assert action.get_action() == ActionType.NOTHING
+        action = GameAction(
+            action=ActionType.ASK_DEFENSE, target=[1], defense_cards=[1, 2]
+        )
+        assert (
+            str(action)
+            == "Action: ASK_DEFENSE, Action2: None, Target: [1], Defense cards: [1, 2], Card target: None"
+        )
 
-        action = GameAction(ActionType.KILL, 1)
-        assert action.get_action() == ActionType.KILL
+        action = GameAction(
+            action=ActionType.ASK_EXCHANGE, target=[1, 2], card_target=[1]
+        )
+        assert (
+            str(action)
+            == "Action: ASK_EXCHANGE, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1]"
+        )
 
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
-        assert action.get_action() == ActionType.ASK_DEFENSE
+        action = GameAction(
+            action=ActionType.EXCHANGE, target=[1, 2], card_target=[1, 2]
+        )
+        assert (
+            str(action)
+            == "Action: EXCHANGE, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1, 2]"
+        )
 
-    def test_get_target(self):
-        """Test get_target()."""
-        action = GameAction(ActionType.NOTHING)
-        assert action.get_target() is None
+        action = GameAction(
+            action=ActionType.EXCHANGE,
+            action2=ActionType.INFECT,
+            target=[1, 2, 1],
+            card_target=[1, 2],
+        )
+        assert (
+            str(action)
+            == "Action: EXCHANGE, Action2: INFECT, Target: [1, 2, 1], Defense cards: None, Card target: [1, 2]"
+        )
 
-        action = GameAction(ActionType.KILL, 1)
-        assert action.get_target() == 1
+        action = GameAction(action=ActionType.KILL, target=[1])
+        assert (
+            str(action)
+            == "Action: KILL, Action2: None, Target: [1], Defense cards: None, Card target: None"
+        )
 
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
-        assert action.get_target() == 1
+        action = GameAction(
+            action=ActionType.SHOW, target=[1, 2], card_target=[1]
+        )
+        assert (
+            str(action)
+            == "Action: SHOW, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1]"
+        )
 
-    def test_get_defense_cards(self):
-        """Test get_defense_cards()."""
-        action = GameAction(ActionType.NOTHING)
-        assert action.get_defense_cards() is None
+        action = GameAction(action=ActionType.SHOW_ALL, target=[1, 2])
+        assert (
+            str(action)
+            == "Action: SHOW_ALL, Action2: None, Target: [1, 2], Defense cards: None, Card target: None"
+        )
 
-        action = GameAction(ActionType.KILL, 1)
-        assert action.get_defense_cards() is None
+        action = GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[1])
+        assert (
+            str(action)
+            == "Action: SHOW_ALL_TO_ALL, Action2: None, Target: [1], Defense cards: None, Card target: None"
+        )
 
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
-        assert action.get_defense_cards() == [1, 2]
+        action = GameAction(action=ActionType.REVERSE_ORDER)
+        assert (
+            str(action)
+            == "Action: REVERSE_ORDER, Action2: None, Target: None, Defense cards: None, Card target: None"
+        )
 
-    def test_set_action(self):
-        """Test set_action()."""
-        action = GameAction(ActionType.NOTHING)
-        action.set_action(ActionType.KILL)
-        assert action.get_action() == ActionType.KILL
-
-        action = GameAction(ActionType.KILL, 1)
-        action.set_action(ActionType.NOTHING)
-        assert action.get_action() == ActionType.NOTHING
-
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
-        action.set_action(ActionType.KILL)
-        assert action.get_action() == ActionType.KILL
-
-    def test_set_target(self):
-        """Test set_target()."""
-        action = GameAction(ActionType.NOTHING)
-        action.set_target(1)
-        assert action.get_target() == 1
-
-        action = GameAction(ActionType.KILL, 1)
-        action.set_target(2)
-        assert action.get_target() == 2
-
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
-        action.set_target(2)
-        assert action.get_target() == 2
-
-    def test_set_defense_cards(self):
-        """Test set_defense_cards()."""
-        action = GameAction(ActionType.NOTHING)
-        action.set_defense_cards([1, 2])
-        assert action.get_defense_cards() == [1, 2]
-
-        action = GameAction(ActionType.KILL, 1)
-        action.set_defense_cards([1, 2])
-        assert action.get_defense_cards() == [1, 2]
-
-        action = GameAction(ActionType.ASK_DEFENSE, 1, [1, 2])
-        action.set_defense_cards([3, 4])
-        assert action.get_defense_cards() == [3, 4]
+        action = GameAction(action=ActionType.CHANGE_POSITION, target=[1, 2])
+        assert (
+            str(action)
+            == "Action: CHANGE_POSITION, Action2: None, Target: [1, 2], Defense cards: None, Card target: None"
+        )
