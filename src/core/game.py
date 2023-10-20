@@ -142,11 +142,14 @@ def calculate_next_turn(game_id: int):
         next_player_position += 1
         if next_player_position > len(players):
             next_player_position = 1
-        next_player = Player.select(
-            lambda p: p.round_position == next_player_position
-        ).first()
-        if next_player.alive:
+        next_player = None  # Inicializa a None para evitar errores si no se encuentra el siguiente jugador
+        for player in players:
+            if player.round_position == next_player_position:
+                next_player = player
+                break
+        if next_player is not None and next_player.alive:
             break
+
     game.current_position = next_player_position
     print("Next player is: " + str(next_player_position))
     commit()
@@ -220,7 +223,7 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
-    
+    calculate_next_turn(game_id)
 
     current_turn = Game.get(id=game_id).current_position
 
@@ -230,3 +233,4 @@ def handle_defense(
     }
 
     return response
+  
