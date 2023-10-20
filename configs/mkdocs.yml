@@ -31,6 +31,7 @@ nav:
     - makefile-usage.md
     - run-project.md
   - Game Logic:
+    - card.md
     - deck.md
     - effects.md
     - game_utility.md
