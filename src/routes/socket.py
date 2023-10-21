@@ -3,6 +3,7 @@ from core.connections import ConnectionManager
 from core.game import handle_defense
 from core.game import handle_play
 from core.game import try_defense
+from core.game import draw_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -136,7 +137,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
 
-                            case "defense":
+                            case "defense": 
 
                                 response, draw_response = handle_defense(
                                         room_id,
@@ -147,7 +148,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     )
                                 await connection_manager.broadcast(
                                     room_id, response
-                                )
+                                )           
+
+                                if draw_response is not None:
+                                    await connection_manager.send_to_user_id(data["target_player"], draw_response)
+
 
                                 await connection_manager.send_to_user_id(data["target_player"], draw_response)
 

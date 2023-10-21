@@ -207,6 +207,9 @@ def handle_defense(
     last_card_played_id: int,
     attacker_id: int
 ):
+    
+    draw_response = None
+    response = None
 
     if card_type_id == 0:
         try:
@@ -229,29 +232,30 @@ def handle_defense(
             id2 = gu.discard(game_id, card_type_id, defense_player_id)
             game.current_phase="Draw"
             commit()
-            id3 = gu.draw(game_id, defense_player_id)
-            card = Card.get(id=id3)
+            draw_response, cardType = draw_card(game_id, defense_player_id)
             response = {
                 "type" : "defense",
-                "played_defense": card.idtype,
+                "played_defense": cardType,
                 "target_player": defense_player_id,
                 "last_played_card": last_card_played_id
             }
-
-            draw_response = {
-                "type":"draw",
-                "new_card": card.idtype
-            }
-
-            calculate_next_turn(game_id)
-
-            return response, draw_response
-
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
-    calculate_next_turn(game_id)
+        calculate_next_turn(game_id)
 
-    return response
+        return response, draw_response
 
   
+@db_session
+def draw_card(game_id: int, player_id: int):
+    id3 = gu.draw(game_id, player_id)
+    card = Card.get(id=id3)
+    cardType = card.idtype
+
+    draw_response = {
+                    "type":"draw",
+                    "new_card": card.idtype
+                  }
+    
+    return draw_response, cardType
