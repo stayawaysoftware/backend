@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
 from models.room import Room
+from models.game import Card
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
@@ -73,26 +74,29 @@ def play_card(
     current_player_id: int,
     target_player_id: Optional[int] = None,
 ):
-    game = Game.get(id=game_id)
-    game.current_phase = "Play"
-    commit()
-    current_player = Player.get(id=current_player_id)
-    effect = gu.play(
-        id_game=game_id,
-        id_player=current_player_id,
-        idtype_card=card_idtype,
-        target=target_player_id,
-        first_play=False
-    )
-    game.current_phase = "Discard"
-    commit()
-    gu.discard(
-        id_game=game_id, idtype_card=card_idtype, id_player=current_player.id
-    )
-    if str(effect.get_action()) == "Kill":
-        target_player = Player.get(id=target_player_id)
-        target_player.alive = False
+    try:
+        game = Game.get(id=game_id)
+        game.current_phase = "Play"
         commit()
+        current_player = Player.get(id=current_player_id)
+        effect = gu.play(
+            id_game=game_id,
+            id_player=current_player_id,
+            idtype_card=card_idtype,
+            target=target_player_id,
+            first_play=False
+        )
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(
+            id_game=game_id, idtype_card=card_idtype, id_player=current_player.id
+        )
+        if str(effect.get_action()) == "Kill":
+            target_player = Player.get(id=target_player_id)
+            target_player.alive = False
+            commit()
+    except ValueError as e:
+        print("ERROR:", str(e))
 
 
 @db_session
@@ -204,29 +208,50 @@ def handle_defense(
     attacker_id: int
 ):
 
-    if card_type_id is None:
-        play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
+    if card_type_id == 0:
+        try:
+            play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
+        except ValueError as e:
+            print("ERROR:", str(e))
+        response = {
+            "type" : "defense",
+            "played_defense": 0,
+            "target_player": defense_player_id,
+            "last_played_card": last_card_played_id
+        }
+
     else:
         game = Game.get(id=game_id)
         try:
             game.current_phase = "Discard"
             commit()
-            id = gu.discard(game_id, last_card_played_id, attacker_id)
-            id = gu.discard(game_id, card_type_id, defense_player_id)
+            id1 = gu.discard(game_id, last_card_played_id, attacker_id)
+            id2 = gu.discard(game_id, card_type_id, defense_player_id)
             game.current_phase="Draw"
             commit()
-            id = gu.draw(game_id, defense_player_id)
+            id3 = gu.draw(game_id, defense_player_id)
+            card = Card.get(id=id3)
+            response = {
+                "type" : "defense",
+                "played_defense": card.idtype,
+                "target_player": defense_player_id,
+                "last_played_card": last_card_played_id
+            }
+
+            draw_response = {
+                "type":"draw",
+                "new_card": card.idtype
+            }
+
+            calculate_next_turn(game_id)
+
+            return response, draw_response
+
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
     calculate_next_turn(game_id)
 
-    current_turn = Game.get(id=game_id).current_position
-
-    response = {
-        "type": "new_turn",
-         "current_turn":current_turn
-    }
-
     return response
+
   

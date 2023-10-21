@@ -138,7 +138,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
                             case "defense":
 
-                                response = handle_defense(
+                                response, draw_response = handle_defense(
                                         room_id,
                                         data["played_defense"],
                                         data["target_player"],
@@ -148,11 +148,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
+
+                                await connection_manager.send_to_user_id(data["target_player"], draw_response)
+
                                 await connection_manager.broadcast(
-                                room_id,
-                                GameMessage.create(
+                                    room_id,
+                                    GameMessage.create(
                                         "game_info", room_id
-                                    )
+                                    ),
                                 )
                                 
 
