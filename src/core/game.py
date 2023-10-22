@@ -15,6 +15,7 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
+from schemas.card import CardOut
 
 connection_manager = ConnectionManager()
 
@@ -174,12 +175,14 @@ def delete_game(game_id: int):
 
 
 def handle_play(
-    card_type_id: int,
+    card_id: int,
     target_player_id: int,
 ):
+    card = Card.get(id=card_id)
+    card = CardOut.from_card(card)
     response = {
         "type": "play",
-        "played_card": card_type_id,
+        "played_card": card.dict(by_alias=True, exclude_unset=True),
         "card_target": target_player_id,
     }
     return response
@@ -190,10 +193,12 @@ def try_defense(played_card: int, card_target: int):
     with db_session:
         player = Player.get(id=card_target)
         player = PlayerOut.json(player)
+        card = Card.get(id=played_card)
+        card = CardOut.from_card(card)
         res = {
             "type": "try_defense",
             "target_player": card_target,
-            "played_card": played_card,
+            "played_card": card.dict(by_alias=True, exclude_unset=True),
             "defended_by": player["hand"]
         }
     return res
@@ -203,13 +208,17 @@ def try_defense(played_card: int, card_target: int):
 def handle_defense(
     game_id: int,
     card_type_id: int,
-    defense_player_id: int,
+    attacker_id: int,
     last_card_played_id: int,
-    attacker_id: int
+    defense_player_id: int
 ):
     
     draw_response = None
     response = None
+    defense_card = Card.get(id=card_type_id)
+    defense_card = CardOut.from_card(defense_card)
+    attack_card = Card.get(id=last_card_played_id)
+    attack_card = CardOut.from_card(attack_card)
 
     if card_type_id == 0:
         try:
@@ -220,7 +229,7 @@ def handle_defense(
             "type" : "defense",
             "played_defense": 0,
             "target_player": defense_player_id,
-            "last_played_card": last_card_played_id
+            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
         }
 
     else:
@@ -232,12 +241,12 @@ def handle_defense(
             id2 = gu.discard(game_id, card_type_id, defense_player_id)
             game.current_phase="Draw"
             commit()
-            draw_response, cardType = draw_card(game_id, defense_player_id)
+            draw_response = draw_card(game_id, defense_player_id)
             response = {
                 "type" : "defense",
-                "played_defense": cardType,
+                "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
                 "target_player": defense_player_id,
-                "last_played_card": last_card_played_id
+                "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
             }
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
@@ -251,11 +260,12 @@ def handle_defense(
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
     card = Card.get(id=id3)
-    cardType = card.idtype
+    card = CardOut.from_card(card)
+
 
     draw_response = {
                     "type":"draw",
-                    "new_card": card.idtype
+                    "new_card": card.dict(by_alias=True, exclude_unset=True)
                   }
     
-    return draw_response, cardType
+    return draw_response

@@ -153,7 +153,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 if draw_response is not None:
                                     await connection_manager.send_to_user_id(data["target_player"], draw_response)
 
-
                                 await connection_manager.send_to_user_id(data["target_player"], draw_response)
 
                                 await connection_manager.broadcast(
@@ -163,7 +162,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     ),
                                 )
                                 
-
                             case "game_status":
                                 await connection_manager.broadcast(
                                     room_id,
@@ -171,6 +169,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         "game_info", room_id
                                     ),
                                 )
+
                             case _:
                                 await connection_manager.send_to(
                                     websocket,
