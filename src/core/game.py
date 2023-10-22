@@ -252,7 +252,7 @@ def handle_defense(
 
         calculate_next_turn(game_id)
 
-        return response, draw_response
+        return response
 
   
 @db_session
