@@ -188,8 +188,8 @@ def handle_play(
 @db_session
 def try_defense(played_card: int, card_target: int):
     with db_session:
-        if card_target.id == 0:
-            card_target = None
+        if card_target == 0:
+            print("No se puede defender")
         else:
             player = Player.get(id=card_target)
             player = PlayerOut.json(player)
