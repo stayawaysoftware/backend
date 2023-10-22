@@ -468,3 +468,48 @@ class TestGameUtilityPhases:
 
         with pytest.raises(ValueError):
             play(id_game=1, id_player=1, idtype_card=Card[0].idtype, target=13)
+
+    @db_session
+    def test_play_with_invalid_card_type_before(self):
+        """Test play function with invalid card_type_before."""
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card[0])
+
+        with pytest.raises(ValueError):
+            play(
+                id_game=1,
+                id_player=1,
+                idtype_card=Card[0].idtype,
+                idtype_card_before=100,
+                target=2,
+            )
+
+    @db_session
+    def test_play_with_invalid_card_chosen_by_player(self):
+        """Test play function with invalid card_chosen_by_player."""
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card[0])
+
+        with pytest.raises(ValueError):
+            play(
+                id_game=1,
+                id_player=1,
+                idtype_card=Card[0].idtype,
+                card_chosen_by_player=100,
+                target=2,
+            )
+
+    @db_session
+    def test_play_with_invalid_card_chosen_by_target(self):
+        """Test play function with invalid card_chosen_by_target."""
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card[0])
+
+        with pytest.raises(ValueError):
+            play(
+                id_game=1,
+                id_player=1,
+                idtype_card=Card[0].idtype,
+                card_chosen_by_target=100,
+                target=2,
+            )

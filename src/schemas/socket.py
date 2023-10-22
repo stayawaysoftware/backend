@@ -1,20 +1,18 @@
 from enum import Enum
 
+import schemas.validators as validators
+from models.game import Game
 from models.room import Room
 from models.room import User
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
-
-from models.game import Game
 from schemas.game import GameInfo
 
 from .room import RoomId
 from .room import RoomInfo
 from .room import UsersInfo
-import schemas.validators
-
 
 # ======================= Auxiliar Enums =======================
 
@@ -33,6 +31,9 @@ class RoomEventTypes(Enum):
 
 class GameEventTypes(str, Enum):
     start = "start"
+    play = "play"
+    game_status = "game_status"
+    defense = "defense"
     end = "end"
 
     @classmethod
@@ -132,6 +133,7 @@ class RoomMessage(BaseModel):
                         "users": UsersInfo.get_users_info(room),
                     },
                 }
+
 
 class GameMessage(BaseModel):
     model_config = ConfigDict(title="GameMessage")

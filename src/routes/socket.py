@@ -1,17 +1,19 @@
 import core.room as rooms
 from core.connections import ConnectionManager
+from core.game import handle_defense
+from core.game import handle_play
+from core.game import try_defense
+from core.game import draw_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from pony.orm import db_session
 from pydantic import ValidationError
-from core.game import handle_play, try_defense
-from core.game import handle_defense
-from schemas.socket  import GameMessage
 from schemas.room import RoomEventValidator
 from schemas.socket import ChatMessage
 from schemas.socket import ErrorMessage
 from schemas.socket import GameEventTypes
+from schemas.socket import GameMessage
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
 
@@ -68,10 +70,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     ),
                                 )
                                 await connection_manager.broadcast(
-                                        room_id,
-                                        GameMessage.create(
-                                            "game_info", room_id
-                                        ),
+                                    room_id,
+                                    GameMessage.create("game_info", room_id),
                                 )
                             except ValidationError as error:
                                 await connection_manager.send_to(
@@ -118,39 +118,66 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
-                        try:
-                            match data["type"]:
-                                case "play":
-                                    response = handle_play(
-                                        data["played_card"],
-                                        data["card_target"],
-                                    )
-                                    await connection_manager.broadcast(room_id, response)
-                                    res = try_defense(data["played_card"], data["card_target"])
-                                    await connection_manager.broadcast(room_id,res)
+                    try:
+                        match data["type"]:
+                            case "play":
+                                response = handle_play(
+                                    data["played_card"],
+                                    data["card_target"],
+                                )
+                                await connection_manager.broadcast(
+                                    room_id, response
+                                )
 
-                                case "defense":
-                                    await handle_defense(
+                                defense_response = try_defense(
+                                    data["played_card"], data["card_target"]
+                                )
+                                await connection_manager.broadcast(
+                                    room_id, defense_response
+                                )
+
+
+                            case "defense": 
+
+                                response, draw_response = handle_defense(
                                         room_id,
-                                        data["card_type_id"],
-                                        user_id,
-                                        data["last_card_played_id"],
-                                        data["attacker_id"],
+                                        data["played_defense"],
+                                        data["target_player"],
+                                        data["last_played_card"],
+                                        user_id
                                     )
-                                    await connection_manager.broadcast(
-                                        room_id,
-                                        GameMessage.create(
-                                            "game_info", room_id
+                                await connection_manager.broadcast(
+                                    room_id, response
+                                )           
+
+                                if draw_response is not None:
+                                    await connection_manager.send_to_user_id(data["target_player"], draw_response)
+
+                                await connection_manager.send_to_user_id(data["target_player"], draw_response)
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create(
+                                        "game_info", room_id
+                                    ),
+                                )
+                                
+                            case "game_status":
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create(
+                                        "game_info", room_id
+                                    ),
+                                )
+
+                            case _:
+                                await connection_manager.send_to(
+                                    websocket,
+                                    ErrorMessage.create(
+                                        "DEBUGGING: Invalid game event"
                                         ),
                                     )
-                                case _:
-                                    await connection_manager.send_to(
-                                        websocket,
-                                        ErrorMessage.create(
-                                            "DEBUGGING: Invalid game event"
-                                        ),
-                                    )
-                        except ValidationError as error:
+                    except ValidationError as error:
                             await connection_manager.send_to(
                                 websocket,
                                 ErrorMessage.create(str(error)),
@@ -161,6 +188,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                 await connection_manager.send_to(
                     websocket, ErrorMessage.create("DEBUGGING: Invalid format")
                 )
+            except RuntimeError:
+                break
 
     except WebSocketDisconnect:
-        connection_manager.disconnect(websocket, room_id, user_id)
+        await connection_manager.disconnect(websocket, room_id, user_id)
