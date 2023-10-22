@@ -81,6 +81,8 @@ def play_card(
         game.current_phase = "Play"
         commit()
         current_player = Player.get(id=current_player_id)
+        if target_player_id == 0:
+            target_player_id = None
         effect = effect_handler(game_id,card_idtype,current_player_id,target_player_id)
         game.current_phase = "Discard"
         commit()
@@ -186,10 +188,13 @@ def handle_play(
 @db_session
 def try_defense(played_card: int, card_target: int):
     with db_session:
-        player = Player.get(id=card_target)
-        player = PlayerOut.json(player)
-        card = Card.get(id=played_card)
-        card = CardOut.from_card(card)
+        if card_target.id == 0:
+            card_target = None
+        else:
+            player = Player.get(id=card_target)
+            player = PlayerOut.json(player)
+            card = Card.get(id=played_card)
+            card = CardOut.from_card(card)
         res = {
             "type": "try_defense",
             "target_player": card_target,
@@ -250,9 +255,9 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
-        calculate_next_turn(game_id)
+    calculate_next_turn(game_id)
 
-        return response
+    return response
 
   
 @db_session
