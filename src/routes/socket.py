@@ -138,13 +138,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
 
                             case "defense": 
-
                                 response, draw_response = handle_defense(
-                                        room_id,
-                                        data["played_defense"],
-                                        data["target_player"],
-                                        data["last_played_card"],
-                                        user_id
+                                        game_id=room_id,
+                                        card_type_id=data["played_defense"],
+                                        defense_player_id=data["target_player"],
+                                        last_card_played_id=data["last_played_card"],
+                                        attacker_id=user_id
                                     )
                                 await connection_manager.broadcast(
                                     room_id, response
