@@ -319,7 +319,7 @@ def seduccion_effect(target_id: int, user_id: int):
 @db_session
 def sospecha_effect(target_id: int, user_id: int):
     #TODO: Mirar una carta aleatoria de un jugador adyacente
-    pass
+    print("SOSPECHA")
 
 @db_session
 def whisky_effect(user_id: int):
