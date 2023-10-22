@@ -193,6 +193,7 @@ def try_defense(played_card: int, card_target: int):
         else:
             player = Player.get(id=card_target)
             player = PlayerOut.json(player)
+
             card = Card.get(id=played_card)
             card = CardOut.from_card(card)
         res = {

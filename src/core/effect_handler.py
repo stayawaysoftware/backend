@@ -1,4 +1,4 @@
-from core.game import *
+import core.game as ga 
 
 def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
     match id_card_type:
@@ -9,32 +9,32 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
         case 2:  # Infected
             raise ValueError("You can't play Infected card.")
         case 3:  # Flamethrower
-            flamethower_effect(target)
+            ga.flamethower_effect(target)
             return None
         case 4:  # Analysis
-            return analisis_effect(target)
+            return ga.analisis_effect(target)
         case 5:  # Axe
             print("Axe")
             return None
         case 6:  # Suspicion
-            sospecha_effect(target, attacker)
+            ga.sospecha_effect(target, attacker)
             return None
         case 7:  # Determination
             print("Determination")
             return None
         case 8:  # Whisky
-            return whisky_effect(attacker)
+            return ga.whisky_effect(attacker)
         case 9:  # Change of position
-            cambio_de_lugar_effect(target, attacker)
+            ga.cambio_de_lugar_effect(target, attacker)
             return None
         case 10:  # Watch your back
-            vigila_tus_espaldas_effect(id_game)
+            ga.vigila_tus_espaldas_effect(id_game)
             return None
         case 11:  # Seduction
-            seduccion_effect(target, attacker)
+            ga.seduccion_effect(target, attacker)
             return None
         case 12:  # You better run
-            mas_vale_que_corras_effect(target, attacker)
+            ga.mas_vale_que_corras_effect(target, attacker)
             return None
         case 13:  # I'm fine here
             print("I'm fine here")
