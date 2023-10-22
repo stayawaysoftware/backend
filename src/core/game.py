@@ -83,16 +83,16 @@ def play_card(
         current_player = Player.get(id=current_player_id)
         if target_player_id == 0:
             target_player_id = None
+        print("Llego al handler")
+        
         effect = effect_handler(game_id,card_idtype,current_player_id,target_player_id)
+        print("effect")
+        print("Sale del handler")
         game.current_phase = "Discard"
         commit()
         gu.discard(
             id_game=game_id, idtype_card=card_idtype, id_player=current_player.id
         )
-        if str(effect.get_action()) == "Kill":
-            target_player = Player.get(id=target_player_id)
-            target_player.alive = False
-            commit()
     except ValueError as e:
         print("ERROR:", str(e))
 
@@ -194,13 +194,13 @@ def try_defense(played_card: int, card_target: int):
             player = Player.get(id=card_target)
             player = PlayerOut.json(player)
 
-            card = Card.get(id=played_card)
-            card = CardOut.from_card(card)
+        card = Card.get(id=played_card)
+        card = CardOut.from_card(card)
         res = {
             "type": "try_defense",
             "target_player": card_target,
             "played_card": card.dict(by_alias=True, exclude_unset=True),
-            "defended_by": player["hand"]
+            "defended_by": [card.idtype]
         }
     return res
 
@@ -213,8 +213,7 @@ def handle_defense(
     attacker_id: int,
     last_card_played_id: int,
     defense_player_id: int
-):
-    
+):    
     draw_response = None
     response = None
     defense_card = Card.get(id=card_type_id)
@@ -223,9 +222,13 @@ def handle_defense(
     attack_card = CardOut.from_card(attack_card)
 
     if card_type_id == 0:
+        print("Entro")
         try:
             at = Card.get(id=last_card_played_id)
+            print("Entro2")
+            print(at.idtype)
             play_card(game_id, at.idtype, attacker_id, defense_player_id)
+            print("Entro3")
         except ValueError as e:
             print("ERROR:", str(e))
         response = {
@@ -255,8 +258,10 @@ def handle_defense(
             }
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
-
+    game = Game.get(id=game_id)
     calculate_next_turn(game_id)
+    next_player = Player.select(game.current_position == Player.round_position).first()
+    gu.draw(game_id, next_player.id)
 
     return response
 
