@@ -6,6 +6,7 @@ import core.room as Iroom
 from core.connections import ConnectionManager
 from core.player import create_player
 from core.player import dealing_cards
+from core.effect_handler import effect_handler
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
@@ -80,13 +81,7 @@ def play_card(
         game.current_phase = "Play"
         commit()
         current_player = Player.get(id=current_player_id)
-        effect = gu.play(
-            id_game=game_id,
-            id_player=current_player_id,
-            idtype_card=card_idtype,
-            target=target_player_id,
-            first_play=False
-        )
+        effect = effect_handler(game_id,card_idtype,current_player_id,target_player_id)
         game.current_phase = "Discard"
         commit()
         gu.discard(
