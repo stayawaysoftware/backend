@@ -18,8 +18,8 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket, room_id: int, user_id: int):
         # Check if the user is already in a room
-        if user_id in self.user_rooms:
-            await websocket.close()
+        #if user_id in self.user_rooms:
+        #    await websocket.close()
 
         await websocket.accept()
         if room_id not in self.active_connections:
