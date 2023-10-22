@@ -4,6 +4,7 @@ from typing import Optional
 import core.game_utility as gu
 import core.room as Iroom
 from core.connections import ConnectionManager
+from core.card_creation import card_defense
 from core.player import create_player
 from core.player import dealing_cards
 from fastapi import HTTPException
@@ -16,6 +17,7 @@ from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
 from schemas.card import CardOut
+
 
 connection_manager = ConnectionManager()
 
@@ -191,15 +193,14 @@ def handle_play(
 @db_session
 def try_defense(played_card: int, card_target: int):
     with db_session:
-        player = Player.get(id=card_target)
-        player = PlayerOut.json(player)
         card = Card.get(id=played_card)
         card = CardOut.from_card(card)
+        defended_by = card_defense(card.idtype)
         res = {
             "type": "try_defense",
             "target_player": card_target,
             "played_card": card.dict(by_alias=True, exclude_unset=True),
-            "defended_by": player["hand"]
+            "defended_by": defended_by
         }
     return res
 
