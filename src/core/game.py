@@ -222,7 +222,8 @@ def handle_defense(
 
     if card_type_id == 0:
         try:
-            play_card(game_id, last_card_played_id, attacker_id, defense_player_id)
+            at = Card.get(id=last_card_played_id)
+            play_card(game_id, at.idtype, attacker_id, defense_player_id)
         except ValueError as e:
             print("ERROR:", str(e))
         response = {
@@ -234,11 +235,13 @@ def handle_defense(
 
     else:
         game = Game.get(id=game_id)
+        at = Card.get(id=last_card_played_id)
+        de = Card.get(id=card_type_id)
         try:
             game.current_phase = "Discard"
             commit()
-            id1 = gu.discard(game_id, last_card_played_id, attacker_id)
-            id2 = gu.discard(game_id, card_type_id, defense_player_id)
+            id1 = gu.discard(game_id, at.idtype, attacker_id)
+            id2 = gu.discard(game_id, de.idtype, defense_player_id)
             game.current_phase="Draw"
             commit()
             draw_response = draw_card(game_id, defense_player_id)
