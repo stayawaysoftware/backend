@@ -309,6 +309,7 @@ def handle_exchange_defense(
     chosen_card: int,
     is_defense: bool
 ):
+    game = Game.get(id=game_id)
     if is_defense:
         game.current_phase = "Discard"
         commit()
@@ -318,7 +319,6 @@ def handle_exchange_defense(
         gu.draw(game_id, current_player_id)
     else:
        effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
-    game = Game.get(id=game_id)
     calculate_next_turn(game_id)
     next_player = Player.select(
         lambda p: p.round_position == game.current_position
