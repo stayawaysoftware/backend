@@ -574,6 +574,77 @@ class TestNoBarbacuesEffect:
 # ============================ EXCHANGE EFFECT ============================
 
 
+class TestExchangeEffectFIRSTPLAY:
+    """Tests for exchange effect."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+        create_all_cards()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    def init_db(self):
+        """Init DB."""
+        with db_session:
+            Deck(id=1)
+            Game(id=1, deck=Deck[1], current_phase="Play")
+            Player(
+                id=1,
+                game=Game[1],
+                alive=True,
+                round_position=1,
+                name="Player 1",
+            )
+            Player(
+                id=2,
+                game=Game[1],
+                alive=True,
+                round_position=2,
+                name="Player 2",
+            )
+            commit()
+
+    def end_db(self):
+        """End DB."""
+        with db_session:
+            Game[1].delete()
+            Deck[1].delete()
+            Player[1].delete()
+            Player[2].delete()
+            commit()
+
+    @db_session
+    def test_exchange_effect_ask_defense(self):
+        """Test exchange effect ask defense."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+
+        assert str(
+            do_effect(
+                id_game=1,
+                id_player=1,
+                id_card_type=32,
+                target=2,
+                card_chosen_by_player=3,
+            )
+        ) == str(
+            GameAction(
+                action=ActionType.ASK_DEFENSE,
+                target=[2],
+                defense_cards=[14, 15, 16],
+            )
+        )
+
+        self.end_db()
+
+
 class TestExchangeREALEFFECT:
     """Tests for exchange effect."""
 
