@@ -80,7 +80,7 @@ def do_effect(
             else:
                 return change_of_position_effect(id_game, id_player, target)
         case 13:  # I'm fine here
-            return nothing_effect(id_game)
+            return im_fine_here_effect(id_game)
         case 14:  # Terrifying
             return terrifying_effect(
                 id_game, id_player, target, card_chosen_by_target
@@ -542,3 +542,14 @@ def change_of_position_effect(
         return GameAction(
             action=ActionType.CHANGE_POSITION, target=[target, player]
         )
+
+
+def im_fine_here_effect(id_game: int) -> GameAction:
+    """I'm fine here effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+
+        return nothing_effect(id_game)
