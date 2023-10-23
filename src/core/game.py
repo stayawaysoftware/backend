@@ -4,6 +4,7 @@ from typing import Optional
 import core.game_utility as gu
 import core.room as Iroom
 from core.connections import ConnectionManager
+from core.card_creation import card_defense
 from core.player import create_player
 from core.player import dealing_cards
 from core.effect_handler import effect_handler
@@ -17,6 +18,7 @@ from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
 from schemas.card import CardOut
+
 
 connection_manager = ConnectionManager()
 
@@ -196,11 +198,12 @@ def try_defense(played_card: int, card_target: int):
 
         card = Card.get(id=played_card)
         card = CardOut.from_card(card)
+        defended_by = card_defense[card.idtype]
         res = {
             "type": "try_defense",
             "target_player": card_target,
             "played_card": card.dict(by_alias=True, exclude_unset=True),
-            "defended_by": [card.idtype]
+            "defended_by": defended_by
         }
     return res
 
@@ -284,7 +287,9 @@ def draw_card(game_id: int, player_id: int):
                     "new_card": card.dict(by_alias=True, exclude_unset=True)
                   }
     
-    return draw_response@db_session
+    return draw_response
+
+@db_session
 def analisis_effect(adyacent_id: int):
     #TODO: Revisar que sea adyacente
     adyacent_player  = Player.get(id=adyacent_id)
