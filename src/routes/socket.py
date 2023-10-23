@@ -174,6 +174,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
+                                    exchange_requester=data["exchange_requester_id"],
                                     last_chosen_card=data["last_chose"],
                                     chosen_card=data["chosen_card"],
                                     is_defense=data["is_defense"]
