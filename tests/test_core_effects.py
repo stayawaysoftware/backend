@@ -3006,3 +3006,310 @@ class TestNoThanksEffect:
         ) == str(GameAction(action=ActionType.NOTHING))
 
         self.end_db()
+
+
+# YOU FAILED
+
+
+class TestYouFailedEffect:
+    """Test You Failed effect."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+        create_all_cards()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    def init_db(self):
+        """Init DB."""
+        with db_session:
+            Deck(id=1)
+            Game(id=1, deck=Deck[1], current_phase="Play")
+            Player(
+                id=1,
+                game=Game[1],
+                alive=True,
+                round_position=1,
+                name="Player 1",
+            )
+            Player(
+                id=2,
+                game=Game[1],
+                alive=True,
+                round_position=2,
+                name="Player 2",
+            )
+            commit()
+
+    def end_db(self):
+        """End DB."""
+        with db_session:
+            Game[1].delete()
+            Deck[1].delete()
+            Player[1].delete()
+            Player[2].delete()
+            commit()
+
+    @db_session
+    def test_you_failed_effect(self):
+        """Test You Failed effect."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=3).first())
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+        assert str(
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=1,
+                card_chosen_by_target=3,
+            )
+        ) == str(
+            GameAction(
+                action=ActionType.ASK_EXCHANGE, target=[1, 2], card_target=[3]
+            )
+        )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_with_invalid_phase(self):
+        """Test You Failed effect with invalid phase."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=3).first())
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=1,
+                card_chosen_by_target=3,
+            )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_without_target(self):
+        """Test You Failed effect without target."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=16,
+                id_card_type_before=11,
+                card_chosen_by_target=3,
+            )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_with_invalid_target(self):
+        """Test You Failed effect with invalid target."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+        Game[1].current_phase = "Defense"
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=31,
+                card_chosen_by_target=3,
+            )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_with_dead_target(self):
+        """Test You Failed effect with dead target."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+        Player[1].alive = False
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=1,
+                card_chosen_by_target=3,
+            )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_with_invalid_player(self):
+        """Test You Failed effect with invalid player."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=31,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=1,
+                card_chosen_by_target=3,
+            )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_with_player_as_target(self):
+        """Test You Failed effect with player as target."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=1,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=1,
+                card_chosen_by_target=3,
+            )
+
+        self.end_db()
+
+    @db_session
+    def test_you_failed_effect_without_target_card(self):
+        """Test You Failed effect without target card."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        Player[2].hand.add(Card.select(idtype=16).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+
+        with pytest.raises(ValueError):
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=16,
+                id_card_type_before=11,
+                target=1,
+            )
+
+        self.end_db()
