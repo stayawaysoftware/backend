@@ -358,10 +358,10 @@ def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_c
     user = Player.get(id=user_id)
     target_card = Card.get(id=target_chosen_card)
     user_card = Card.get(id=user_chosen_card)
-    unrelate_card_with_player(target_card, target.id)
-    unrelate_card_with_player(user_card, user.id)
-    relate_card_with_player(target_card, user.id)
-    relate_card_with_player(user_card, target.id)
+    unrelate_card_with_player(target_card.id target.id)
+    unrelate_card_with_player(user_card.id, user.id)
+    relate_card_with_player(target_card.id, user.id)
+    relate_card_with_player(user_card.id, target.id)
     commit()
 
 
