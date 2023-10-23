@@ -3,6 +3,7 @@ from core.connections import ConnectionManager
 from core.game import handle_defense
 from core.game import handle_play
 from core.game import try_defense
+from core.game import handle_exchange
 from core.game import draw_card
 from fastapi import APIRouter
 from fastapi import WebSocket
@@ -158,11 +159,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "exchange":
-                                exchange_res ={
-                                    "type":"exchange",
-                                    "chosen_card":data["chosen_card"],
-                                    "target": data["target"]
-                                }
+                                exchange_res = handle_exchange(
+                                    data["chosen_card"],
+                                    data["target_player"]
+                                )
 
                                 await connection_manager.broadcast(
                                     room_id, exchange_res

@@ -290,6 +290,21 @@ def draw_card(game_id: int, player_id: int):
     return draw_response
 
 @db_session
+def handle_exchange(
+    chosen_card: int,
+    target_player: int
+):
+    exchange_defense = card_defense[32]
+    exchange_response = {
+        "type": "exchange_defense",
+        "defended_by": exchange_defense,
+        "chosen_card": chosen_card,
+        "target_player": target_player
+    }
+    return exchange_response
+
+
+@db_session
 def analisis_effect(adyacent_id: int):
     #TODO: Revisar que sea adyacente
     adyacent_player  = Player.get(id=adyacent_id)
