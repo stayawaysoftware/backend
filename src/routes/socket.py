@@ -3,6 +3,7 @@ from core.connections import ConnectionManager
 from core.game import handle_defense
 from core.game import handle_play
 from core.game import try_defense
+from core.game import draw_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -127,28 +128,36 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
-                                res = try_defense(
+
+                                defense_response = try_defense(
                                     data["played_card"], data["card_target"]
                                 )
                                 await connection_manager.broadcast(
-                                    room_id, res
+                                    room_id, defense_response
                                 )
 
-                            case "defense":
-                                await handle_defense(
-                                room_id,
-                                data["card_type_id"],
-                                user_id,
-                                data["last_card_played_id"],
-                                data["attacker_id"],
-                               )
+
+                            case "defense": 
+                                print("LLego")
+                                response = handle_defense(
+                                        game_id=room_id,
+                                        card_type_id=data["played_defense"],
+                                        attacker_id=data["target_player"],
+                                        last_card_played_id=data["last_played_card"],
+                                        defense_player_id=user_id
+                                    )
+                                print(response)
                                 await connection_manager.broadcast(
-                                room_id,
-                                GameMessage.create(
+                                    room_id, response
+                                )           
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create(
                                         "game_info", room_id
                                     ),
                                 )
-
+                                
                             case "game_status":
                                 await connection_manager.broadcast(
                                     room_id,
@@ -156,6 +165,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         "game_info", room_id
                                     ),
                                 )
+
                             case _:
                                 await connection_manager.send_to(
                                     websocket,
