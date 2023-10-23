@@ -294,7 +294,7 @@ def handle_exchange(
     exchange_response = {
         "type": "exchange_defense",
         "defended_by": exchange_defense,
-        "chosen_card": card.dict(by_alias=True, exclude_unset=True),
+        "last_chosen_card": card.dict(by_alias=True, exclude_unset=True),
         "target_player": target_player,
         "exchange_requester" : exchange_requester
     }
