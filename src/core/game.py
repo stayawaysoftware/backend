@@ -4,8 +4,10 @@ from typing import Optional
 import core.game_utility as gu
 import core.room as Iroom
 from core.connections import ConnectionManager
+from core.card_creation import card_defense
 from core.player import create_player
 from core.player import dealing_cards
+from core.effect_handler import effect_handler
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
@@ -16,6 +18,7 @@ from pony.orm import db_session
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
 from schemas.card import CardOut
+
 
 connection_manager = ConnectionManager()
 
@@ -80,22 +83,18 @@ def play_card(
         game.current_phase = "Play"
         commit()
         current_player = Player.get(id=current_player_id)
-        effect = gu.play(
-            id_game=game_id,
-            id_player=current_player_id,
-            idtype_card=card_idtype,
-            target=target_player_id,
-            first_play=False
-        )
+        if target_player_id == 0:
+            target_player_id = None
+        print("Llego al handler")
+        
+        effect = effect_handler(game_id,card_idtype,current_player_id,target_player_id)
+        print("effect")
+        print("Sale del handler")
         game.current_phase = "Discard"
         commit()
         gu.discard(
             id_game=game_id, idtype_card=card_idtype, id_player=current_player.id
         )
-        if str(effect.get_action()) == "Kill":
-            target_player = Player.get(id=target_player_id)
-            target_player.alive = False
-            commit()
     except ValueError as e:
         print("ERROR:", str(e))
 
@@ -191,17 +190,23 @@ def handle_play(
 @db_session
 def try_defense(played_card: int, card_target: int):
     with db_session:
-        player = Player.get(id=card_target)
-        player = PlayerOut.json(player)
+        if card_target == 0:
+            print("No se puede defender")
+        else:
+            player = Player.get(id=card_target)
+            player = PlayerOut.json(player)
+
         card = Card.get(id=played_card)
         card = CardOut.from_card(card)
+        defended_by = card_defense[card.idtype]
         res = {
             "type": "try_defense",
             "target_player": card_target,
             "played_card": card.dict(by_alias=True, exclude_unset=True),
-            "defended_by": player["hand"]
+            "defended_by": defended_by
         }
     return res
+
 
 
 @db_session
@@ -254,9 +259,20 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
-        calculate_next_turn(game_id)
-
-        return response, draw_response
+    print ("DRAW RESPONSE")
+    game = Game.get(id=game_id)
+    calculate_next_turn(game_id)
+    next_player = Player.select(
+        lambda p: p.round_position == game.current_position
+    ).first()
+    game.current_phase = "Draw"
+    commit()
+    try:
+         gu.draw(game_id, next_player.id)
+    except ValueError as e:
+            print("ERROR:", str(e))
+        
+    return response
 
   
 @db_session
@@ -272,3 +288,68 @@ def draw_card(game_id: int, player_id: int):
                   }
     
     return draw_response
+
+@db_session
+def analisis_effect(adyacent_id: int):
+    #TODO: Revisar que sea adyacente
+    adyacent_player  = Player.get(id=adyacent_id)
+    adyacent_player = PlayerOut.json(adyacent_player)
+    cards = adyacent_player["hand"]
+    response = {
+        "type": "analisis_effect",
+        "hand": cards
+    }
+    return response
+
+@db_session
+def vigila_tus_espaldas_effect(game_id: int):
+    game = Game.get(id=game_id)
+    game.round_left_direction = not game.round_left_direction
+    commit()
+
+
+@db_session
+def cambio_de_lugar_effect(target_id: int, user_id: int):
+    #TODO: implementar que si hay obstaculos o cuarentena no se puede usar y verificar que sea adyacente
+
+    target = Player.get(id=target_id)
+    user = Player.get(id=user_id)
+    user_position = user.round_position
+    user.round_position = target.round_position
+    target.round_position = user_position
+    commit()
+
+@db_session
+def mas_vale_que_corras_effect(target_id: int, user_id: int):
+    target = Player.get(id=target_id)
+    user = Player.get(id=user_id)
+    user_position = user.round_position
+    user.round_position = target.round_position
+    target.round_position = user_position
+    commit()
+
+@db_session
+def seduccion_effect(target_id: int, user_id: int):
+    #TODO: Dejar hasta que este el intercambio de cartas
+    pass
+
+@db_session
+def sospecha_effect(target_id: int, user_id: int):
+    #TODO: Mirar una carta aleatoria de un jugador adyacente
+    print("SOSPECHA")
+
+@db_session
+def whisky_effect(user_id: int):
+    player = Player.get(id=user_id)
+    player = PlayerOut.json(player)
+    cards = player["hand"]
+    response = {
+        "type": "whisky_effect",
+        "hand": cards
+    }
+    return response
+
+def flamethower_effect(target_id: int):
+    target_player = Player.get(id=target_id)
+    target_player.alive = False
+    commit()
