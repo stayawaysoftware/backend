@@ -198,12 +198,12 @@ def try_defense(played_card: int, card_target: int):
 
         card = Card.get(id=played_card)
         card = CardOut.from_card(card)
-        defended_by = card_defense(card.idtype)
+        defended_by = card_defense[card.idtype]
         res = {
             "type": "try_defense",
             "target_player": card_target,
             "played_card": card.dict(by_alias=True, exclude_unset=True),
-            "defended_by": [card.idtype]
+            "defended_by": defended_by
         }
     return res
 
