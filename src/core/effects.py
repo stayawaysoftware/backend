@@ -59,7 +59,7 @@ def do_effect(
         case 9:  # Change of position
             return nothing_effect(id_game)
         case 10:  # Watch your back
-            return nothing_effect(id_game)
+            return watch_your_back_effect(id_game, id_player)
         case 11:  # Seduction
             if first_play:
                 return ask_defense_effect(id_card_type, target)
@@ -265,6 +265,19 @@ def whisky_effect(id_game: int, player: int) -> GameAction:
             raise ValueError("Player doesn't exists.")
 
         return GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[player])
+
+
+def watch_your_back_effect(id_game: int, player: int) -> GameAction:
+    """Watch your back effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Play":
+            raise ValueError("You can't use this card in this phase.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+
+        return GameAction(action=ActionType.REVERSE_ORDER)
 
 
 def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
