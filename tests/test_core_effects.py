@@ -720,7 +720,10 @@ class TestExchangeREALEFFECT:
             )
         ) == str(
             GameAction(
-                action=ActionType.EXCHANGE, target=[1, 2], card_target=[3, 5]
+                action=ActionType.EXCHANGE,
+                target=[1, 2],
+                card_target=[3, 5],
+                exchange_phase=False,
             )
         )
 
@@ -1109,6 +1112,7 @@ class TestExchangeREALEFFECT:
                 target=[1, 2, 2],
                 card_target=[2, 5],
                 action2=ActionType.INFECT,
+                exchange_phase=False,
             )
         )
 
@@ -1189,7 +1193,10 @@ class TestExchangeREALEFFECT:
             )
         ) == str(
             GameAction(
-                action=ActionType.EXCHANGE, target=[1, 2], card_target=[2, 5]
+                action=ActionType.EXCHANGE,
+                target=[1, 2],
+                card_target=[2, 5],
+                exchange_phase=False,
             )
         )
 
@@ -1393,6 +1400,7 @@ class TestExchangeREALEFFECT:
                 target=[2, 1, 2],
                 card_target=[5, 2],
                 action2=ActionType.INFECT,
+                exchange_phase=False,
             )
         )
 
@@ -1473,7 +1481,10 @@ class TestExchangeREALEFFECT:
             )
         ) == str(
             GameAction(
-                action=ActionType.EXCHANGE, target=[2, 1], card_target=[5, 2]
+                action=ActionType.EXCHANGE,
+                target=[2, 1],
+                card_target=[5, 2],
+                exchange_phase=False,
             )
         )
 
@@ -1749,7 +1760,10 @@ class TestSeductionEffectREALEFFECT:
             )
         ) == str(
             GameAction(
-                action=ActionType.EXCHANGE, target=[1, 2], card_target=[3, 5]
+                action=ActionType.EXCHANGE,
+                target=[1, 2],
+                card_target=[3, 5],
+                exchange_phase=False,
             )
         )
 
@@ -2138,6 +2152,7 @@ class TestSeductionEffectREALEFFECT:
                 target=[1, 2, 2],
                 card_target=[2, 5],
                 action2=ActionType.INFECT,
+                exchange_phase=False,
             )
         )
 
@@ -2218,7 +2233,10 @@ class TestSeductionEffectREALEFFECT:
             )
         ) == str(
             GameAction(
-                action=ActionType.EXCHANGE, target=[1, 2], card_target=[2, 5]
+                action=ActionType.EXCHANGE,
+                target=[1, 2],
+                card_target=[2, 5],
+                exchange_phase=False,
             )
         )
 
@@ -2422,6 +2440,7 @@ class TestSeductionEffectREALEFFECT:
                 target=[2, 1, 2],
                 card_target=[5, 2],
                 action2=ActionType.INFECT,
+                exchange_phase=False,
             )
         )
 
@@ -2502,7 +2521,10 @@ class TestSeductionEffectREALEFFECT:
             )
         ) == str(
             GameAction(
-                action=ActionType.EXCHANGE, target=[2, 1], card_target=[5, 2]
+                action=ActionType.EXCHANGE,
+                target=[2, 1],
+                card_target=[5, 2],
+                exchange_phase=False,
             )
         )
 
