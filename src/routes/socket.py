@@ -138,7 +138,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
 
                             case "defense": 
-                                print("LLego")
                                 response = handle_defense(
                                         game_id=room_id,
                                         card_type_id=data["played_defense"],
@@ -157,6 +156,18 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         "game_info", room_id
                                     ),
                                 )
+
+                            case "exchange":
+                                exchange_res ={
+                                    "type":"exchange",
+                                    "chosen_card":data["chosen_card"],
+                                    "target": data["target"]
+                                }
+
+                                await connection_manager.broadcast(
+                                    room_id, exchange_res
+                                )
+                                
                                 
                             case "game_status":
                                 await connection_manager.broadcast(
