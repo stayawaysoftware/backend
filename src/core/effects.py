@@ -80,7 +80,9 @@ def do_effect(
         case 15:  # No, thanks
             return no_thanks_effect(id_game)
         case 16:  # You failed
-            return nothing_effect(id_game)
+            return you_failed_effect(
+                id_game, id_player, target, card_chosen_by_target
+            )
         case 17:  # No Barbecues
             return no_barbecues_effect(id_game)
         case 18:  # Quarantine
@@ -380,3 +382,35 @@ def no_thanks_effect(id_game: int) -> GameAction:
             raise ValueError("You can't use this card in this phase.")
 
         return nothing_effect(id_game)
+
+
+def you_failed_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+    card_chosen_by_target: Optional[int],
+) -> GameAction:
+    """You failed effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+        if card_chosen_by_target is None:
+            raise ValueError("You must select a card before.")
+
+        return GameAction(
+            action=ActionType.ASK_EXCHANGE,
+            target=[target, player],
+            card_target=[card_chosen_by_target],
+        )
