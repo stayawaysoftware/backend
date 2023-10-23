@@ -226,7 +226,7 @@ def handle_defense(
     defense_card = CardOut.from_card(defense_card)
     attack_card = Card.get(id=last_card_played_id)
     attack_card = CardOut.from_card(attack_card)
-
+    game = Game.get(id=game_id)
     if card_type_id == 0:
         try:
             at = Card.get(id=last_card_played_id)
@@ -239,9 +239,7 @@ def handle_defense(
             "target_player": defense_player_id,
             "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
         }
-
     else:
-        game = Game.get(id=game_id)
         at = Card.get(id=last_card_played_id)
         de = Card.get(id=card_type_id)
         try:
