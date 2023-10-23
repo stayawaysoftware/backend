@@ -222,7 +222,7 @@ def suspicion_effect(
     with db_session:
         game = Game[id_game]
 
-        if game.current_phase != "Defense":
+        if game.current_phase != "Play":
             raise ValueError("You can't use this card in this phase.")
         if target is None:
             raise ValueError("You must select a target.")
@@ -236,6 +236,16 @@ def suspicion_effect(
             raise ValueError("You can't use this card on yourself.")
         if card_chosen_by_player is None:
             raise ValueError("You must select a card before.")
+        if (
+            game.players.select(id=target)
+            .first()
+            .hand.select(idtype=card_chosen_by_player)
+            .count()
+            == 0
+        ):
+            raise ValueError(
+                f"Target doesn't have this card with id {card_chosen_by_player}"
+            )
 
         return GameAction(
             action=ActionType.SHOW,
