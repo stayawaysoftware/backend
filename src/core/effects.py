@@ -71,7 +71,7 @@ def do_effect(
         case 16:  # You failed
             return nothing_effect(id_game)
         case 17:  # No Barbecues
-            return nothing_effect(id_game)
+            return no_barbecues_effect(id_game)
         case 18:  # Quarantine
             return nothing_effect(id_game)
         case 19:  # Locked Door
@@ -188,6 +188,15 @@ def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
 
         return GameAction(action=ActionType.KILL, target=[target])
 
+def no_barbecues_effect(id_game: int) -> GameAction:
+    """No barbecues effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+
+        return nothing_effect(id_game)
 
 def exchange_effect(
     id_game: int,
