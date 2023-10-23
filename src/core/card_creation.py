@@ -58,7 +58,7 @@ card_defense = [
     [13],  # Change of position 9
     [],  # Watch your back 10
     [14, 15, 16],  # Seduction 11
-    [],  # You better run 12
+    [13],  # You better run 12
     [],  # I'm fine here 13
     [],  # Terrifying 14
     [],  # No, thanks 15
