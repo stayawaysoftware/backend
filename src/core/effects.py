@@ -57,7 +57,10 @@ def do_effect(
         case 8:  # Whisky
             return whisky_effect(id_game, id_player)
         case 9:  # Change of position
-            return nothing_effect(id_game)
+            if first_play:
+                return ask_defense_effect(id_card_type, target)
+            else:
+                return change_of_position_effect(id_game, id_player, target)
         case 10:  # Watch your back
             return watch_your_back_effect(id_game, id_player)
         case 11:  # Seduction
@@ -508,4 +511,31 @@ def you_failed_effect(
             action=ActionType.ASK_EXCHANGE,
             target=[target, player],
             card_target=[card_chosen_by_target],
+        )
+
+
+def change_of_position_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+) -> GameAction:
+    """Change of position effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+
+        return GameAction(
+            action=ActionType.CHANGE_POSITION, target=[target, player]
         )
