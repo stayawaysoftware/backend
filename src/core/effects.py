@@ -49,7 +49,9 @@ def do_effect(
         case 5:  # Axe
             return nothing_effect(id_game)
         case 6:  # Suspicion
-            return nothing_effect(id_game)
+            return suspicion_effect(
+                id_game, id_player, target, card_chosen_by_player
+            )
         case 7:  # Determination
             return nothing_effect(id_game)
         case 8:  # Whisky
@@ -207,6 +209,38 @@ def analysis_effect(
 
         return GameAction(
             action=ActionType.SHOW_ALL, target=[target, id_player]
+        )
+
+
+def suspicion_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+    card_chosen_by_player: Optional[int],
+) -> GameAction:
+    """Suspicion effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+        if card_chosen_by_player is None:
+            raise ValueError("You must select a card before.")
+
+        return GameAction(
+            action=ActionType.SHOW,
+            target=[target, player],
+            card_target=[card_chosen_by_player],
         )
 
 
