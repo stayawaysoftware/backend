@@ -294,11 +294,13 @@ def handle_exchange(
     chosen_card: int,
     target_player: int
 ):
+    card = Card.get(id=chosen_card)
+    card = CardOut.from_card(card)
     exchange_defense = card_defense[32]
     exchange_response = {
         "type": "exchange_defense",
         "defended_by": exchange_defense,
-        "chosen_card": chosen_card,
+        "chosen_card": card.dict(by_alias=True, exclude_unset=True),
         "target_player": target_player
     }
     return exchange_response
