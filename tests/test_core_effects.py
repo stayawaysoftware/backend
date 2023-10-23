@@ -2626,3 +2626,87 @@ class TestSeductionEffectREALEFFECT:
             )
 
         self.end_db()
+
+
+# ================================= EXCHANGE / SEDUCTION (WITH DEFENSE) =================================
+
+# NO, THANKS
+
+
+class TestNoThanksEffect:
+    """Test No Thanks effect."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+        create_all_cards()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    def init_db(self):
+        """Init DB."""
+        with db_session:
+            Deck(id=1)
+            Game(id=1, deck=Deck[1], current_phase="Play")
+            Player(
+                id=1,
+                game=Game[1],
+                alive=True,
+                round_position=1,
+                name="Player 1",
+            )
+            Player(
+                id=2,
+                game=Game[1],
+                alive=True,
+                round_position=2,
+                name="Player 2",
+            )
+            commit()
+
+    def end_db(self):
+        """End DB."""
+        with db_session:
+            Game[1].delete()
+            Deck[1].delete()
+            Player[1].delete()
+            Player[2].delete()
+            commit()
+
+    @db_session
+    def test_no_thanks_effect(self):
+        """Test No, Thanks effect."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=3).first())
+        Player[1].hand.add(Card.select(idtype=11).first())
+
+        do_effect(
+            id_game=1,
+            id_player=1,
+            id_card_type=11,
+            target=2,
+            card_chosen_by_player=3,
+        )
+
+        Game[1].current_phase = "Defense"
+        Player[2].hand.add(Card.select(idtype=5).first())
+        Player[2].hand.add(Card.select(idtype=15).first())
+        assert str(
+            do_effect(
+                id_game=1,
+                id_player=2,
+                id_card_type=15,
+                id_card_type_before=11,
+                target=1,
+                card_chosen_by_target=3,
+            )
+        ) == str(GameAction(action=ActionType.NOTHING))
+
+        self.end_db()
