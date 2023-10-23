@@ -55,7 +55,7 @@ def do_effect(
         case 7:  # Determination
             return nothing_effect(id_game)
         case 8:  # Whisky
-            return nothing_effect(id_game)
+            return whisky_effect(id_game, id_player)
         case 9:  # Change of position
             return nothing_effect(id_game)
         case 10:  # Watch your back
@@ -252,6 +252,19 @@ def suspicion_effect(
             target=[target, player],
             card_target=[card_chosen_by_player],
         )
+
+
+def whisky_effect(id_game: int, player: int) -> GameAction:
+    """Whisky effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Play":
+            raise ValueError("You can't use this card in this phase.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+
+        return GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[player])
 
 
 def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
