@@ -1,6 +1,7 @@
 import core.game as ga 
+from typing import Optional
 
-def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
+def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, last_chosen_card: Optional[int] = None, chosen_card: Optional[int] = None):
     match id_card_type:
         case 0:  # None 
             raise ValueError("You can't play None card.")
@@ -94,7 +95,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
             print("Ups!")
             return None
         case 32:  # Exchange (Fictional card)
-            print("Exchange")
+            ga.exchange_effect(target, attacker, chosen_card,last_chosen_card)
             return None
         case _:  # Invalid card
             raise ValueError("Card doesn't exists.")

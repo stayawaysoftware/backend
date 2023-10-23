@@ -8,6 +8,8 @@ from core.card_creation import card_defense
 from core.player import create_player
 from core.player import dealing_cards
 from core.effect_handler import effect_handler
+from core.card import relate_card_with_player
+from core.card import unrelate_card_with_player
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
@@ -260,17 +262,8 @@ def handle_defense(
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
     print ("DRAW RESPONSE")
-    game = Game.get(id=game_id)
-    calculate_next_turn(game_id)
-    next_player = Player.select(
-        lambda p: p.round_position == game.current_position
-    ).first()
-    game.current_phase = "Draw"
+    game.current_phase = "Exchange"
     commit()
-    try:
-         gu.draw(game_id, next_player.id)
-    except ValueError as e:
-            print("ERROR:", str(e))
         
     return response
 
@@ -291,6 +284,7 @@ def draw_card(game_id: int, player_id: int):
 
 @db_session
 def handle_exchange(
+    exchange_requester:int,
     chosen_card: int,
     target_player: int
 ):
@@ -301,10 +295,40 @@ def handle_exchange(
         "type": "exchange_defense",
         "defended_by": exchange_defense,
         "chosen_card": card.dict(by_alias=True, exclude_unset=True),
-        "target_player": target_player
+        "target_player": target_player,
+        "exchange_requester" : exchange_requester
     }
     return exchange_response
 
+@db_session
+def handle_exchange_defense(
+    game_id : int,
+    current_player_id: int,
+    exchange_requester:int,
+    last_chosen_card: int,
+    chosen_card: int,
+    is_defense: bool
+):
+    if is_defense:
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(game_id, last_chosen_card, current_player_id)
+        game.current_phase = "Draw"
+        commit()
+        gu.draw(game_id, current_player_id)
+    else:
+       effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
+    game = Game.get(id=game_id)
+    calculate_next_turn(game_id)
+    next_player = Player.select(
+        lambda p: p.round_position == game.current_position
+    ).first()
+    game.current_phase = "Draw"
+    commit()
+    try:
+         gu.draw(game_id, next_player.id)
+    except ValueError as e:
+            print("ERROR:", str(e))
 
 @db_session
 def analisis_effect(adyacent_id: int):
@@ -322,6 +346,18 @@ def analisis_effect(adyacent_id: int):
 def vigila_tus_espaldas_effect(game_id: int):
     game = Game.get(id=game_id)
     game.round_left_direction = not game.round_left_direction
+    commit()
+
+@db_session
+def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_chosen_card:int):
+    target = Player.get(id=target_id)
+    user = Player.get(id=user_id)
+    target_card = Card.get(id=target_chosen_card)
+    user_card = Card.get(id=user_chosen_card)
+    unrelate_card_with_player(target_card, target)
+    unrelate_card_with_player(user_card, user)
+    relate_card_with_player(target_card, user)
+    relate_card_with_player(user_card, target)
     commit()
 
 
