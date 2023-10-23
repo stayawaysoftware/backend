@@ -138,22 +138,18 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
 
                             case "defense": 
-
-                                response, draw_response = handle_defense(
-                                        room_id,
-                                        data["played_defense"],
-                                        data["target_player"],
-                                        data["last_played_card"],
-                                        user_id
+                                print("LLego")
+                                response = handle_defense(
+                                        game_id=room_id,
+                                        card_type_id=data["played_defense"],
+                                        attacker_id=data["target_player"],
+                                        last_card_played_id=data["last_played_card"],
+                                        defense_player_id=user_id
                                     )
+                                print(response)
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )           
-
-                                if draw_response is not None:
-                                    await connection_manager.send_to_user_id(data["target_player"], draw_response)
-
-                                await connection_manager.send_to_user_id(data["target_player"], draw_response)
 
                                 await connection_manager.broadcast(
                                     room_id,
