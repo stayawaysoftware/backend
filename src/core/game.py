@@ -309,14 +309,20 @@ def handle_exchange_defense(
 ):
     game = Game.get(id=game_id)
     if is_defense:
-        game.current_phase = "Discard"
-        commit()
-        gu.discard(game_id, last_chosen_card, current_player_id)
-        game.current_phase = "Draw"
-        commit()
-        gu.draw(game_id, current_player_id)
+        try:
+            game.current_phase = "Discard"
+            commit()
+            gu.discard(game_id, last_chosen_card, current_player_id)
+            game.current_phase = "Draw"
+            commit()
+            gu.draw(game_id, current_player_id)
+        except ValueError as e:
+            print("ERROR:", str(e))
     else:
-       effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
+        try:
+            effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
+        except ValueError as e:
+           print("ERROR:",str(e))
     calculate_next_turn(game_id)
     next_player = Player.select(
         lambda p: p.round_position == game.current_position
