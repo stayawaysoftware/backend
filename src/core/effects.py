@@ -76,7 +76,7 @@ def do_effect(
         case 14:  # Terrifying
             return nothing_effect(id_game)
         case 15:  # No, thanks
-            return nothing_effect(id_game)
+            return no_thanks_effect(id_game)
         case 16:  # You failed
             return nothing_effect(id_game)
         case 17:  # No Barbecues
@@ -335,3 +335,14 @@ def exchange_effect(
                 target=[player, target, player_infected],
                 card_target=[card_chosen_by_player, card_chosen_by_target],
             )
+
+
+def no_thanks_effect(id_game: int) -> GameAction:
+    """No thanks effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+
+        return nothing_effect(id_game)
