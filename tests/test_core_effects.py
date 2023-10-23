@@ -4365,3 +4365,81 @@ class TestYouBetterRunREALEFFECT:
             )
 
         self.end_db()
+
+
+# ================================== CHANGE OF POSITION / YOU BETTER RUN (DEFENSE) ==================================
+
+
+class TestImFineHereEffect:
+    """Test I'm Fine Here effect."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+        create_all_cards()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    def init_db(self):
+        """Init DB."""
+        with db_session:
+            Deck(id=1)
+            Game(id=1, deck=Deck[1], current_phase="Play")
+            Player(
+                id=1,
+                game=Game[1],
+                alive=True,
+                round_position=1,
+                name="Player 1",
+            )
+            Player(
+                id=2,
+                game=Game[1],
+                alive=True,
+                round_position=2,
+                name="Player 2",
+            )
+            commit()
+
+    def end_db(self):
+        """End DB."""
+        with db_session:
+            Game[1].delete()
+            Deck[1].delete()
+            Player[1].delete()
+            Player[2].delete()
+            commit()
+
+    @db_session
+    def test_im_fine_here_effect(self):
+        """Test I'm Fine Here effect."""
+        self.init_db()
+
+        Game[1].current_phase = "Defense"
+        Player[1].hand.add(Card.select(idtype=9).first())
+        Player[2].hand.add(Card.select(idtype=13).first())
+
+        assert str(
+            do_effect(id_game=1, id_player=2, id_card_type=13, target=1)
+        ) == str(GameAction(action=ActionType.NOTHING))
+
+        self.end_db()
+
+    @db_session
+    def test_im_fine_here_effect_with_invalid_phase(self):
+        """Test I'm Fine Here effect with invalid phase."""
+        self.init_db()
+
+        Game[1].current_phase = "Play"
+        Player[1].hand.add(Card.select(idtype=9).first())
+        Player[2].hand.add(Card.select(idtype=13).first())
+
+        with pytest.raises(ValueError):
+            do_effect(id_game=1, id_player=2, id_card_type=13, target=1)
+
+        self.end_db()
