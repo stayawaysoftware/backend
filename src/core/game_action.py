@@ -57,6 +57,7 @@ class GameAction:
             target (list): Action targets (player ids).
             defense_cards (list): List of defense cards.
             card_target (list): List of cards.
+            exchange_phase (bool): The next phase is exchange.
 
     Methods:
         Get methods:
@@ -65,11 +66,13 @@ class GameAction:
             get_target(): Return targets.
             get_defense_cards(): Return defense cards.
             get_card_target(): Return cards target.
+            get_exchange_phase(): Return exchange phase.
         Set methods:
             set_action(): Set action.
             set_target(): Set targets.
             set_defense_cards(): Set defense cards.
             set_card_target(): Set cards target.
+            set_exchange_phase(): Set exchange phase.
     """
 
     def __init__(
@@ -79,6 +82,7 @@ class GameAction:
         target: Optional[list[int]] = None,
         defense_cards: Optional[list[int]] = None,
         card_target: Optional[list[int]] = None,
+        exchange_phase: Optional[bool] = None,
     ):
         """Initialize class. Argument target is optional."""
         self.action = action
@@ -86,10 +90,11 @@ class GameAction:
         self.target = target
         self.defense_cards = defense_cards
         self.card_target = card_target
+        self.exchange_phase = exchange_phase
 
     def __str__(self) -> str:
         """Return string representation."""
-        return f"Action: {self.action}, Action2: {self.action2}, Target: {self.target}, Defense cards: {self.defense_cards}, Card target: {self.card_target}"
+        return f"Action: {self.action}, Action2: {self.action2}, Target: {self.target}, Defense cards: {self.defense_cards}, Card target: {self.card_target}, Exchange phase: {self.exchange_phase}"
 
     def get_action(self) -> ActionType:
         """Return action."""
@@ -111,6 +116,12 @@ class GameAction:
         """Return cards target."""
         return self.card_target
 
+    def get_exchange_phase(self) -> Optional[bool]:
+        """Return exchange phase."""
+        if self.exchange_phase is None:
+            return True
+        return self.exchange_phase
+
     def set_action(self, action: ActionType):
         """Set action."""
         self.action = action
@@ -130,3 +141,7 @@ class GameAction:
     def set_card_target(self, card_target: Optional[list[int]]):
         """Set cards target."""
         self.card_target = card_target
+
+    def set_exchange_phase(self, exchange_phase: Optional[bool]):
+        """Set exchange phase."""
+        self.exchange_phase = exchange_phase
