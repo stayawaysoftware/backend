@@ -59,7 +59,16 @@ def do_effect(
         case 10:  # Watch your back
             return nothing_effect(id_game)
         case 11:  # Seduction
-            return nothing_effect(id_game)
+            if first_play:
+                return ask_defense_effect(id_card_type, target)
+            else:
+                return exchange_effect(
+                    id_game,
+                    id_player,
+                    target,
+                    card_chosen_by_player,
+                    card_chosen_by_target,
+                )
         case 12:  # You better run
             return nothing_effect(id_game)
         case 13:  # I'm fine here
@@ -188,6 +197,7 @@ def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
 
         return GameAction(action=ActionType.KILL, target=[target])
 
+
 def no_barbecues_effect(id_game: int) -> GameAction:
     """No barbecues effect."""
     with db_session:
@@ -197,6 +207,7 @@ def no_barbecues_effect(id_game: int) -> GameAction:
             raise ValueError("You can't use this card in this phase.")
 
         return nothing_effect(id_game)
+
 
 def exchange_effect(
     id_game: int,
