@@ -432,6 +432,7 @@ def exchange_effect(
                 action=ActionType.EXCHANGE,
                 target=[player, target],
                 card_target=[card_chosen_by_player, card_chosen_by_target],
+                exchange_phase=False,
             )
         else:
             return GameAction(
@@ -439,6 +440,7 @@ def exchange_effect(
                 action2=ActionType.INFECT,
                 target=[player, target, player_infected],
                 card_target=[card_chosen_by_player, card_chosen_by_target],
+                exchange_phase=False,
             )
 
 
