@@ -287,7 +287,9 @@ def draw_card(game_id: int, player_id: int):
                     "new_card": card.dict(by_alias=True, exclude_unset=True)
                   }
     
-    return draw_response@db_session
+    return draw_response
+
+@db_session
 def analisis_effect(adyacent_id: int):
     #TODO: Revisar que sea adyacente
     adyacent_player  = Player.get(id=adyacent_id)
