@@ -213,7 +213,8 @@ def handle_defense(
     attacker_id: int,
     last_card_played_id: int,
     defense_player_id: int
-):    
+):
+    
     draw_response = None
     response = None
     defense_card = Card.get(id=card_type_id)
@@ -222,13 +223,9 @@ def handle_defense(
     attack_card = CardOut.from_card(attack_card)
 
     if card_type_id == 0:
-        print("Entro")
         try:
             at = Card.get(id=last_card_played_id)
-            print("Entro2")
-            print(at.idtype)
             play_card(game_id, at.idtype, attacker_id, defense_player_id)
-            print("Entro3")
         except ValueError as e:
             print("ERROR:", str(e))
         response = {
@@ -258,11 +255,20 @@ def handle_defense(
             }
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
+
+    print ("DRAW RESPONSE")
     game = Game.get(id=game_id)
     calculate_next_turn(game_id)
-    next_player = Player.select(game.current_position == Player.round_position).first()
-    gu.draw(game_id, next_player.id)
-
+    next_player = Player.select(
+        lambda p: p.round_position == game.current_position
+    ).first()
+    game.current_phase = "Draw"
+    commit()
+    try:
+         gu.draw(game_id, next_player.id)
+    except ValueError as e:
+            print("ERROR:", str(e))
+        
     return response
 
   
