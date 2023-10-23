@@ -75,7 +75,10 @@ def do_effect(
                     card_chosen_by_target,
                 )
         case 12:  # You better run
-            return nothing_effect(id_game)
+            if first_play:
+                return ask_defense_effect(id_card_type, target)
+            else:
+                return change_of_position_effect(id_game, id_player, target)
         case 13:  # I'm fine here
             return nothing_effect(id_game)
         case 14:  # Terrifying
