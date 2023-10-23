@@ -480,6 +480,7 @@ class TestFlamethrowerEffectREAL:
 
 # ============================ EXCHANGE EFFECT ============================
 
+
 class TestExchangeREALEFFECT:
     """Tests for exchange effect."""
 

@@ -1,8 +1,11 @@
-import core.game as ga 
+import core.game as ga
 
-def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
+
+def effect_handler(
+    id_game: int, id_card_type: int, attacker: int, target: int
+):
     match id_card_type:
-        case 0:  # None 
+        case 0:  # None
             raise ValueError("You can't play None card.")
         case 1:  # The Thing
             raise ValueError("You can't play The Thing card.")

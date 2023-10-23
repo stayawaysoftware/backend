@@ -85,7 +85,7 @@ def play(
     target: Optional[int] = None,
     card_chosen_by_player: Optional[int] = None,
     card_chosen_by_target: Optional[int] = None,
-    first_play: bool = True
+    first_play: bool = True,
 ) -> GameAction:
     """Play a card from player hand."""
     with db_session:
@@ -126,7 +126,7 @@ def play(
         target=target,
         card_chosen_by_player=card_chosen_by_player,
         card_chosen_by_target=card_chosen_by_target,
-        first_play=first_play
+        first_play=first_play,
     )
 
 

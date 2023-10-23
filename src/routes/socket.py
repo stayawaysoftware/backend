@@ -3,7 +3,6 @@ from core.connections import ConnectionManager
 from core.game import handle_defense
 from core.game import handle_play
 from core.game import try_defense
-from core.game import draw_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -136,45 +135,41 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id, defense_response
                                 )
 
-
-                            case "defense": 
+                            case "defense":
                                 response = handle_defense(
-                                        game_id=room_id,
-                                        card_type_id=data["played_defense"],
-                                        attacker_id=data["target_player"],
-                                        last_card_played_id=data["last_played_card"],
-                                        defense_player_id=user_id
-                                    )
+                                    game_id=room_id,
+                                    card_type_id=data["played_defense"],
+                                    attacker_id=data["target_player"],
+                                    last_card_played_id=data[
+                                        "last_played_card"
+                                    ],
+                                    defense_player_id=user_id,
+                                )
                                 print(response)
                                 await connection_manager.broadcast(
                                     room_id, response
-                                )           
+                                )
 
                                 await connection_manager.broadcast(
                                     room_id,
-                                    GameMessage.create(
-                                        "game_info", room_id
-                                    ),
+                                    GameMessage.create("game_info", room_id),
                                 )
 
                             case "exchange":
-                                exchange_res ={
-                                    "type":"exchange",
-                                    "chosen_card":data["chosen_card"],
-                                    "target": data["target"]
+                                exchange_res = {
+                                    "type": "exchange",
+                                    "chosen_card": data["chosen_card"],
+                                    "target": data["target"],
                                 }
 
                                 await connection_manager.broadcast(
                                     room_id, exchange_res
                                 )
-                                
-                                
+
                             case "game_status":
                                 await connection_manager.broadcast(
                                     room_id,
-                                    GameMessage.create(
-                                        "game_info", room_id
-                                    ),
+                                    GameMessage.create("game_info", room_id),
                                 )
 
                             case _:
@@ -182,13 +177,13 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     websocket,
                                     ErrorMessage.create(
                                         "DEBUGGING: Invalid game event"
-                                        ),
-                                    )
+                                    ),
+                                )
                     except ValidationError as error:
-                            await connection_manager.send_to(
-                                websocket,
-                                ErrorMessage.create(str(error)),
-                            )
+                        await connection_manager.send_to(
+                            websocket,
+                            ErrorMessage.create(str(error)),
+                        )
             except ValueError:
                 # If the data is not a valid json
                 # For now send an error message
