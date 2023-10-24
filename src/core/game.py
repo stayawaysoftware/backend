@@ -39,15 +39,13 @@ def init_players(room_id: int, game: Game):
         i += 1
 
     players = list(game.players)
-    player = random.choice(players)
-    player.role = "The Thing"
-    """
+
     for p in players:
         for c in p.hand:
             if c.idtype == 2:
                 p.role = "The Thing"
                 break
-    """
+
     
     commit()
 
