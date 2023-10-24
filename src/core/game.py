@@ -369,9 +369,9 @@ def handle_exchange_defense(
     exchange_requester:int,
     last_chosen_card: int,
     chosen_card: int,
-    is_defense: bool
-    effect = None
+    is_defense: bool,
 ):
+    effect = None
     game = Game.get(id=game_id)
     you_failed_effect = False
     if is_defense:
