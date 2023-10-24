@@ -351,14 +351,19 @@ def handle_exchange_defense(
     print("Exchange finalizado")
 
 @db_session
-def analisis_effect(adyacent_id: int):
+def analisis_effect(game_id: int, adyacent_id: int):
     #TODO: Revisar que sea adyacente
     adyacent_player  = Player.get(id=adyacent_id)
     adyacent_player_json = PlayerOut.json(adyacent_player)
     cards = adyacent_player_json["hand"]
+    players = Game.get(id=game_id).players
+    target = []
+    for p in players:
+        target.append(p.id)
     response = {
         "type": "show_card",
         "player_name": adyacent_player.name,
+        "target": target,
         "cards": cards
     }
     return response
@@ -425,6 +430,7 @@ def sospecha_effect(target_id: int, user_id: int):
     response = {
         "type": "show_card",
         "player_name": target.name,
+        "target":[user_id],
         "cards": [random_card.dict(by_alias=True, exclude_unset=True)]
     }
     return response
@@ -432,13 +438,19 @@ def sospecha_effect(target_id: int, user_id: int):
 
 
 @db_session
-def whisky_effect(user_id: int):
+def whisky_effect(game_id,user_id: int):
     player = Player.get(id=user_id)
     player_json = PlayerOut.json(player)
     cards = player_json["hand"]
+    #Add every player from game_id to targe tarray
+    players = Game.get(id=game_id).players
+    target = []
+    for p in players:
+        target.append(p.id)
     response = {
         "type": "show_card",
         "player_name": player.name,
+        "target": target,
         "cards": cards
     }
     return response
