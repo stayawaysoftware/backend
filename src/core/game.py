@@ -305,6 +305,29 @@ def handle_defense(
     return response, effect
 
 @db_session
+def handle_discard(
+    game_id: int,
+    played_card: int,
+    user_id: int,
+):
+    game = Game.get(id=game_id)
+    game.current_phase = "Discard"
+    commit()
+    try:
+        gu.discard(game_id, played_card, user_id)
+    except ValueError as e:
+        print("ERROR:", str(e))
+    game.current_phase = "Draw"
+    commit()
+    res ={"type":"discard",
+    "played_card":played_card
+    }
+
+    return res
+
+
+
+@db_session
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
     card = Card.get(id=id3)
@@ -346,6 +369,7 @@ def handle_exchange_defense(
     is_defense: bool
 ):
     game = Game.get(id=game_id)
+    you_failed_effect = False
     if is_defense:
         try:
             print("Pre-disc")
@@ -358,6 +382,10 @@ def handle_exchange_defense(
             commit()
             gu.draw(game_id, current_player_id)
             print("Aft-draw")
+            if chosen_card == 16:
+                not you_failed_effect
+            elif chosen_card == 14:
+                effect = effect_handler(game_id,14,current_player_id,exchange_requester)
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -379,6 +407,8 @@ def handle_exchange_defense(
     except ValueError as e:
             print("ERROR:", str(e))
     print("Exchange finalizado")
+
+    return effect
 
 @db_session
 def analisis_effect(game_id: int, adyacent_id: int):
@@ -486,7 +516,9 @@ def whisky_effect(game_id,user_id: int):
     }
     return response
 
+@db_session
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
     commit()
+
