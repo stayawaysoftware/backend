@@ -6,6 +6,7 @@ from core.game import try_defense
 from core.game import handle_exchange
 from core.game import handle_exchange_defense
 from core.game import draw_card
+from core.game import delete_game
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -198,7 +199,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     )
                                 )
 
-                                
+                            case "finished":
+                                delete_game(room_id)
                                 
                             case "game_status":
                                 await connection_manager.broadcast(

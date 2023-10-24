@@ -240,9 +240,6 @@ def check_winners(game_id:int):
         commit()
         game.status = "Finished"
         commit()
-    
-
-
 
 @db_session
 def handle_defense(
@@ -300,7 +297,6 @@ def handle_defense(
         
     return response, effect
 
-  
 @db_session
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
@@ -424,8 +420,6 @@ def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_c
     if target_is_the_thing:
         user.role = "Infected"
         commit()
-    
-
 
 @db_session
 def cambio_de_lugar_effect(target_id: int, user_id: int):
@@ -465,8 +459,6 @@ def sospecha_effect(target_id: int, user_id: int):
         "cards": [random_card.dict(by_alias=True, exclude_unset=True)]
     }
     return response
-
-
 
 @db_session
 def whisky_effect(game_id,user_id: int):
