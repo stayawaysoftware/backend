@@ -5,8 +5,8 @@ from core.game import handle_play
 from core.game import try_defense
 from core.game import handle_exchange
 from core.game import handle_exchange_defense
-from core.game import draw_card
 from core.game import delete_game
+from core.game_utility import discard
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -198,6 +198,22 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         "game_info", room_id
                                     )
                                 )
+
+                            case "discard":
+                                id = discard(room_id,
+                                        data["chosen_card"],
+                                        user_id,
+                                        )
+
+                                res = {"type":"discard",
+                                       "chosen_card":data["chosen_card"]
+                                       }
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    res,
+                                )
+                                
 
                             case "finished":
                                 delete_game(room_id)
