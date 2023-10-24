@@ -5,7 +5,12 @@ from core.game import handle_play
 from core.game import try_defense
 from core.game import handle_exchange
 from core.game import handle_exchange_defense
-from core.game import draw_card
+from core.game import delete_game
+from core.game import handle_discard
+from core.room import delete_room
+from core.game_utility import discard
+from core.game import get_game
+from core.game import get_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -131,10 +136,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
-
+    
                                 defense_response = try_defense(
                                     data["played_card"], data["card_target"]
-                                )
+                                    )
                                 await connection_manager.broadcast(
                                     room_id, defense_response
                                 )
@@ -175,7 +180,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
                             
                             case "exchange_defense":
-                                handle_exchange_defense(
+                                effect = handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
                                     exchange_requester=data["exchange_requester_id"],
@@ -196,6 +201,21 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     )
                                 )
 
+                            case "discard":
+                                res = handle_discard(room_id,
+                                        data["played_card"],
+                                        user_id,
+                                        )
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    res,
+                                )
+
+                            case "finished":
+                                await connection_manager.disconnect_all(room_id)
+                                delete_game(room_id)
+                                delete_room(room_id)
                                 
                                 
                             case "game_status":

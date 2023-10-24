@@ -187,10 +187,11 @@ def delete_game(game_id: int):
         raise HTTPException(status_code=404, detail="Players not found")
     for p in players:
         p.delete()
+        commit()
     game.delete()
     commit()
-    room = Room.get(id=game.id)
-    Iroom.delete_room(room.id, room.host_id)
+    room = Room.get(id=game_id)
+    room.ingame = False
 
 
 def handle_play(
@@ -227,6 +228,22 @@ def try_defense(played_card: int, card_target: int):
         }
     return res
 
+@db_session
+def check_winners(game_id:int):
+    game = Game.get(id=game_id)
+    players = list(game.players)
+    infected_players = list(filter(lambda p: p.role == "Infected", players))
+    human_players = list(filter(lambda p: p.role == "Human", players))
+    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
+    if (infected_players == len(players) - 1) or len(human_players) == 0:
+        game.winners = "The Thing"
+        commit()
+        game.status = "Finished"
+    elif not the_thing_player.alive:
+        game.winners = "Humans"
+        commit()
+        game.status = "Finished"
+        commit()
 
 @db_session
 def handle_defense(
@@ -251,12 +268,10 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))
         response = {
-            "type": "defense",
+            "type" : "defense",
             "played_defense": 0,
             "target_player": defense_player_id,
-            "last_played_card": attack_card.dict(
-                by_alias=True, exclude_unset=True
-            ),
+            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
         }
     else:
         at = Card.get(id=last_card_played_id)
@@ -264,32 +279,56 @@ def handle_defense(
         try:
             game.current_phase = "Discard"
             commit()
-            gu.discard(game_id, at.idtype, attacker_id)
-            gu.discard(game_id, de.idtype, defense_player_id)
-            game.current_phase = "Draw"
+            id1 = gu.discard(game_id, at.idtype, attacker_id)
+            id2 = gu.discard(game_id, de.idtype, defense_player_id)
+            game.current_phase="Draw"
             commit()
-            draw_card(game_id, defense_player_id)
+            draw_response = draw_card(game_id, defense_player_id)
             response = {
-                "type": "defense",
-                "played_defense": defense_card.dict(
-                    by_alias=True, exclude_unset=True
-                ),
+                "type" : "defense",
+                "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
                 "target_player": defense_player_id,
-                "last_played_card": attack_card.dict(
-                    by_alias=True, exclude_unset=True
-                ),
+                "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
             }
         except ValueError as e:
-            print(
-                "ERROR:", str(e)
-            )  # Imprime el mensaje de error de la excepción
+            print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
-    print ("DRAW RESPONSE")
-    game.current_phase = "Exchange"
-    commit()
+        check_winners(game_id)
+        print ("DRAW RESPONSE")
+        game.current_phase = "Exchange"
+        commit()
         
     return response, effect
 
+@db_session
+def handle_discard(
+    game_id: int,
+    played_card: int,
+    user_id: int,
+):
+    game = Game.get(id=game_id)
+    game.current_phase = "Discard"
+    commit()
+    try:
+        gu.discard(game_id, played_card, user_id)
+    except ValueError as e:
+        print("ERROR:", str(e))
+    game.current_phase = "Exchange"
+    commit()
+    res ={"type":"discard",
+    "played_card":played_card
+    }
+
+    return res
+
+@db_session
+def get_game(game_id: int):
+    game = Game.get(id=game_id)
+    return game
+
+def get_card(card_id: int):
+    card = Card.get(id=card_id)
+    return card
 
 @db_session
 def draw_card(game_id: int, player_id: int):
@@ -330,9 +369,11 @@ def handle_exchange_defense(
     exchange_requester:int,
     last_chosen_card: int,
     chosen_card: int,
-    is_defense: bool
+    is_defense: bool,
 ):
+    effect = None
     game = Game.get(id=game_id)
+    you_failed_effect = False
     if is_defense:
         try:
             print("Pre-disc")
@@ -345,6 +386,10 @@ def handle_exchange_defense(
             commit()
             gu.draw(game_id, current_player_id)
             print("Aft-draw")
+            if chosen_card == 16:
+                not you_failed_effect
+            elif chosen_card == 14:
+                effect = effect_handler(game_id,14,current_player_id,exchange_requester)
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -366,6 +411,8 @@ def handle_exchange_defense(
     except ValueError as e:
             print("ERROR:", str(e))
     print("Exchange finalizado")
+
+    return effect
 
 @db_session
 def analisis_effect(game_id: int, adyacent_id: int):
@@ -415,8 +462,6 @@ def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_c
     if target_is_the_thing:
         user.role = "Infected"
         commit()
-    
-
 
 @db_session
 def cambio_de_lugar_effect(target_id: int, user_id: int):
@@ -440,9 +485,10 @@ def mas_vale_que_corras_effect(target_id: int, user_id: int):
 
 
 @db_session
-def seduccion_effect(target_id: int, user_id: int):
-    # TODO: Dejar hasta que este el intercambio de cartas
-    pass
+def seduccion_effect(game_id: int):
+    game = Game.get(id=game_id)
+    game.current_phase = "Exchange"
+    commit()
 
 
 @db_session
@@ -459,9 +505,6 @@ def sospecha_effect(target_id: int, user_id: int):
         "cards": [random_card.dict(by_alias=True, exclude_unset=True)]
     }
     return response
-
-
-
 
 @db_session
 def whisky_effect(game_id,user_id: int):
@@ -481,8 +524,9 @@ def whisky_effect(game_id,user_id: int):
     }
     return response
 
-
+@db_session
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
     commit()
+

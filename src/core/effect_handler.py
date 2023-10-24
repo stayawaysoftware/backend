@@ -31,7 +31,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, las
             ga.vigila_tus_espaldas_effect(id_game)
             return None
         case 11:  # Seduction
-            ga.seduccion_effect(target, attacker)
+            ga.seduccion_effect(game_id=id_game)
             return None
         case 12:  # You better run
             ga.mas_vale_que_corras_effect(target, attacker)
@@ -46,7 +46,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, las
             print("No, thanks")
             return None
         case 16:  # You failed
-            print("You failed")
+            ga.you_failed_effect(id_game)
             return None
         case 17:  # No Barbecues
             print("No Barbecues")

@@ -26,6 +26,7 @@ class Game(db.Entity):
     status = Required(str, default="In progress")
     current_phase = Required(str, default="Draw")  # Draw, Play, Discard
     current_position = Optional(int, default=1, unsigned=True)
+    winners = Optional(str, default="None")  # Human, The Thing, Infected
     players = Set("Player")
     deck = Optional("Deck")
 
