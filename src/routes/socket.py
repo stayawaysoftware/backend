@@ -201,12 +201,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
                             case "discard":
                                 id = discard(room_id,
-                                        data["chosen_card"],
+                                        data["played_card"],
                                         user_id,
                                         )
 
                                 res = {"type":"discard",
-                                       "chosen_card":data["chosen_card"]
+                                       "chosen_card":data["played_card"]
                                        }
 
                                 await connection_manager.broadcast(
