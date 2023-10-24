@@ -224,6 +224,24 @@ def try_defense(played_card: int, card_target: int):
         }
     return res
 
+@db_session
+def check_winners(game_id:int):
+    game = Game.get(id=game_id)
+    players = list(game.players)
+    infected_players = list(filter(lambda p: p.role == "Infected", players))
+    human_players = list(filter(lambda p: p.role == "Human", players))
+    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
+    if (infected_players == len(players) - 1) or len(human_players) == 0:
+        game.winners = "The Thing"
+        commit()
+        game.status = "Finished"
+    elif not the_thing_player.alive:
+        game.winners = "Humans"
+        commit()
+        game.status = "Finished"
+        commit()
+    
+
 
 
 @db_session
@@ -275,6 +293,7 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
+    check_winners(game_id)
     print ("DRAW RESPONSE")
     game.current_phase = "Exchange"
     commit()

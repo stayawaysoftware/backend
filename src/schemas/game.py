@@ -43,4 +43,6 @@ class GameInfo(BaseModel):
             "turn_phase": game.current_phase,
             "current_turn": game.current_position,
             "turn_order": game.round_left_direction,
+            "status": game.status,
+            "winners": game.winners
         }
