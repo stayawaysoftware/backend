@@ -1,6 +1,7 @@
 import core.game as ga 
+from typing import Optional
 
-def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
+def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, last_chosen_card: Optional[int] = None, chosen_card: Optional[int] = None):
     match id_card_type:
         case 0:  # None 
             raise ValueError("You can't play None card.")
@@ -12,18 +13,17 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
             ga.flamethower_effect(target)
             return None
         case 4:  # Analysis
-            return ga.analisis_effect(target)
+            return ga.analisis_effect(id_game, target)
         case 5:  # Axe
             print("Axe")
             return None
         case 6:  # Suspicion
-            ga.sospecha_effect(target, attacker)
-            return None
+            return ga.sospecha_effect(target, attacker)
         case 7:  # Determination
             print("Determination")
             return None
         case 8:  # Whisky
-            return ga.whisky_effect(attacker)
+            return ga.whisky_effect(id_game, attacker)
         case 9:  # Change of position
             ga.cambio_de_lugar_effect(target, attacker)
             return None
@@ -94,7 +94,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int):
             print("Ups!")
             return None
         case 32:  # Exchange (Fictional card)
-            print("Exchange")
+            ga.exchange_effect(target, attacker, last_chosen_card, chosen_card)
             return None
         case _:  # Invalid card
             raise ValueError("Card doesn't exists.")
