@@ -354,10 +354,11 @@ def handle_exchange_defense(
 def analisis_effect(adyacent_id: int):
     #TODO: Revisar que sea adyacente
     adyacent_player  = Player.get(id=adyacent_id)
-    adyacent_player = PlayerOut.json(adyacent_player)
-    cards = adyacent_player["hand"]
+    adyacent_player_json = PlayerOut.json(adyacent_player)
+    cards = adyacent_player_json["hand"]
     response = {
         "type": "show_card",
+        "player_name": adyacent_player.name,
         "cards": cards
     }
     return response
@@ -423,7 +424,8 @@ def sospecha_effect(target_id: int, user_id: int):
     random_card = CardOut.from_card(random_card)
     response = {
         "type": "show_card",
-        "cards": random_card.dict(by_alias=True, exclude_unset=True)
+        "player_name": target.name,
+        "cards": [random_card.dict(by_alias=True, exclude_unset=True)]
     }
     return response
 
@@ -432,10 +434,11 @@ def sospecha_effect(target_id: int, user_id: int):
 @db_session
 def whisky_effect(user_id: int):
     player = Player.get(id=user_id)
-    player = PlayerOut.json(player)
-    cards = player["hand"]
+    player_json = PlayerOut.json(player)
+    cards = player_json["hand"]
     response = {
         "type": "show_card",
+        "player_name": player.name,
         "cards": cards
     }
     return response
