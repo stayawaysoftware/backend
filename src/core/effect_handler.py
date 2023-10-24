@@ -3,7 +3,7 @@ from typing import Optional
 
 def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, last_chosen_card: Optional[int] = None, chosen_card: Optional[int] = None):
     match id_card_type:
-        case 0:  # None
+        case 0:  # None 
             raise ValueError("You can't play None card.")
         case 1:  # The Thing
             raise ValueError("You can't play The Thing card.")
@@ -46,7 +46,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, las
             print("No, thanks")
             return None
         case 16:  # You failed
-            ga.you_failed_effect(id_game)
+            print("You failed")
             return None
         case 17:  # No Barbecues
             print("No Barbecues")
