@@ -3,23 +3,24 @@ from typing import Optional
 
 import core.game_utility as gu
 import core.room as Iroom
-from core.connections import ConnectionManager
 from core.card_creation import card_defense
+from core.connections import ConnectionManager
+from core.effect_handler import effect_handler
 from core.player import create_player
 from core.player import dealing_cards
 from core.effect_handler import effect_handler
 from core.card import relate_card_with_player
 from core.card import unrelate_card_with_player
 from fastapi import HTTPException
+from models.game import Card
 from models.game import Game
 from models.game import Player
 from models.room import Room
-from models.game import Card
 from pony.orm import commit
 from pony.orm import db_session
+from schemas.card import CardOut
 from schemas.game import GameStatus
 from schemas.player import PlayerOut
-from schemas.card import CardOut
 
 
 connection_manager = ConnectionManager()
@@ -96,14 +97,18 @@ def play_card(
         if target_player_id == 0:
             target_player_id = None
         print("Llego al handler")
-        
-        effect = effect_handler(game_id,card_idtype,current_player_id,target_player_id)
+
+        effect = effect_handler(
+            game_id, card_idtype, current_player_id, target_player_id
+        )
         print("effect")
         print("Sale del handler")
         game.current_phase = "Discard"
         commit()
         gu.discard(
-            id_game=game_id, idtype_card=card_idtype, id_player=current_player.id
+            id_game=game_id,
+            idtype_card=card_idtype,
+            id_player=current_player.id,
         )
     except ValueError as e:
         print("ERROR:", str(e))
@@ -220,10 +225,9 @@ def try_defense(played_card: int, card_target: int):
             "type": "try_defense",
             "target_player": card_target,
             "played_card": card.dict(by_alias=True, exclude_unset=True),
-            "defended_by": defended_by
+            "defended_by": defended_by,
         }
     return res
-
 
 
 @db_session
@@ -232,10 +236,9 @@ def handle_defense(
     card_type_id: int,
     attacker_id: int,
     last_card_played_id: int,
-    defense_player_id: int
+    defense_player_id: int,
 ):
-    
-    draw_response = None
+
     response = None
     defense_card = Card.get(id=card_type_id)
     defense_card = CardOut.from_card(defense_card)
@@ -250,10 +253,12 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))
         response = {
-            "type" : "defense",
+            "type": "defense",
             "played_defense": 0,
             "target_player": defense_player_id,
-            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+            "last_played_card": attack_card.dict(
+                by_alias=True, exclude_unset=True
+            ),
         }
     else:
         at = Card.get(id=last_card_played_id)
@@ -261,19 +266,25 @@ def handle_defense(
         try:
             game.current_phase = "Discard"
             commit()
-            id1 = gu.discard(game_id, at.idtype, attacker_id)
-            id2 = gu.discard(game_id, de.idtype, defense_player_id)
-            game.current_phase="Draw"
+            gu.discard(game_id, at.idtype, attacker_id)
+            gu.discard(game_id, de.idtype, defense_player_id)
+            game.current_phase = "Draw"
             commit()
-            draw_response = draw_card(game_id, defense_player_id)
+            draw_card(game_id, defense_player_id)
             response = {
-                "type" : "defense",
-                "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
+                "type": "defense",
+                "played_defense": defense_card.dict(
+                    by_alias=True, exclude_unset=True
+                ),
                 "target_player": defense_player_id,
-                "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+                "last_played_card": attack_card.dict(
+                    by_alias=True, exclude_unset=True
+                ),
             }
         except ValueError as e:
-            print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
+            print(
+                "ERROR:", str(e)
+            )  # Imprime el mensaje de error de la excepción
 
     print ("DRAW RESPONSE")
     game.current_phase = "Exchange"
@@ -281,20 +292,20 @@ def handle_defense(
         
     return response, effect
 
-  
+
 @db_session
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
     card = Card.get(id=id3)
     card = CardOut.from_card(card)
 
-
     draw_response = {
-                    "type":"draw",
-                    "new_card": card.dict(by_alias=True, exclude_unset=True)
-                  }
-    
+        "type": "draw",
+        "new_card": card.dict(by_alias=True, exclude_unset=True),
+    }
+
     return draw_response
+
 
 @db_session
 def handle_exchange(
@@ -376,6 +387,7 @@ def analisis_effect(game_id: int, adyacent_id: int):
     }
     return response
 
+
 @db_session
 def vigila_tus_espaldas_effect(game_id: int):
     game = Game.get(id=game_id)
@@ -418,6 +430,7 @@ def cambio_de_lugar_effect(target_id: int, user_id: int):
     target.round_position = user_position
     commit()
 
+
 @db_session
 def mas_vale_que_corras_effect(target_id: int, user_id: int):
     target = Player.get(id=target_id)
@@ -427,10 +440,12 @@ def mas_vale_que_corras_effect(target_id: int, user_id: int):
     target.round_position = user_position
     commit()
 
+
 @db_session
 def seduccion_effect(target_id: int, user_id: int):
-    #TODO: Dejar hasta que este el intercambio de cartas
+    # TODO: Dejar hasta que este el intercambio de cartas
     pass
+
 
 @db_session
 def sospecha_effect(target_id: int, user_id: int):
@@ -446,6 +461,7 @@ def sospecha_effect(target_id: int, user_id: int):
         "cards": [random_card.dict(by_alias=True, exclude_unset=True)]
     }
     return response
+
 
 
 
@@ -466,6 +482,7 @@ def whisky_effect(game_id,user_id: int):
         "cards": cards
     }
     return response
+
 
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
