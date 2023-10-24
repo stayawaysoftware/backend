@@ -31,6 +31,8 @@ from models.game import Deck  # noqa : F401
 from models.game import Card  # noqa : F401
 from models.game import AvailableDeck  # noqa : F401
 from models.game import DisposableDeck  # noqa : F401
+from schemas.validators import SocketValidators  # noqa : F401
+from schemas.validators import EndpointValidators  # noqa : F401
 from pony.orm import db_session  # noqa : F401
 from pony.orm import commit  # noqa : F401
 

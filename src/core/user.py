@@ -14,6 +14,8 @@ def get_users():
 
 def create_user(username: str):
     with db_session:
+        if User.exists(username=username):
+            raise PermissionError("User already exists")
         user = User(username=username)
         commit()
     return user

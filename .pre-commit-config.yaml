@@ -27,7 +27,7 @@ repos:
     rev: 3.9.2
     hooks:
     -   id: flake8
-        args: ["--ignore=E501,E203,W503,E402", "--max-line-length=88"]
+        args: ["--ignore=E501,E203,W503,E402, F841", "--max-line-length=88"]
         language_version: python3
 
 -   repo: https://github.com/asottile/reorder_python_imports

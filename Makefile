@@ -6,10 +6,10 @@
 	pip install -q -r configs/requirements-utils.txt;)
 
 build-dev:
-	@sudo docker build --pull --rm -f "Dockerfile.dev" -t dev .
+	@sudo docker build --pull --rm -f "configs/Dockerfile.dev" -t dev .
 
 build-test:
-	@sudo docker build --pull --rm -f "Dockerfile.test" -t test .
+	@sudo docker build --pull --rm -f "configs/Dockerfile.test" -t test .
 
 .PHONY: clean
 clean:
