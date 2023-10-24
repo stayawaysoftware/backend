@@ -184,11 +184,8 @@ def delete_game(game_id: int):
         raise HTTPException(status_code=404, detail="Players not found")
     for p in players:
         p.delete()
-        commit()
     game.delete()
     commit()
-    room = Room.get(id=game_id)
-    room.ingame = False
 
 
 def handle_play(
@@ -298,7 +295,7 @@ def handle_defense(
                     "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
                 }
             except ValueError as e:
-                print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
+                print("ERROR:", str(e))  # Imprime el mensaje de error de la excepciÃ³n
 
         check_winners(game_id)
         print ("DRAW RESPONSE")
@@ -306,36 +303,6 @@ def handle_defense(
         commit()
         
     return response, effect
-
-@db_session
-def handle_discard(
-    game_id: int,
-    played_card: int,
-    user_id: int,
-):
-    game = Game.get(id=game_id)
-    game.current_phase = "Discard"
-    commit()
-    try:
-        gu.discard(game_id, played_card, user_id)
-    except ValueError as e:
-        print("ERROR:", str(e))
-    game.current_phase = "Exchange"
-    commit()
-    res ={"type":"discard",
-    "played_card":played_card
-    }
-
-    return res
-
-@db_session
-def get_game(game_id: int):
-    game = Game.get(id=game_id)
-    return game
-
-def get_card(card_id: int):
-    card = Card.get(id=card_id)
-    return card
 
 @db_session
 def draw_card(game_id: int, player_id: int):
@@ -376,11 +343,9 @@ def handle_exchange_defense(
     exchange_requester:int,
     last_chosen_card: int,
     chosen_card: int,
-    is_defense: bool,
+    is_defense: bool
 ):
-    effect = None
     game = Game.get(id=game_id)
-    you_failed_effect = False
     if is_defense:
         try:
             print("Pre-disc")
@@ -393,10 +358,6 @@ def handle_exchange_defense(
             commit()
             gu.draw(game_id, current_player_id)
             print("Aft-draw")
-            if chosen_card == 16:
-                not you_failed_effect
-            elif chosen_card == 14:
-                effect = effect_handler(game_id,14,current_player_id,exchange_requester)
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -418,8 +379,6 @@ def handle_exchange_defense(
     except ValueError as e:
             print("ERROR:", str(e))
     print("Exchange finalizado")
-
-    return effect
 
 @db_session
 def analisis_effect(game_id: int, adyacent_id: int):
@@ -527,9 +486,7 @@ def whisky_effect(game_id,user_id: int):
     }
     return response
 
-@db_session
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
     commit()
-

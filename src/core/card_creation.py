@@ -55,9 +55,9 @@ card_defense = [
     [],  # Suspicion 6
     [],  # Determination 7
     [],  # Whisky 8
-    [13,14,15,16],  # Change of position 9
+    [13],  # Change of position 9
     [],  # Watch your back 10
-    [14,15,16],  # Seduction 11
+    [14, 15, 16],  # Seduction 11
     [13],  # You better run 12
     [],  # I'm fine here 13
     [],  # Terrifying 14
@@ -78,7 +78,7 @@ card_defense = [
     [],  # Can't we be friends? 29
     [],  # Blind date 30
     [],  # Ups! 31
-    [14,15,16],  # Exchange 32 --> Fictional card
+    [14, 15, 16],  # Exchange 32 --> Fictional card
 ]
 
 # Quantity of cards of different category for quantity of players

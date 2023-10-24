@@ -45,33 +45,54 @@ def do_effect(
             else:
                 return flamethrower_effect(id_game, target)
         case 4:  # Analysis
-            return nothing_effect(id_game)
+            return analysis_effect(id_game, id_player, target)
         case 5:  # Axe
             return nothing_effect(id_game)
         case 6:  # Suspicion
-            return nothing_effect(id_game)
+            return suspicion_effect(
+                id_game, id_player, target, card_chosen_by_player
+            )
         case 7:  # Determination
             return nothing_effect(id_game)
         case 8:  # Whisky
-            return nothing_effect(id_game)
+            return whisky_effect(id_game, id_player)
         case 9:  # Change of position
-            return nothing_effect(id_game)
+            if first_play:
+                return ask_defense_effect(id_card_type, target)
+            else:
+                return change_of_position_effect(id_game, id_player, target)
         case 10:  # Watch your back
-            return nothing_effect(id_game)
+            return watch_your_back_effect(id_game, id_player)
         case 11:  # Seduction
-            return nothing_effect(id_game)
+            if first_play:
+                return ask_defense_effect(id_card_type, target)
+            else:
+                return exchange_effect(
+                    id_game,
+                    id_player,
+                    target,
+                    card_chosen_by_player,
+                    card_chosen_by_target,
+                )
         case 12:  # You better run
-            return nothing_effect(id_game)
+            if first_play:
+                return ask_defense_effect(id_card_type, target)
+            else:
+                return change_of_position_effect(id_game, id_player, target)
         case 13:  # I'm fine here
-            return nothing_effect(id_game)
+            return im_fine_here_effect(id_game)
         case 14:  # Terrifying
-            return nothing_effect(id_game)
+            return terrifying_effect(
+                id_game, id_player, target, card_chosen_by_target
+            )
         case 15:  # No, thanks
-            return nothing_effect(id_game)
+            return no_thanks_effect(id_game)
         case 16:  # You failed
-            return nothing_effect(id_game)
+            return you_failed_effect(
+                id_game, id_player, target, card_chosen_by_target
+            )
         case 17:  # No Barbecues
-            return nothing_effect(id_game)
+            return no_barbecues_effect(id_game)
         case 18:  # Quarantine
             return nothing_effect(id_game)
         case 19:  # Locked Door
@@ -172,6 +193,99 @@ def ask_defense_effect(id_card_type: int, target: Optional[int]) -> GameAction:
         )
 
 
+def analysis_effect(
+    id_game: int, id_player: int, target: Optional[int]
+) -> GameAction:
+    """Analysis effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Play":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=id_player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=id_player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+
+        return GameAction(
+            action=ActionType.SHOW_ALL, target=[target, id_player]
+        )
+
+
+def suspicion_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+    card_chosen_by_player: Optional[int],
+) -> GameAction:
+    """Suspicion effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Play":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+        if card_chosen_by_player is None:
+            raise ValueError("You must select a card before.")
+        if (
+            game.players.select(id=target)
+            .first()
+            .hand.select(idtype=card_chosen_by_player)
+            .count()
+            == 0
+        ):
+            raise ValueError(
+                f"Target doesn't have this card with id {card_chosen_by_player}"
+            )
+
+        return GameAction(
+            action=ActionType.SHOW,
+            target=[target, player],
+            card_target=[card_chosen_by_player],
+        )
+
+
+def whisky_effect(id_game: int, player: int) -> GameAction:
+    """Whisky effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Play":
+            raise ValueError("You can't use this card in this phase.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+
+        return GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[player])
+
+
+def watch_your_back_effect(id_game: int, player: int) -> GameAction:
+    """Watch your back effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Play":
+            raise ValueError("You can't use this card in this phase.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+
+        return GameAction(action=ActionType.REVERSE_ORDER)
+
+
 def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
     """Flamethrower effect."""
     with db_session:
@@ -187,6 +301,17 @@ def flamethrower_effect(id_game: int, target: Optional[int]) -> GameAction:
             raise ValueError("Target is dead.")
 
         return GameAction(action=ActionType.KILL, target=[target])
+
+
+def no_barbecues_effect(id_game: int) -> GameAction:
+    """No barbecues effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+
+        return nothing_effect(id_game)
 
 
 def exchange_effect(
@@ -307,6 +432,7 @@ def exchange_effect(
                 action=ActionType.EXCHANGE,
                 target=[player, target],
                 card_target=[card_chosen_by_player, card_chosen_by_target],
+                exchange_phase=False,
             )
         else:
             return GameAction(
@@ -314,4 +440,118 @@ def exchange_effect(
                 action2=ActionType.INFECT,
                 target=[player, target, player_infected],
                 card_target=[card_chosen_by_player, card_chosen_by_target],
+                exchange_phase=False,
             )
+
+
+def terrifying_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+    card_chosen_by_target: Optional[int],
+) -> GameAction:
+    """Terrifying effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+        if card_chosen_by_target is None:
+            raise ValueError("You must select a card before.")
+
+        return GameAction(
+            action=ActionType.SHOW,
+            target=[target, player],
+            card_target=[card_chosen_by_target],
+        )
+
+
+def no_thanks_effect(id_game: int) -> GameAction:
+    """No thanks effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+
+        return nothing_effect(id_game)
+
+
+def you_failed_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+    card_chosen_by_target: Optional[int],
+) -> GameAction:
+    """You failed effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+        if card_chosen_by_target is None:
+            raise ValueError("You must select a card before.")
+
+        return GameAction(
+            action=ActionType.ASK_EXCHANGE,
+            target=[target, player],
+            card_target=[card_chosen_by_target],
+        )
+
+
+def change_of_position_effect(
+    id_game: int,
+    player: int,
+    target: Optional[int],
+) -> GameAction:
+    """Change of position effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+        if target is None:
+            raise ValueError("You must select a target.")
+        if game.players.select(id=target).count() == 0:
+            raise ValueError("Target doesn't exists.")
+        if not game.players.select(id=target).first().alive:
+            raise ValueError("Target is dead.")
+        if game.players.select(id=player).count() == 0:
+            raise ValueError("Player doesn't exists.")
+        if game.players.select(id=player).first().id == target:
+            raise ValueError("You can't use this card on yourself.")
+
+        return GameAction(
+            action=ActionType.CHANGE_POSITION, target=[target, player]
+        )
+
+
+def im_fine_here_effect(id_game: int) -> GameAction:
+    """I'm fine here effect."""
+    with db_session:
+        game = Game[id_game]
+
+        if game.current_phase != "Defense":
+            raise ValueError("You can't use this card in this phase.")
+
+        return nothing_effect(id_game)

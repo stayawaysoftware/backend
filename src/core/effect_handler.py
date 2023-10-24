@@ -46,7 +46,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, las
             print("No, thanks")
             return None
         case 16:  # You failed
-            ga.you_failed_effect(id_game)
+            print("You failed")
             return None
         case 17:  # No Barbecues
             print("No Barbecues")
