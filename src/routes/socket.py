@@ -120,6 +120,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
+                    print(data)
                     try:
                         match data["type"]:
                             case "play":
@@ -179,7 +180,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     chosen_card=data["chosen_card"],
                                     is_defense=data["is_defense"]
                                 )
-
+                                
                                 await connection_manager.broadcast(
                                     room_id,
                                     GameMessage.create(

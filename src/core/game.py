@@ -310,17 +310,24 @@ def handle_exchange_defense(
     game = Game.get(id=game_id)
     if is_defense:
         try:
+            print("Pre-disc")
             game.current_phase = "Discard"
             commit()
+            print("Aft-disc")
             gu.discard(game_id, last_chosen_card, current_player_id)
+            print("Aft-disc")
             game.current_phase = "Draw"
             commit()
             gu.draw(game_id, current_player_id)
+            print("Aft-draw")
         except ValueError as e:
             print("ERROR:", str(e))
     else:
         try:
+            print("Pre-EffectHandler")
+            print("Effect handler args: ", game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
             effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
+            print("After-EffectHandler")
         except ValueError as e:
            print("ERROR:",str(e))
     calculate_next_turn(game_id)
@@ -333,6 +340,7 @@ def handle_exchange_defense(
          gu.draw(game_id, next_player.id)
     except ValueError as e:
             print("ERROR:", str(e))
+    print("Exchange finalizado")
 
 @db_session
 def analisis_effect(adyacent_id: int):
@@ -354,14 +362,23 @@ def vigila_tus_espaldas_effect(game_id: int):
 
 @db_session
 def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_chosen_card:int):
+    print("Entra en exchange effect")
     target = Player.get(id=target_id)
     user = Player.get(id=user_id)
     target_card = Card.get(id=target_chosen_card)
     user_card = Card.get(id=user_chosen_card)
+    print(list(user.hand) , user.id)
+    print(list(target.hand), target.id)
     unrelate_card_with_player(target_card.id, target.id)
+    print("Desrelaciona")
     unrelate_card_with_player(user_card.id, user.id)
+    print("Desrelaciona")
     relate_card_with_player(target_card.id, user.id)
+    print("Relaciona")
     relate_card_with_player(user_card.id, target.id)
+    print("Relaciona")
+    print(list(user.hand))
+    print(list(target.hand))
     commit()
 
 

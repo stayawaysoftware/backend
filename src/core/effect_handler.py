@@ -95,7 +95,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, las
             print("Ups!")
             return None
         case 32:  # Exchange (Fictional card)
-            ga.exchange_effect(target, attacker, chosen_card,last_chosen_card)
+            ga.exchange_effect(target, attacker, last_chosen_card, chosen_card)
             return None
         case _:  # Invalid card
             raise ValueError("Card doesn't exists.")
