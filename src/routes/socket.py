@@ -9,6 +9,7 @@ from core.game import delete_game
 from core.game import handle_discard
 from core.game_utility import discard
 from core.game import get_game
+from core.game import get_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -134,7 +135,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
-                                if data["played_card"] != 11 or data["played_card"] != 14 or get_game(room_id).current_phase != "Exchange":
+                                if get_card(data["played_card"]).idtype != 11 or get_card(data["played_card"]).idtype != 14 or get_game(room_id).current_phase != "Exchange":
                                     defense_response = try_defense(
                                         data["played_card"], data["card_target"]
                                     )

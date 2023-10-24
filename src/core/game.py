@@ -330,6 +330,10 @@ def get_game(game_id: int):
     game = Game.get(id=game_id)
     return game
 
+def get_card(card_id: int):
+    card = Card.get(id=card_id)
+    return card
+
 @db_session
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
