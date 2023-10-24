@@ -186,8 +186,6 @@ def delete_game(game_id: int):
         p.delete()
     game.delete()
     commit()
-    room = Room.get(id=game.id)
-    Iroom.delete_room(room.id, room.host_id)
 
 
 def handle_play(
