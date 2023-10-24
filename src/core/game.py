@@ -40,6 +40,14 @@ def init_players(room_id: int, game: Game):
     players = list(game.players)
     player = random.choice(players)
     player.role = "The Thing"
+    """
+    for p in players:
+        for c in p.hand:
+            if c.idtype == 2:
+                p.role = "The Thing"
+                break
+    """
+    
     commit()
 
 
@@ -387,8 +395,8 @@ def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_c
     relate_card_with_player(target_card.id, user.id)
     relate_card_with_player(user_card.id, target.id)
 
-    user_is_the_thing = (user_card.idtype == 2) and (user_id.role == "The Thing")
-    target_is_the_thing = (target_card.idtype == 2) and (target_id.role == "The Thing")
+    user_is_the_thing = (user_card.idtype == 2) and (user.role == "The Thing")
+    target_is_the_thing = (target_card.idtype == 2) and (target.role == "The Thing")
 
     if user_is_the_thing:
         target.role = "Infected"
