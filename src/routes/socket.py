@@ -141,7 +141,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
 
                             case "defense": 
-                                response = handle_defense(
+                                response, effect = handle_defense(
                                         game_id=room_id,
                                         card_type_id=data["played_defense"],
                                         attacker_id=data["target_player"],
@@ -151,7 +151,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 print(response)
                                 await connection_manager.broadcast(
                                     room_id, response
-                                )           
+                                )
+                                print(effect)
+                                if effect is not None:
+                                    await connection_manager.broadcast(
+                                        room_id, effect
+                                    )           
 
                                 await connection_manager.broadcast(
                                     room_id,

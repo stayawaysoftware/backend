@@ -99,6 +99,8 @@ def play_card(
         )
     except ValueError as e:
         print("ERROR:", str(e))
+    
+    return effect
 
 
 @db_session
@@ -232,10 +234,11 @@ def handle_defense(
     attack_card = Card.get(id=last_card_played_id)
     attack_card = CardOut.from_card(attack_card)
     game = Game.get(id=game_id)
+    effect = None
     if card_type_id == 0:
         try:
             at = Card.get(id=last_card_played_id)
-            play_card(game_id, at.idtype, attacker_id, defense_player_id)
+            effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         except ValueError as e:
             print("ERROR:", str(e))
         response = {
@@ -268,7 +271,7 @@ def handle_defense(
     game.current_phase = "Exchange"
     commit()
         
-    return response
+    return response, effect
 
   
 @db_session
@@ -354,8 +357,8 @@ def analisis_effect(adyacent_id: int):
     adyacent_player = PlayerOut.json(adyacent_player)
     cards = adyacent_player["hand"]
     response = {
-        "type": "analisis_effect",
-        "hand": cards
+        "type": "show_card",
+        "cards": cards
     }
     return response
 
@@ -390,7 +393,6 @@ def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_c
 @db_session
 def cambio_de_lugar_effect(target_id: int, user_id: int):
     #TODO: implementar que si hay obstaculos o cuarentena no se puede usar y verificar que sea adyacente
-
     target = Player.get(id=target_id)
     user = Player.get(id=user_id)
     user_position = user.round_position
@@ -415,7 +417,17 @@ def seduccion_effect(target_id: int, user_id: int):
 @db_session
 def sospecha_effect(target_id: int, user_id: int):
     #TODO: Mirar una carta aleatoria de un jugador adyacente
-    print("SOSPECHA")
+    target = Player.get(id=target_id)
+    target_hand = list(target.hand)
+    random_card = random.choice(target_hand)
+    random_card = CardOut.from_card(random_card)
+    response = {
+        "type": "show_card",
+        "card": random_card.dict(by_alias=True, exclude_unset=True)
+    }
+    return response
+
+
 
 @db_session
 def whisky_effect(user_id: int):
@@ -423,7 +435,7 @@ def whisky_effect(user_id: int):
     player = PlayerOut.json(player)
     cards = player["hand"]
     response = {
-        "type": "whisky_effect",
+        "type": "show_card",
         "hand": cards
     }
     return response
