@@ -145,9 +145,14 @@ def calculate_next_turn(game_id: int):
     # select as next player the next player alive in the round direction
     next_player_position = current_player_position
     while True:
-        next_player_position += 1
-        if next_player_position > len(players):
-            next_player_position = 1
+        if not game.round_left_direction:
+            next_player_position += 1
+            if next_player_position > len(players):
+                next_player_position = 1
+        else:
+            next_player_position -= 1
+            if next_player_position < 1:
+                next_player_position = len(players)
         next_player = None  # Inicializa a None para evitar errores si no se encuentra el siguiente jugador
         for player in players:
             if player.round_position == next_player_position:
