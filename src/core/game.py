@@ -381,19 +381,23 @@ def exchange_effect(target_id: int, user_id: int, target_chosen_card:int, user_c
     user = Player.get(id=user_id)
     target_card = Card.get(id=target_chosen_card)
     user_card = Card.get(id=user_chosen_card)
-    print(list(user.hand) , user.id)
-    print(list(target.hand), target.id)
+
     unrelate_card_with_player(target_card.id, target.id)
-    print("Desrelaciona")
     unrelate_card_with_player(user_card.id, user.id)
-    print("Desrelaciona")
     relate_card_with_player(target_card.id, user.id)
-    print("Relaciona")
     relate_card_with_player(user_card.id, target.id)
-    print("Relaciona")
-    print(list(user.hand))
-    print(list(target.hand))
-    commit()
+
+    user_is_the_thing = (user_card.idtype == 2) and (user_id.role == "The Thing")
+    target_is_the_thing = (target_card.idtype == 2) and (target_id.role == "The Thing")
+
+    if user_is_the_thing:
+        target.role = "Infected"
+        commit()
+    
+    if target_is_the_thing:
+        user.role = "Infected"
+        commit()
+    
 
 
 @db_session
