@@ -7,6 +7,7 @@ from core.game import handle_exchange
 from core.game import handle_exchange_defense
 from core.game import delete_game
 from core.game import handle_discard
+from core.room import delete_room
 from core.game_utility import discard
 from core.game import get_game
 from core.game import get_card
@@ -214,7 +215,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "finished":
+                                await connection_manager.disconnect_all(room_id)
                                 delete_game(room_id)
+                                delete_room(room_id)
+                                
                                 
                             case "game_status":
                                 await connection_manager.broadcast(
