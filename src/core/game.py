@@ -184,8 +184,11 @@ def delete_game(game_id: int):
         raise HTTPException(status_code=404, detail="Players not found")
     for p in players:
         p.delete()
+        commit()
     game.delete()
     commit()
+    room = Room.get(id=game_id)
+    room.ingame = False
 
 
 def handle_play(
