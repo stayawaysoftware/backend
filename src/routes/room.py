@@ -1,51 +1,36 @@
 import core.room as rooms
 from fastapi import APIRouter
-from fastapi import HTTPException
 from fastapi import status
 from pony.orm import db_session
-from schemas.room import RoomOut
+from schemas.room import RoomCreateForm
+from schemas.room import RoomId
+from schemas.room import RoomJoinForm
+from schemas.room import RoomListItem
+from schemas.socket import RoomMessage
+
+from .socket import connection_manager
 
 room = APIRouter(tags=["rooms"])
 
 
 @room.get(
-    "/rooms",
-    response_model=list[RoomOut],
-    response_description="List the rooms available in the database",
+    "/room/list",
+    response_model=list[RoomListItem],
+    response_description="Returns 200 OK with a list of rooms\
+          available in the database",
     status_code=status.HTTP_200_OK,
 )
 def get_rooms():
     with db_session:
         result = rooms.get_rooms()
-        result = [RoomOut.model_validate(room) for room in result]
     return result
 
 
-@room.get(
-    "/rooms/{room_id}",
-    response_model=RoomOut,
-    response_description="Get a room info by its id",
-    status_code=status.HTTP_200_OK,
-    responses={
-        404: {
-            "description": "Room not found",
-        }
-    },
-)
-def get_room(room_id: int):
-    with db_session:
-        try:
-            room = rooms.get_room(room_id)
-        except ValueError as error:
-            raise HTTPException(status_code=404, detail=str(error))
-        room = RoomOut.model_validate(room)
-    return room
-
-
 @room.post(
-    "/rooms",
-    response_model=RoomOut,
-    response_description="Returns the created room or an error with details when fail",
+    "/room/new",
+    response_model=RoomId,
+    name="Create a new room",
+    response_description="Returns 201 Created with the room id",
     status_code=status.HTTP_201_CREATED,
     responses={
         400: {
@@ -56,27 +41,23 @@ def get_room(room_id: int):
         },
     },
 )
-async def create_room(
-    name: str, host_id: int, min_users: int = 4, max_users: int = 12
-):
+async def new_room(room_form_data: RoomCreateForm):
     with db_session:
-        try:
-            room = rooms.create_room(name, host_id, min_users, max_users)
-        except PermissionError as error:
-            raise HTTPException(status_code=403, detail=str(error))
-        except ValueError as error:
-            if str(error) == "User not found":
-                raise HTTPException(status_code=404, detail=str(error))
-            else:
-                raise HTTPException(status_code=400, detail=str(error))
-        room = RoomOut.model_validate(room)
-    return room
+        room_id = rooms.create_room(
+            room_form_data.name,
+            room_form_data.host_id,
+            room_form_data.min_users,
+            room_form_data.max_users,
+            room_form_data.password,
+        )
+    return RoomId.create(room_id)
 
 
 @room.put(
-    "/rooms/{room_id}/join",
-    response_model=RoomOut,
-    response_description="Returns the joined room or an error with msg when fail",
+    "/room/join",
+    response_model=RoomId,
+    name="Join a room",
+    response_description="Returns 200 OK with the room id",
     status_code=status.HTTP_200_OK,
     responses={
         403: {
@@ -88,21 +69,19 @@ async def create_room(
         },
     },
 )
-async def join_room(room_id: int, user_id: int):
+async def join_room(join_form_data: RoomJoinForm):
     with db_session:
-        try:
-            room = rooms.join_room(room_id, user_id)
-        except PermissionError as error:
-            raise HTTPException(status_code=403, detail=str(error))
-        except ValueError as error:
-            raise HTTPException(status_code=404, detail=str(error))
-    return room
+        rooms.join_room(join_form_data.room_id, join_form_data.user_id)
+    # Post to subscribers that a user has joined the room
+    response = RoomMessage.create("join", join_form_data.room_id)
+    await connection_manager.broadcast(join_form_data.room_id, response)
+    return RoomId.create(join_form_data.room_id)
 
 
+"""
 @room.put(
-    "/rooms/{room_id}/leave",
-    response_model=RoomOut,
-    response_description="Returns the left room or an error with details when fail",
+    "/room/leave",
+    response_description="Returns 200 OK",
     status_code=status.HTTP_200_OK,
     responses={
         403: {
@@ -114,7 +93,7 @@ async def join_room(room_id: int, user_id: int):
         },
     },
 )
-async def leave_room(room_id: int, user_id: int):
+async def leave_room(room_id: int = Form(...), user_id: int = Form(...)):
     with db_session:
         try:
             room = rooms.leave_room(room_id, user_id)
@@ -122,15 +101,15 @@ async def leave_room(room_id: int, user_id: int):
             raise HTTPException(status_code=403, detail=str(error))
         except ValueError as error:
             raise HTTPException(status_code=404, detail=str(error))
-    if room:
-        room = RoomOut.model_validate(room)
-    return room
+    # Post to subscribers that a user has left the room
+    if room is not None:
+        response = connection_manager.make_room_response(room_id, "leave")
+        await connection_manager.broadcast(room_id, response)
 
 
 @room.put(
-    "/rooms/{room_id}/start",
-    response_model=RoomOut,
-    response_description="Returns the started room or an error with details when fail",
+    "/room/start",
+    response_description="Returns 200 OK",
     status_code=status.HTTP_200_OK,
     responses={
         403: {
@@ -142,20 +121,22 @@ async def leave_room(room_id: int, user_id: int):
         },
     },
 )
-async def play_game(room_id: int, host_id: int):
+async def play_game(room_id: int = Form(...), host_id: int = Form(...)):
     with db_session:
         try:
-            room = rooms.start_game(room_id, host_id)
+            rooms.start_game(room_id, host_id)
         except PermissionError as error:
             raise HTTPException(status_code=403, detail=str(error))
         except ValueError as error:
             raise HTTPException(status_code=404, detail=str(error))
-    return room
+    # Post to subscribers that a game has started
+    response = connection_manager.make_room_response(room_id, "start")
+    await connection_manager.broadcast(room_id, response)
 
 
 @room.delete(
-    "/rooms/{room_id}",
-    response_description="Returns an error with details when fail",
+    "/room/delete",
+    response_description="Returns 204",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         403: {
@@ -166,7 +147,7 @@ async def play_game(room_id: int, host_id: int):
         },
     },
 )
-async def delete_room(room_id: int, host_id: int):
+async def delete_room(room_id: int = Form(...), host_id: int = Form(...)):
     with db_session:
         try:
             rooms.delete_room(room_id, host_id)
@@ -174,3 +155,7 @@ async def delete_room(room_id: int, host_id: int):
             raise HTTPException(status_code=403, detail=str(error))
         except ValueError as error:
             raise HTTPException(status_code=404, detail=str(error))
+    # Post to subscribers that a room has been deleted
+    response = connection_manager.make_room_response(room_id, "delete")
+    await connection_manager.broadcast(room_id, response)
+"""

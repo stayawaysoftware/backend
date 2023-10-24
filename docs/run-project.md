@@ -10,26 +10,17 @@ Before we start we must have venv installed on our computer and of course python
 If you don't have venv installed you can install it by running:
 ```apt install python3-venv```
 
-After that we will run the autoconfiguration using the Makefile:
-```make mkenv```
-
-At the end of this task we have our environment configured and it is enough to activate it when we want to use it and deactivate it when we don't want to use it anymore.
-
-To activate it, inside the src directory, we execute:
-```source venv/bin/activate```
-
 Now we can run the code locally with the makefile target:
 ```make run-local```
 
-Then to deactivate it we only execute:
-```deactivate```
+This target call to another target that creates the virtual environment and installs the necessary dependencies, so it is not necessary to do it manually.
 
 
 ### Running it containerized
 For ease of use there are makefile targets that allow us to make it easy to use. But before using it, docker must be installed as the only dependency.
 
 To install it on debian/ubuntu based you can run:
-```sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin```
+```sudo apt-get install docker*```
 
 To see the different execution possibilities see the [makefile-usage](makefile-usage.md) file, but normally you will want to execute:
 ```make run``` which normally runs the project but in a containerized way.
