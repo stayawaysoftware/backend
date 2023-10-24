@@ -439,9 +439,9 @@ def mas_vale_que_corras_effect(target_id: int, user_id: int):
     commit()
 
 @db_session
-def seduccion_effect(target_id: int, user_id: int):
-    #TODO: Dejar hasta que este el intercambio de cartas
-    pass
+def seduccion_effect(game_id: int,target_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    
 
 @db_session
 def sospecha_effect(target_id: int, user_id: int):
