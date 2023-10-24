@@ -256,42 +256,51 @@ def handle_defense(
     attack_card = CardOut.from_card(attack_card)
     game = Game.get(id=game_id)
     effect = None
-    if card_type_id == 0:
-        try:
-            at = Card.get(id=last_card_played_id)
-            effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
-        except ValueError as e:
-            print("ERROR:", str(e))
+    if last_card_played_id == 11:
+        effect = seduccion_effect(game_id)
         response = {
-            "type" : "defense",
-            "played_defense": 0,
-            "target_player": defense_player_id,
-            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
-        }
-    else:
-        at = Card.get(id=last_card_played_id)
-        de = Card.get(id=card_type_id)
-        try:
-            game.current_phase = "Discard"
-            commit()
-            id1 = gu.discard(game_id, at.idtype, attacker_id)
-            id2 = gu.discard(game_id, de.idtype, defense_player_id)
-            game.current_phase="Draw"
-            commit()
-            draw_response = draw_card(game_id, defense_player_id)
-            response = {
                 "type" : "defense",
-                "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
+                "played_defense": 0,
                 "target_player": defense_player_id,
                 "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
             }
-        except ValueError as e:
-            print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
+    else:
+        if card_type_id == 0:
+            try:
+                at = Card.get(id=last_card_played_id)
+                effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
+            except ValueError as e:
+                print("ERROR:", str(e))
+            response = {
+                "type" : "defense",
+                "played_defense": 0,
+                "target_player": defense_player_id,
+                "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+            }
+        else:
+            at = Card.get(id=last_card_played_id)
+            de = Card.get(id=card_type_id)
+            try:
+                game.current_phase = "Discard"
+                commit()
+                id1 = gu.discard(game_id, at.idtype, attacker_id)
+                id2 = gu.discard(game_id, de.idtype, defense_player_id)
+                game.current_phase="Draw"
+                commit()
+                draw_response = draw_card(game_id, defense_player_id)
+                response = {
+                    "type" : "defense",
+                    "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
+                    "target_player": defense_player_id,
+                    "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+                }
+            except ValueError as e:
+                print("ERROR:", str(e))  # Imprime el mensaje de error de la excepción
 
-    check_winners(game_id)
-    print ("DRAW RESPONSE")
-    game.current_phase = "Exchange"
-    commit()
+        check_winners(game_id)
+        print ("DRAW RESPONSE")
+        game.current_phase = "Exchange"
+        commit()
         
     return response, effect
 
@@ -439,9 +448,10 @@ def mas_vale_que_corras_effect(target_id: int, user_id: int):
     commit()
 
 @db_session
-def seduccion_effect(game_id: int,target_id: int, user_id: int):
+def seduccion_effect(game_id: int):
     game = Game.get(id=game_id)
-    
+    game.current_phase = "Exchange"
+    commit()
 
 @db_session
 def sospecha_effect(target_id: int, user_id: int):
