@@ -8,6 +8,7 @@ from core.game import handle_exchange_defense
 from core.game import delete_game
 from core.game import handle_discard
 from core.game_utility import discard
+from core.game import get_game
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -133,13 +134,13 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
-
-                                defense_response = try_defense(
-                                    data["played_card"], data["card_target"]
-                                )
-                                await connection_manager.broadcast(
-                                    room_id, defense_response
-                                )
+                                if data["played_card"] != 11 or data["played_card"] != 14 or get_game(room_id).current_phase != "Exchange":
+                                    defense_response = try_defense(
+                                        data["played_card"], data["card_target"]
+                                    )
+                                    await connection_manager.broadcast(
+                                        room_id, defense_response
+                                    )
 
 
                             case "defense": 
@@ -179,7 +180,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
                             
                             case "exchange_defense":
-                                handle_exchange_defense(
+                                effect = handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
                                     exchange_requester=data["exchange_requester_id"],
@@ -210,7 +211,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id,
                                     res,
                                 )
-                                
 
                             case "finished":
                                 delete_game(room_id)
