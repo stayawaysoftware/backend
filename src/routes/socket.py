@@ -3,6 +3,9 @@ from core.connections import ConnectionManager
 from core.game import handle_defense
 from core.game import handle_play
 from core.game import try_defense
+from core.game import handle_exchange
+from core.game import handle_exchange_defense
+from core.game import draw_card
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -117,6 +120,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
+                    print(data)
                     try:
                         match data["type"]:
                             case "play":
@@ -135,20 +139,24 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id, defense_response
                                 )
 
-                            case "defense":
-                                response = handle_defense(
-                                    game_id=room_id,
-                                    card_type_id=data["played_defense"],
-                                    attacker_id=data["target_player"],
-                                    last_card_played_id=data[
-                                        "last_played_card"
-                                    ],
-                                    defense_player_id=user_id,
-                                )
+
+                            case "defense": 
+                                response, effect = handle_defense(
+                                        game_id=room_id,
+                                        card_type_id=data["played_defense"],
+                                        attacker_id=data["target_player"],
+                                        last_card_played_id=data["last_played_card"],
+                                        defense_player_id=user_id
+                                    )
                                 print(response)
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
+                                print(effect)
+                                if effect is not None:
+                                    await connection_manager.broadcast(
+                                        room_id, effect
+                                    )           
 
                                 await connection_manager.broadcast(
                                     room_id,
@@ -156,16 +164,40 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "exchange":
-                                exchange_res = {
-                                    "type": "exchange",
-                                    "chosen_card": data["chosen_card"],
-                                    "target": data["target"],
-                                }
+                                exchange_res = handle_exchange(
+                                    user_id,
+                                    data["chosen_card"],
+                                    data["target_player"]
+                                )
 
                                 await connection_manager.broadcast(
                                     room_id, exchange_res
                                 )
+                            
+                            case "exchange_defense":
+                                handle_exchange_defense(
+                                    game_id=room_id,
+                                    current_player_id=user_id,
+                                    exchange_requester=data["exchange_requester_id"],
+                                    last_chosen_card=data["last_chose"],
+                                    chosen_card=data["chosen_card"],
+                                    is_defense=data["is_defense"]
+                                )
 
+                                res = {"type":"exchange_end"}
+                                await connection_manager.broadcast(
+                                    room_id, res
+                                )
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create(
+                                        "game_info", room_id
+                                    )
+                                )
+
+                                
+                                
                             case "game_status":
                                 await connection_manager.broadcast(
                                     room_id,

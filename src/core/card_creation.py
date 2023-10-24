@@ -55,7 +55,7 @@ card_defense = [
     [],  # Suspicion 6
     [],  # Determination 7
     [],  # Whisky 8
-    [13, 14, 15, 16],  # Change of position 9
+    [13],  # Change of position 9
     [],  # Watch your back 10
     [14, 15, 16],  # Seduction 11
     [13],  # You better run 12

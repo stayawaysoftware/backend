@@ -7,6 +7,7 @@
 - `target` -> Lista de enteros
 - `defense_cards` -> Lista de enteros (tipos de carta)
 - `card_target` -> Lista de enteros (tipos de carta)
+- `exchange_phase` -> Booleano (si es True, entonces luego sigue la fase de intercambio)
 
 ## CAMPOS QUE RECIBE PLAY()
 
@@ -51,6 +52,8 @@
 
     - Acción2 -> INFECT (puede ser _None_)
     - Persona infectada -> target[2]
+
+    - exchange_phase -> False (indica que NO sigue una fase de intercambio después)
 
 - _ATERRADOR_
     - Acción -> SHOW

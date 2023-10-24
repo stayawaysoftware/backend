@@ -33,6 +33,10 @@ class TestGameAction:
         assert action.get_target() is None
         assert action.get_defense_cards() is None
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(
             action=ActionType.ASK_DEFENSE, target=[1], defense_cards=[1, 2]
@@ -42,36 +46,50 @@ class TestGameAction:
         assert action.get_target() == [1]
         assert action.get_defense_cards() == [1, 2]
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(
-            action=ActionType.ASK_EXCHANGE, target=[1, 2], card_target=[1]
+            action=ActionType.ASK_EXCHANGE,
+            target=[1, 2],
+            card_target=[1],
+            exchange_phase=False,
         )
         assert action.get_action() == ActionType.ASK_EXCHANGE
         assert action.get_action2() is None
         assert action.get_target() == [1, 2]
         assert action.get_defense_cards() is None
         assert action.get_card_target() == [1]
+        assert action.get_exchange_phase() is False
 
         action = GameAction(
-            action=ActionType.EXCHANGE, target=[1, 2], card_target=[1, 2]
+            action=ActionType.EXCHANGE,
+            target=[1, 2],
+            card_target=[1, 2],
+            exchange_phase=False,
         )
         assert action.get_action() == ActionType.EXCHANGE
         assert action.get_action2() is None
         assert action.get_target() == [1, 2]
         assert action.get_defense_cards() is None
         assert action.get_card_target() == [1, 2]
+        assert action.get_exchange_phase() is False
 
         action = GameAction(
             action=ActionType.EXCHANGE,
             action2=ActionType.INFECT,
             target=[1, 2, 1],
             card_target=[1, 2],
+            exchange_phase=False,
         )
         assert action.get_action() == ActionType.EXCHANGE
         assert action.get_action2() == ActionType.INFECT
         assert action.get_target() == [1, 2, 1]
         assert action.get_defense_cards() is None
         assert action.get_card_target() == [1, 2]
+        assert action.get_exchange_phase() is False
 
         action = GameAction(action=ActionType.KILL, target=[1])
         assert action.get_action() == ActionType.KILL
@@ -79,6 +97,10 @@ class TestGameAction:
         assert action.get_target() == [1]
         assert action.get_defense_cards() is None
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(
             action=ActionType.SHOW, target=[1, 2], card_target=[1]
@@ -88,6 +110,10 @@ class TestGameAction:
         assert action.get_target() == [1, 2]
         assert action.get_defense_cards() is None
         assert action.get_card_target() == [1]
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(action=ActionType.SHOW_ALL, target=[1, 2])
         assert action.get_action() == ActionType.SHOW_ALL
@@ -95,6 +121,10 @@ class TestGameAction:
         assert action.get_target() == [1, 2]
         assert action.get_defense_cards() is None
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[1])
         assert action.get_action() == ActionType.SHOW_ALL_TO_ALL
@@ -102,6 +132,10 @@ class TestGameAction:
         assert action.get_target() == [1]
         assert action.get_defense_cards() is None
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(action=ActionType.REVERSE_ORDER)
         assert action.get_action() == ActionType.REVERSE_ORDER
@@ -109,6 +143,10 @@ class TestGameAction:
         assert action.get_target() is None
         assert action.get_defense_cards() is None
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
         action = GameAction(action=ActionType.CHANGE_POSITION, target=[1, 2])
         assert action.get_action() == ActionType.CHANGE_POSITION
@@ -116,6 +154,10 @@ class TestGameAction:
         assert action.get_target() == [1, 2]
         assert action.get_defense_cards() is None
         assert action.get_card_target() is None
+        assert (
+            action.get_exchange_phase() is True
+            and action.exchange_phase is None
+        )
 
     def test_set_functions(self):
         """Test set functions."""
@@ -131,6 +173,8 @@ class TestGameAction:
         assert action.get_defense_cards() == [1, 2]
         action.set_card_target([1, 2])
         assert action.get_card_target() == [1, 2]
+        action.set_exchange_phase(False)
+        assert action.get_exchange_phase() is False
 
     def test_str(self):
         """Test str function."""
@@ -138,7 +182,7 @@ class TestGameAction:
         action = GameAction(action=ActionType.NOTHING)
         assert (
             str(action)
-            == "Action: NOTHING, Action2: None, Target: None, Defense cards: None, Card target: None"
+            == "Action: NOTHING, Action2: None, Target: None, Defense cards: None, Card target: None, Exchange phase: None"
         )
 
         action = GameAction(
@@ -146,7 +190,7 @@ class TestGameAction:
         )
         assert (
             str(action)
-            == "Action: ASK_DEFENSE, Action2: None, Target: [1], Defense cards: [1, 2], Card target: None"
+            == "Action: ASK_DEFENSE, Action2: None, Target: [1], Defense cards: [1, 2], Card target: None, Exchange phase: None"
         )
 
         action = GameAction(
@@ -154,15 +198,18 @@ class TestGameAction:
         )
         assert (
             str(action)
-            == "Action: ASK_EXCHANGE, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1]"
+            == "Action: ASK_EXCHANGE, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1], Exchange phase: None"
         )
 
         action = GameAction(
-            action=ActionType.EXCHANGE, target=[1, 2], card_target=[1, 2]
+            action=ActionType.EXCHANGE,
+            target=[1, 2],
+            card_target=[1, 2],
+            exchange_phase=False,
         )
         assert (
             str(action)
-            == "Action: EXCHANGE, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1, 2]"
+            == "Action: EXCHANGE, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1, 2], Exchange phase: False"
         )
 
         action = GameAction(
@@ -170,16 +217,17 @@ class TestGameAction:
             action2=ActionType.INFECT,
             target=[1, 2, 1],
             card_target=[1, 2],
+            exchange_phase=False,
         )
         assert (
             str(action)
-            == "Action: EXCHANGE, Action2: INFECT, Target: [1, 2, 1], Defense cards: None, Card target: [1, 2]"
+            == "Action: EXCHANGE, Action2: INFECT, Target: [1, 2, 1], Defense cards: None, Card target: [1, 2], Exchange phase: False"
         )
 
         action = GameAction(action=ActionType.KILL, target=[1])
         assert (
             str(action)
-            == "Action: KILL, Action2: None, Target: [1], Defense cards: None, Card target: None"
+            == "Action: KILL, Action2: None, Target: [1], Defense cards: None, Card target: None, Exchange phase: None"
         )
 
         action = GameAction(
@@ -187,29 +235,29 @@ class TestGameAction:
         )
         assert (
             str(action)
-            == "Action: SHOW, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1]"
+            == "Action: SHOW, Action2: None, Target: [1, 2], Defense cards: None, Card target: [1], Exchange phase: None"
         )
 
         action = GameAction(action=ActionType.SHOW_ALL, target=[1, 2])
         assert (
             str(action)
-            == "Action: SHOW_ALL, Action2: None, Target: [1, 2], Defense cards: None, Card target: None"
+            == "Action: SHOW_ALL, Action2: None, Target: [1, 2], Defense cards: None, Card target: None, Exchange phase: None"
         )
 
         action = GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[1])
         assert (
             str(action)
-            == "Action: SHOW_ALL_TO_ALL, Action2: None, Target: [1], Defense cards: None, Card target: None"
+            == "Action: SHOW_ALL_TO_ALL, Action2: None, Target: [1], Defense cards: None, Card target: None, Exchange phase: None"
         )
 
         action = GameAction(action=ActionType.REVERSE_ORDER)
         assert (
             str(action)
-            == "Action: REVERSE_ORDER, Action2: None, Target: None, Defense cards: None, Card target: None"
+            == "Action: REVERSE_ORDER, Action2: None, Target: None, Defense cards: None, Card target: None, Exchange phase: None"
         )
 
         action = GameAction(action=ActionType.CHANGE_POSITION, target=[1, 2])
         assert (
             str(action)
-            == "Action: CHANGE_POSITION, Action2: None, Target: [1, 2], Defense cards: None, Card target: None"
+            == "Action: CHANGE_POSITION, Action2: None, Target: [1, 2], Defense cards: None, Card target: None, Exchange phase: None"
         )
