@@ -423,7 +423,7 @@ def sospecha_effect(target_id: int, user_id: int):
     random_card = CardOut.from_card(random_card)
     response = {
         "type": "show_card",
-        "card": random_card.dict(by_alias=True, exclude_unset=True)
+        "cards": random_card.dict(by_alias=True, exclude_unset=True)
     }
     return response
 
@@ -436,7 +436,7 @@ def whisky_effect(user_id: int):
     cards = player["hand"]
     response = {
         "type": "show_card",
-        "hand": cards
+        "cards": cards
     }
     return response
 

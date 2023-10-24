@@ -18,8 +18,7 @@ def effect_handler(id_game:int ,id_card_type: int,attacker: int,target: int, las
             print("Axe")
             return None
         case 6:  # Suspicion
-            ga.sospecha_effect(target, attacker)
-            return None
+            return ga.sospecha_effect(target, attacker)
         case 7:  # Determination
             print("Determination")
             return None
