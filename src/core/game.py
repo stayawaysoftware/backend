@@ -226,13 +226,15 @@ def try_defense(played_card: int, card_target: int):
 def check_winners(game_id:int):
     game = Game.get(id=game_id)
     players = list(game.players)
-    infected_players = list(filter(lambda p: p.role == "Infected", players))
-    human_players = list(filter(lambda p: p.role == "Human", players))
+    infected_players = list(filter(lambda p: ((p.role == "Infected") and (p.alive)), players))
+    human_alive_players = list(filter(lambda p: ((p.role == "Human") and (p.alive)), players))
+    alive_players = list(filter(lambda p: p.alive, players))
     the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
-    if (infected_players == len(players) - 1) or len(human_players) == 0:
+    if (infected_players == len(alive_players) - 1) or len(human_alive_players) == 0:
         game.winners = "The Thing"
         commit()
         game.status = "Finished"
+        commit()
     elif not the_thing_player.alive:
         game.winners = "Humans"
         commit()
