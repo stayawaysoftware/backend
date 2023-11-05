@@ -227,7 +227,7 @@ def check_winners(game_id:int):
     game = Game.get(id=game_id)
     players = list(game.players)
     alive_players = list(filter(lambda p: p.alive, players))
-    infected_players = list(filter(lambda p: (p.role == "Infected"), alive_players))
+    infected_players = list(filter(lambda p: p.role == "Infected", alive_players))
     human_alive_players = list(filter(lambda p: p.role == "Human", alive_players))
     the_thing_player = list(filter(lambda p: p.role == "The Thing", players))[0]
     if (infected_players == len(alive_players) - 1) or len(human_alive_players) == 0:
