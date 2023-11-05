@@ -15,7 +15,7 @@ from core.game_logic.deck import delete_disposable_deck
 from core.game_logic.deck import get_deck
 from core.game_logic.deck import get_random_card_from_available_deck
 from core.game_logic.deck import move_disposable_to_available_deck
-from core.game_logic.effects import do_effect
+from core.game_logic.effects.effect_handler import do_effect
 from core.game_logic.game_action import GameAction
 from models.game import Deck
 from models.game import Game
