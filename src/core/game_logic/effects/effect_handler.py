@@ -1,18 +1,28 @@
 """Effect handler"""
-
 from typing import Optional
 
 from core.game_logic.card_creation import card_defense
-from core.game_logic.game_action import ActionType
-from core.game_logic.game_action import GameAction
 from core.game_logic.effects.analysis_effect import analysis_effect
-from core.game_logic.effects.change_of_position_effect import change_of_position_effect, im_fine_here_effect
-from core.game_logic.effects.exchange_effect import exchange_effect, terrifying_effect, you_failed_effect, no_thanks_effect
-from core.game_logic.effects.flamethrower_effect import flamethrower_effect, no_barbecues_effect
+from core.game_logic.effects.change_of_position_effect import (
+    change_of_position_effect,
+)
+from core.game_logic.effects.change_of_position_effect import (
+    im_fine_here_effect,
+)
+from core.game_logic.effects.exchange_effect import exchange_effect
+from core.game_logic.effects.exchange_effect import no_thanks_effect
+from core.game_logic.effects.exchange_effect import terrifying_effect
+from core.game_logic.effects.exchange_effect import you_failed_effect
+from core.game_logic.effects.flamethrower_effect import flamethrower_effect
+from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
 from core.game_logic.effects.nothing_effect import nothing_effect
 from core.game_logic.effects.suspicion_effect import suspicion_effect
-from core.game_logic.effects.watch_your_back_effect import watch_your_back_effect
+from core.game_logic.effects.watch_your_back_effect import (
+    watch_your_back_effect,
+)
 from core.game_logic.effects.whisky_effect import whisky_effect
+from core.game_logic.game_action import ActionType
+from core.game_logic.game_action import GameAction
 from models.game import Game
 from pony.orm import db_session
 
@@ -143,7 +153,8 @@ def do_effect(
                 )
         case _:  # Invalid card
             raise ValueError("Card doesn't exists.")
-        
+
+
 def without_defense_effect(
     id_game: int,
     id_player: int,

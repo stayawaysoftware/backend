@@ -1,11 +1,11 @@
 """Suspicion effect."""
-
 from typing import Optional
 
 from core.game_logic.game_action import ActionType
 from core.game_logic.game_action import GameAction
 from models.game import Game
 from pony.orm import db_session
+
 
 def suspicion_effect(
     id_game: int,

@@ -1,5 +1,4 @@
 """Exchange effect."""
-
 from typing import Optional
 
 from core.game_logic.effects.nothing_effect import nothing_effect
@@ -7,6 +6,7 @@ from core.game_logic.game_action import ActionType
 from core.game_logic.game_action import GameAction
 from models.game import Game
 from pony.orm import db_session
+
 
 def exchange_effect(
     id_game: int,
