@@ -129,7 +129,9 @@ class TestWinnerCheckoutHuman:
         for infected_player in infected_players:
             infected_player.role = "Human"
             commit()
+        assert game.winners != "None"
         assert game.winners == "The Thing"
         assert game.status == "Finished"
+        
 
         
