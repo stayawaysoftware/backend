@@ -55,6 +55,9 @@ class TestWinnerCheckoutHuman:
     def test_Human_win_test(self, resources):
         room = resources[1]
         game = Game.get(id=room.id)
+        game.winners = "None"
+        game.status = "In progress"
+        commit()
         players = list(game.players)
         the_thing_player = list(filter(lambda p: p.role == "The Thing", players))[0]
         flamethower_effect(the_thing_player.id)
@@ -69,6 +72,9 @@ class TestWinnerCheckoutHuman:
     def test_The_Thing_wins_because_all_human_death(self, resources):
         room = resources[1]
         game = Game.get(id=room.id)
+        game.winners = "None"
+        game.status = "In progress"
+        commit()
         players = list(game.players)
         human_players = list(filter(lambda p: p.role == "Human", players))
         for human_player in human_players:
@@ -77,6 +83,7 @@ class TestWinnerCheckoutHuman:
         #Set alive all the human killed for next test
         for player in players:
             player.alive = True
+            commit()
         assert game.winners == "The Thing"
         assert game.status == "Finished"
 
@@ -84,10 +91,14 @@ class TestWinnerCheckoutHuman:
     def test_The_Thing_wins_because_infected(self, resources):
         room = resources[1]
         game = Game.get(id=room.id)
+        game.winners = "None"
+        game.status = "In progress"
+        commit()
         players = list(game.players)
         human_players = list(filter(lambda p: p.role == "Human", players))
         for human_player in human_players:
             human_player.role = "Infected"
+            commit()
         check_winners(game.id)
         #Set Human roles for all the previous infected players
         infected_players = list(filter(lambda p: p.role == "Infected", players))
@@ -102,12 +113,16 @@ class TestWinnerCheckoutHuman:
         room = resources[1]
         game = Game.get(id=room.id)
         players = list(game.players)
+        game.winners = "None"
+        game.status = "In progress"
+        commit()
         human_players = list(filter(lambda p: p.role == "Human", players))
         # Kill one human
         flamethower_effect(human_players[0].id)
         for human_player in human_players:
             if human_player.alive:
                 human_player.role = "Infected"
+                commit()
         check_winners(game.id)
         #Set Human roles for all the previous infected players
         infected_players = list(filter(lambda p: p.role == "Infected", players))
