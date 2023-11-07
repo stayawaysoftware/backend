@@ -40,14 +40,6 @@ def init_players(room_id: int, game: Game):
     players = list(game.players)
     player = random.choice(players)
     player.role = "The Thing"
-    """
-    for p in players:
-        for c in p.hand:
-            if c.idtype == 2:
-                p.role = "The Thing"
-                break
-    """
-    
     commit()
 
 
@@ -62,24 +54,6 @@ def init_game(room_id: int):
     game = Game(id=room_id, deck=deck)
     commit()
     init_players(room_id, game)
-
-
-@db_session
-def init_game_status(game_id: int):
-    players = Game.get(id=game_id).players
-    player_list = [PlayerOut.from_player(p) for p in players]
-    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
-    the_thing_player_status = the_thing_player.alive
-    game_status = GameStatus(
-        players=player_list,
-        alive_players=len(list(filter(lambda p: p.alive, players))),
-        the_thing_is_alive=the_thing_player_status,
-        turn_phase=Game.get(id=game_id).current_phase,
-        current_turn=Game.get(id=game_id).current_position,
-        lastPlayedCard=None,
-    )
-    return game_status
-
 
 @db_session
 def play_card(
@@ -109,43 +83,6 @@ def play_card(
         print("ERROR:", str(e))
     
     return effect
-
-
-@db_session
-def turn_game_status(
-    game: Game,
-    card_idtype: int,
-    current_player_id: int,
-    target_player_id: Optional[int] = None,
-):
-    play_card(
-        game_id=game.id,
-        card_idtype=card_idtype,
-        current_player_id=current_player_id,
-        target_player_id=target_player_id,
-    )
-    players = Game.get(id=game.id).players
-    player_list = [PlayerOut.from_player(p) for p in players]
-    calculate_next_turn(game_id=game.id)
-    next_player = Player.select(
-        lambda p: p.round_position == game.current_position
-    ).first()
-    gu.draw(id_game=game.id, id_player=next_player.id)
-    game.current_phase = "Draw"
-    commit()
-    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
-    the_thing_player_status = the_thing_player.alive
-
-    game_status = GameStatus(
-        players=player_list,
-        alive_players=len(list(filter(lambda p: p.alive, players))),
-        the_thing_is_alive=the_thing_player_status,
-        turn_phase=Game.get(id=game.id).current_phase,
-        current_turn=Game.get(id=game.id).current_position,
-        lastPlayedCard=card_idtype,
-    )
-    return game_status
-
 
 @db_session
 def calculate_next_turn(game_id: int):
@@ -226,13 +163,15 @@ def try_defense(played_card: int, card_target: int):
 def check_winners(game_id:int):
     game = Game.get(id=game_id)
     players = list(game.players)
-    infected_players = list(filter(lambda p: p.role == "Infected", players))
-    human_players = list(filter(lambda p: p.role == "Human", players))
-    the_thing_player = Player.select(lambda p: p.role == "The Thing").first()
-    if (infected_players == len(players) - 1) or len(human_players) == 0:
+    alive_players = list(filter(lambda p: p.alive, players))
+    infected_players = list(filter(lambda p: p.role == "Infected", alive_players))
+    human_alive_players = list(filter(lambda p: p.role == "Human", alive_players))
+    the_thing_player = list(filter(lambda p: p.role == "The Thing", players))[0]
+    if (infected_players == len(alive_players) - 1) or len(human_alive_players) == 0:
         game.winners = "The Thing"
         commit()
         game.status = "Finished"
+        commit()
     elif not the_thing_player.alive:
         game.winners = "Humans"
         commit()
