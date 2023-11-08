@@ -14,7 +14,10 @@ from core.deck import delete_deck
 from core.deck import delete_disposable_deck
 from core.deck import get_deck
 from core.deck import get_random_card_from_available_deck
+from core.deck import get_specific_card_from_available_deck
+from core.deck import get_specific_card_from_disposable_deck
 from core.deck import move_disposable_to_available_deck
+from core.deck import unrelate_card_with_disposable_deck
 from core.effects import do_effect
 from core.game_action import GameAction
 from models.game import Deck
@@ -74,6 +77,48 @@ def draw(id_game: int, id_player: int) -> int:
     return card.id
 
 
+def draw_specific(id_game: int, id_player: int, idtype_card: int) -> int:
+    """Draw a specific card from the available or disposable deck."""
+    with db_session:
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+        if not Game.exists(id=id_game):
+            raise ValueError(f"Game with id {id_game} doesn't exist")
+
+    # I've got the card from one of the two decks
+
+    get_functions = [
+        get_specific_card_from_available_deck,
+        get_specific_card_from_disposable_deck,
+    ]
+    card = None
+
+    for index in range(2):
+        try:
+            card = get_functions[index](id_game, idtype_card)
+        except ValueError:
+            card = None
+
+        if card is not None:
+            break
+
+    if card is None:
+        raise ValueError(
+            f"Decks of game with id {id_game} doesn't have a card with idtype {idtype_card}"
+        )
+
+    # I make the corresponding associations with this card obtained
+
+    unrelate_functions = [
+        unrelate_card_with_available_deck,
+        unrelate_card_with_disposable_deck,
+    ]
+    unrelate_functions[index](card.id, id_game)
+    relate_card_with_player(card.id, id_player)
+
+    return card.id
+
+
 # PLAY phase
 
 
@@ -84,7 +129,7 @@ def play(
     idtype_card_before: Optional[int] = None,
     target: Optional[int] = None,
     card_chosen_by_player: Optional[int] = None,
-    card_chosen_by_target: Optional[int] = None
+    card_chosen_by_target: Optional[int] = None,
 ) -> GameAction:
     """Play a card from player hand."""
     with db_session:
@@ -124,7 +169,7 @@ def play(
         id_card_type_before=idtype_card_before,
         target=target,
         card_chosen_by_player=card_chosen_by_player,
-        card_chosen_by_target=card_chosen_by_target
+        card_chosen_by_target=card_chosen_by_target,
     )
 
 
