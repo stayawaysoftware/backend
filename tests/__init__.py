@@ -14,6 +14,7 @@ from core.player import *  # noqa : F401
 from core.game_logic.deck import *  # noqa : F401
 from core.game_logic.card import *  # noqa : F401
 from core.game_logic.game_utility import *  # noqa : F401
+from core.game_logic.game_effects import *  # noqa : F401
 from core.game_logic.game_action import *  # noqa : F401
 from core.game_logic.card_creation import *  # noqa : F401
 from core.game_logic.effects.analysis_effect import *  # noqa : F401
