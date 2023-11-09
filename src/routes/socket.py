@@ -1,12 +1,12 @@
 import core.room as rooms
 from core.connections import ConnectionManager
+from core.game import delete_game
 from core.game import handle_defense
-from core.game import handle_play
-from core.game import try_defense
 from core.game import handle_exchange
 from core.game import handle_exchange_defense
-from core.game import delete_game
-from core.game_utility import discard
+from core.game import handle_play
+from core.game import try_defense
+from core.game_logic.game_utility import discard
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -140,15 +140,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id, defense_response
                                 )
 
-
-                            case "defense": 
+                            case "defense":
                                 response, effect = handle_defense(
-                                        game_id=room_id,
-                                        card_type_id=data["played_defense"],
-                                        attacker_id=data["target_player"],
-                                        last_card_played_id=data["last_played_card"],
-                                        defense_player_id=user_id
-                                    )
+                                    game_id=room_id,
+                                    card_type_id=data["played_defense"],
+                                    attacker_id=data["target_player"],
+                                    last_card_played_id=data[
+                                        "last_played_card"
+                                    ],
+                                    defense_player_id=user_id,
+                                )
                                 print(response)
                                 await connection_manager.broadcast(
                                     room_id, response
@@ -157,73 +158,70 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 if effect is not None:
                                     await connection_manager.broadcast(
                                         room_id, effect
-                                    )           
+                                    )
 
                                 await connection_manager.broadcast(
                                     room_id,
-                                    GameMessage.create(
-                                        "game_info", room_id
-                                    ),
+                                    GameMessage.create("game_info", room_id),
                                 )
 
                             case "exchange":
                                 exchange_res = handle_exchange(
                                     user_id,
                                     data["chosen_card"],
-                                    data["target_player"]
+                                    data["target_player"],
                                 )
 
                                 await connection_manager.broadcast(
                                     room_id, exchange_res
                                 )
-                            
+
                             case "exchange_defense":
                                 handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
-                                    exchange_requester=data["exchange_requester_id"],
+                                    exchange_requester=data[
+                                        "exchange_requester_id"
+                                    ],
                                     last_chosen_card=data["last_chose"],
                                     chosen_card=data["chosen_card"],
-                                    is_defense=data["is_defense"]
+                                    is_defense=data["is_defense"],
                                 )
 
-                                res = {"type":"exchange_end"}
+                                res = {"type": "exchange_end"}
                                 await connection_manager.broadcast(
                                     room_id, res
                                 )
 
                                 await connection_manager.broadcast(
                                     room_id,
-                                    GameMessage.create(
-                                        "game_info", room_id
-                                    )
+                                    GameMessage.create("game_info", room_id),
                                 )
 
                             case "discard":
-                                id = discard(room_id,
-                                        data["played_card"],
-                                        user_id,
-                                        )
+                                id = discard(
+                                    room_id,
+                                    data["played_card"],
+                                    user_id,
+                                )
 
-                                res = {"type":"discard",
-                                       "played_card":data["played_card"]
-                                       }
+                                res = {
+                                    "type": "discard",
+                                    "played_card": data["played_card"],
+                                }
 
                                 await connection_manager.broadcast(
                                     room_id,
                                     res,
                                 )
-                                
 
                             case "finished":
                                 delete_game(room_id)
-                                
+
                             case "game_status":
                                 await connection_manager.broadcast(
                                     room_id,
-                                    GameMessage.create(
-                                        "game_info", room_id
-                                    ),
+                                    GameMessage.create("game_info", room_id),
                                 )
 
                             case _:
@@ -231,13 +229,13 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     websocket,
                                     ErrorMessage.create(
                                         "DEBUGGING: Invalid game event"
-                                        ),
-                                    )
+                                    ),
+                                )
                     except ValidationError as error:
-                            await connection_manager.send_to(
-                                websocket,
-                                ErrorMessage.create(str(error)),
-                            )
+                        await connection_manager.send_to(
+                            websocket,
+                            ErrorMessage.create(str(error)),
+                        )
             except ValueError:
                 # If the data is not a valid json
                 # For now send an error message

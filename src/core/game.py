@@ -1,15 +1,15 @@
 import random
 from typing import Optional
 
-import core.game_utility as gu
+import core.game_logic.game_utility as gu
 import core.room as Iroom
 from core.connections import ConnectionManager
-from core.card_creation import card_defense
+from core.game_logic.card_creation import card_defense
 from core.player import create_player
 from core.player import dealing_cards
 from core.effect_handler import effect_handler
-from core.card import relate_card_with_player
-from core.card import unrelate_card_with_player
+from core.game_logic.card import relate_card_with_player
+from core.game_logic.card import unrelate_card_with_player
 from fastapi import HTTPException
 from models.game import Game
 from models.game import Player
