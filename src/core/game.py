@@ -302,6 +302,36 @@ def handle_exchange(
     return exchange_response
 
 @db_session
+def exchange_defended(
+    game_id : int,
+    current_player_id: int,
+    defense_card_id: int,
+):
+    print("Pre-disc")
+    game = Game.get(id=game_id)
+    game.current_phase = "Discard"
+    defense_card = Card.get(id=defense_card_id)
+    commit()
+    print("Aft-disc")
+    gu.discard(game_id, defense_card.idtype, current_player_id)
+    print("Aft-disc")
+    game.current_phase = "Draw"
+    commit()
+    gu.draw(game_id, current_player_id)
+    print("Aft-draw")
+
+@db_session
+def exchange_not_defended(
+    game_id : int,
+    current_player_id: int,
+    last_chosen_card: int,
+    exchange_requester: int,
+    chosen_card: int,
+):
+    effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
+    return effect
+
+@db_session
 def handle_exchange_defense(
     game_id : int,
     current_player_id: int,
@@ -313,24 +343,12 @@ def handle_exchange_defense(
     game = Game.get(id=game_id)
     if is_defense:
         try:
-            print("Pre-disc")
-            game.current_phase = "Discard"
-            commit()
-            print("Aft-disc")
-            gu.discard(game_id, last_chosen_card, current_player_id)
-            print("Aft-disc")
-            game.current_phase = "Draw"
-            commit()
-            gu.draw(game_id, current_player_id)
-            print("Aft-draw")
+            exchange_defended(game_id, current_player_id, chosen_card)
         except ValueError as e:
             print("ERROR:", str(e))
     else:
         try:
-            print("Pre-EffectHandler")
-            print("Effect handler args: ", game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
-            effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
-            print("After-EffectHandler")
+            effect = exchange_not_defended(game_id, current_player_id, last_chosen_card, exchange_requester, chosen_card)
         except ValueError as e:
            print("ERROR:",str(e))
     calculate_next_turn(game_id)
