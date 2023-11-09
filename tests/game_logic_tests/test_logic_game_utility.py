@@ -12,6 +12,7 @@ from . import discard
 from . import DisposableDeck
 from . import do_effect
 from . import draw
+from . import draw_no_panic
 from . import draw_specific
 from . import Game
 from . import initialize_decks
@@ -267,6 +268,52 @@ class TestGameUtilityPhases:
         draw_specific(1, 1, 1)
         with pytest.raises(ValueError):
             draw_specific(1, 1, 1)
+
+    @db_session
+    def test_draw_no_panic(self):
+        """Test draw_no_panic function."""
+        id_player = 1
+        for _ in range(2 * 109 + 1):
+            # Draw the no panic card
+            card = draw_no_panic(1, id_player)
+
+            assert Card.exists(id=card)
+            assert (
+                len(Card[card].players) == 1
+                and Player[id_player] in Card[card].players  # noqa : W503
+            )
+            assert (
+                len(Player[id_player].hand) == 1
+                and Card[card] in Player[id_player].hand  # noqa : W503
+            )
+            assert len(Card[card].available_deck) == 0
+            assert len(Card[card].disposable_deck) == 0
+            for i in range(1, 13):
+                if i != id_player:
+                    assert len(Player[i].hand) == 0
+            assert Card[card].type != "PANIC"
+
+            # Discard the card to check others
+            Player[id_player].hand.remove(Card[card])
+            DisposableDeck[1].cards.add(Card[card])
+
+            id_player += 1
+            if id_player > 12:
+                id_player = 1
+
+    @db_session
+    def test_draw_no_panic_with_invalid_player(self):
+        """Test draw_no_panic function with invalid player."""
+        with pytest.raises(ValueError):
+            draw_no_panic(1, 0)
+
+        with pytest.raises(ValueError):
+            draw_no_panic(1, 13)
+
+    def test_draw_no_panic_with_invalid_game(self):
+        """Test draw_no_panic function with invalid game."""
+        with pytest.raises(ValueError):
+            draw_no_panic(2, 1)
 
     @db_session
     def test_discard(self):

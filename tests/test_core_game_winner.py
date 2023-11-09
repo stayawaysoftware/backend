@@ -1,19 +1,18 @@
 import pytest
-from pony.orm import db_session
 from pony.orm import commit
+from pony.orm import db_session
+
+from . import check_winners
+from . import clean_db
 from . import create_room
 from . import create_user
 from . import delete_room
 from . import delete_user
-from . import Room
-from . import join_room
-from . import start_game
-from . import Player
-from . import Game
-from . import delete_game
-from . import clean_db
 from . import flamethower_effect
-from . import check_winners
+from . import Game
+from . import join_room
+from . import Room
+from . import start_game
 
 
 # =============================== Human Win Testing =================================
@@ -28,7 +27,7 @@ class TestWinnerCheckoutHuman:
         room = Room.get(id=room_id)
 
         for i in range(3):
-            user = create_user(str("user"+str(i)))
+            user = create_user(str("user" + str(i)))
             id_list.append(user.id)
             join_room(room_id, user.id)
 
@@ -49,8 +48,6 @@ class TestWinnerCheckoutHuman:
     def teardown_class(cls):
         clean_db()
 
- 
-
     @db_session
     def test_Human_win_test(self, resources):
         room = resources[1]
@@ -59,7 +56,9 @@ class TestWinnerCheckoutHuman:
         game.status = "In progress"
         commit()
         players = list(game.players)
-        the_thing_player = list(filter(lambda p: p.role == "The Thing", players))[0]
+        the_thing_player = list(
+            filter(lambda p: p.role == "The Thing", players)
+        )[0]
         flamethower_effect(the_thing_player.id)
         check_winners(game.id)
         # Return the thing to the game for next test
@@ -78,9 +77,9 @@ class TestWinnerCheckoutHuman:
         players = list(game.players)
         human_players = list(filter(lambda p: p.role == "Human", players))
         for human_player in human_players:
-           flamethower_effect(human_player.id)
+            flamethower_effect(human_player.id)
         check_winners(game.id)
-        #Set alive all the human killed for next test
+        # Set alive all the human killed for next test
         for player in players:
             player.alive = True
             commit()
@@ -100,8 +99,10 @@ class TestWinnerCheckoutHuman:
             human_player.role = "Infected"
             commit()
         check_winners(game.id)
-        #Set Human roles for all the previous infected players
-        infected_players = list(filter(lambda p: p.role == "Infected", players))
+        # Set Human roles for all the previous infected players
+        infected_players = list(
+            filter(lambda p: p.role == "Infected", players)
+        )
         for infected_player in infected_players:
             infected_player.role = "Human"
             commit()
@@ -124,14 +125,13 @@ class TestWinnerCheckoutHuman:
                 human_player.role = "Infected"
                 commit()
         check_winners(game.id)
-        #Set Human roles for all the previous infected players
-        infected_players = list(filter(lambda p: p.role == "Infected", players))
+        # Set Human roles for all the previous infected players
+        infected_players = list(
+            filter(lambda p: p.role == "Infected", players)
+        )
         for infected_player in infected_players:
             infected_player.role = "Human"
             commit()
         assert game.winners != "None"
         assert game.winners == "The Thing"
         assert game.status == "Finished"
-        
-
-        
