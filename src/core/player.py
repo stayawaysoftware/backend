@@ -1,4 +1,4 @@
-import core.game_utility as gu
+import core.game_logic.game_utility as gu
 from models.game import Game
 from models.game import Player
 from models.room import Room
