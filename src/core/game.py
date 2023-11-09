@@ -307,18 +307,14 @@ def exchange_defended(
     current_player_id: int,
     defense_card_id: int,
 ):
-    print("Pre-disc")
     game = Game.get(id=game_id)
     game.current_phase = "Discard"
     defense_card = Card.get(id=defense_card_id)
     commit()
-    print("Aft-disc")
     gu.discard(game_id, defense_card.idtype, current_player_id)
-    print("Aft-disc")
     game.current_phase = "Draw"
     commit()
     gu.draw(game_id, current_player_id)
-    print("Aft-draw")
 
 @db_session
 def exchange_not_defended(
@@ -361,7 +357,6 @@ def handle_exchange_defense(
          gu.draw(game_id, next_player.id)
     except ValueError as e:
             print("ERROR:", str(e))
-    print("Exchange finalizado")
 
 @db_session
 def analisis_effect(game_id: int, adyacent_id: int):
