@@ -11,7 +11,8 @@ from . import delete_decks
 from . import discard
 from . import DisposableDeck
 from . import do_effect
-from . import draw, draw_no_panic
+from . import draw
+from . import draw_no_panic
 from . import Game
 from . import initialize_decks
 from . import play
@@ -243,7 +244,7 @@ class TestGameUtilityPhases:
             id_player += 1
             if id_player > 12:
                 id_player = 1
-    
+
     @db_session
     def test_draw_no_panic_with_invalid_player(self):
         """Test draw_no_panic function with invalid player."""

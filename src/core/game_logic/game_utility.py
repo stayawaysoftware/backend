@@ -69,6 +69,7 @@ def draw(id_game: int, id_player: int) -> int:
     relate_card_with_player(card.id, id_player)
     return card.id
 
+
 def draw_no_panic(id_game: int, id_player: int) -> int:
     """Draw a card from the available deck. The card isn't of panic type."""
     with db_session:
@@ -76,25 +77,25 @@ def draw_no_panic(id_game: int, id_player: int) -> int:
             raise ValueError(f"Player with id {id_player} doesn't exist")
         if not Game.exists(id=id_game):
             raise ValueError(f"Game with id {id_game} doesn't exist")
-        
+
         if len(get_deck(id_game).available_deck.cards) == 0:
             move_disposable_to_available_deck(id_game)
-        
+
         card = get_random_card_from_available_deck(id_game)
-        while card.type == 'PANIC':
+        while card.type == "PANIC":
             unrelate_card_with_available_deck(card.id, id_game)
             relate_card_with_disposable_deck(card.id, id_game)
 
-            
             if len(get_deck(id_game).available_deck.cards) == 0:
                 move_disposable_to_available_deck(id_game)
 
             card = get_random_card_from_available_deck(id_game)
-        
+
         unrelate_card_with_available_deck(card.id, id_game)
         relate_card_with_player(card.id, id_player)
 
         return card.id
+
 
 # DISCARD phase
 
