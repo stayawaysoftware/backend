@@ -7,6 +7,7 @@ from models.game import Game
 from models.game import Player
 from pony.orm import db_session
 
+
 def play(
     id_game: int,
     id_player: int,
