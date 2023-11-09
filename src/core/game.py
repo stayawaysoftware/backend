@@ -210,7 +210,6 @@ def handle_defense(
     last_card_played_id: int,
     defense_player_id: int
 ):
-    print("primer try")
     try:
         draw_response = None
         response = None
@@ -220,33 +219,23 @@ def handle_defense(
         effect = None
     except ValueError as e:
         print("ERROR:", str(e))
-    print("Sale ok del primer try")
 
     if card_type_id == 0:
-        print("Entra al if")
         try:
-            print("Entra al try")
             response, effect = not_defended_card(last_card_played_id, game_id, attacker_id, defense_player_id)
-            print("Sale ok del try")
-            print(response)
-            print(effect)
         except ValueError as e:
             print("ERROR:", str(e))
         
     else:
-        print("Entra al Else")
         try:
-            print("Entra al try del else")
             at = Card.get(id=last_card_played_id)
             de = Card.get(id=card_type_id)
             attack_card = Card.get(id=last_card_played_id)
             attack_card = CardOut.from_card(attack_card)
-            print("Sale del try del Else")
         except ValueError as e:
             print("ERROR:", str(e))
 
         try:
-            print("Segundo Try")
             game.current_phase = "Discard"
             commit()
             id1 = gu.discard(game_id, at.idtype, attacker_id)
@@ -260,13 +249,11 @@ def handle_defense(
                 "target_player": defense_player_id,
                 "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
                 }
-            print("Sale ok del segundo try")
         except ValueError as e:
             print("ERROR:", str(e))  # Imprime el mensaje de error de la excepciÃ³n
 
     try:
         check_winners(game_id)
-        print ("DRAW RESPONSE")
         game.current_phase = "Exchange"
         commit()
     except ValueError as e:
