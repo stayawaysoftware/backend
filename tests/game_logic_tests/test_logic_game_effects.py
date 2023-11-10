@@ -15,8 +15,8 @@ from . import play
 from . import Player
 
 
-class TestGameEffects:
-    """Test game effects."""
+class TestPlay:
+    """Test Play Function."""
 
     @classmethod
     @db_session
@@ -51,8 +51,6 @@ class TestGameEffects:
         for i in range(0, 109):
             Card[i].delete()
         commit()
-
-    # PLAY
 
     @db_session
     def test_play(self):
