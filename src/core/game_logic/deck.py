@@ -106,6 +106,34 @@ def get_random_card_from_available_deck(id_available_deck: int) -> Card:
         )
 
 
+def get_specific_card_from_available_deck(
+    id_available_deck: int, idtype_card: int
+) -> Card:
+    """Get a specific card from an available deck"""
+    with db_session:
+        available_deck = get_available_deck(id_available_deck)
+        if len(available_deck.cards.filter(idtype=idtype_card)) > 0:
+            return available_deck.cards.filter(idtype=idtype_card).random(1)[0]
+        raise ValueError(
+            f"Available deck with id {id_available_deck} doesn't have a card with idtype {idtype_card}"
+        )
+
+
+def get_specific_card_from_disposable_deck(
+    id_disposable_deck: int, idtype_card: int
+) -> Card:
+    """Get a specific card from a disposable deck"""
+    with db_session:
+        disposable_deck = get_disposable_deck(id_disposable_deck)
+        if len(disposable_deck.cards.filter(idtype=idtype_card)) > 0:
+            return disposable_deck.cards.filter(idtype=idtype_card).random(1)[
+                0
+            ]
+        raise ValueError(
+            f"Disposable deck with id {id_disposable_deck} doesn't have a card with idtype {idtype_card}"
+        )
+
+
 # Move cards
 
 

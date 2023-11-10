@@ -12,6 +12,7 @@ from . import discard
 from . import DisposableDeck
 from . import draw
 from . import draw_no_panic
+from . import draw_specific
 from . import Game
 from . import initialize_decks
 from . import Player
@@ -210,6 +211,61 @@ class TestGameUtilityPhases:
         Game[1].current_phase = "Discard"
         with pytest.raises(ValueError):
             draw(1, 1)
+
+    @db_session
+    def test_draw_specific(self):
+        """Test draw_specific function."""
+        id_player = 1
+        for idtype_required in range(1, 32):
+            for _ in range(2 * 109 + 1):
+                # I do this for to test several possibilities and that everything works correctly
+
+                card = draw_specific(1, id_player, idtype_required)
+
+                assert Card.exists(id=card)
+                assert (
+                    len(Card[card].players) == 1
+                    and Player[id_player] in Card[card].players  # noqa : W503
+                )
+                assert (
+                    len(Player[id_player].hand) == 1
+                    and Card[card] in Player[id_player].hand  # noqa : W503
+                )
+                assert len(Card[card].available_deck) == 0
+                assert len(Card[card].disposable_deck) == 0
+                for i in range(1, 13):
+                    if i != id_player:
+                        assert len(Player[i].hand) == 0
+
+                assert Card[card].idtype == idtype_required
+
+                Player[id_player].hand.remove(Card[card])
+                DisposableDeck[1].cards.add(Card[card])
+
+    @db_session
+    def test_draw_specific_with_invalid_player(self):
+        """Test draw_specific function with invalid player."""
+        with pytest.raises(ValueError):
+            draw_specific(1, 0, 1)
+
+        with pytest.raises(ValueError):
+            draw_specific(1, 13, 1)
+
+    @db_session
+    def test_draw_specific_with_invalid_game(self):
+        """Test draw_specific function with invalid game."""
+        with pytest.raises(ValueError):
+            draw_specific(2, 1, 1)
+
+    @db_session
+    def test_draw_specific_with_idtype_that_decks_doesnt_have(self):
+        """Test draw_specific function with idtype that decks doesn't have."""
+        with pytest.raises(ValueError):
+            draw_specific(1, 1, 100)
+
+        draw_specific(1, 1, 1)
+        with pytest.raises(ValueError):
+            draw_specific(1, 1, 1)
 
     @db_session
     def test_draw_no_panic(self):

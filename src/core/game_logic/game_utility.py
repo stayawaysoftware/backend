@@ -2,6 +2,7 @@
 from core.game_logic.card import relate_card_with_disposable_deck
 from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_available_deck
+from core.game_logic.card import unrelate_card_with_disposable_deck
 from core.game_logic.card import unrelate_card_with_player
 from core.game_logic.card_creation import init_available_deck
 from core.game_logic.deck import create_available_deck
@@ -12,6 +13,8 @@ from core.game_logic.deck import delete_deck
 from core.game_logic.deck import delete_disposable_deck
 from core.game_logic.deck import get_deck
 from core.game_logic.deck import get_random_card_from_available_deck
+from core.game_logic.deck import get_specific_card_from_available_deck
+from core.game_logic.deck import get_specific_card_from_disposable_deck
 from core.game_logic.deck import move_disposable_to_available_deck
 from models.game import Deck
 from models.game import Game
@@ -95,6 +98,48 @@ def draw_no_panic(id_game: int, id_player: int) -> int:
         relate_card_with_player(card.id, id_player)
 
         return card.id
+
+
+def draw_specific(id_game: int, id_player: int, idtype_card: int) -> int:
+    """Draw a specific card from the available or disposable deck."""
+    with db_session:
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+        if not Game.exists(id=id_game):
+            raise ValueError(f"Game with id {id_game} doesn't exist")
+
+    # I've got the card from one of the two decks
+
+    get_functions = [
+        get_specific_card_from_available_deck,
+        get_specific_card_from_disposable_deck,
+    ]
+    card = None
+
+    for index in range(2):
+        try:
+            card = get_functions[index](id_game, idtype_card)
+        except ValueError:
+            card = None
+
+        if card is not None:
+            break
+
+    if card is None:
+        raise ValueError(
+            f"Decks of game with id {id_game} doesn't have a card with idtype {idtype_card}"
+        )
+
+    # I make the corresponding associations with this card obtained
+
+    unrelate_functions = [
+        unrelate_card_with_available_deck,
+        unrelate_card_with_disposable_deck,
+    ]
+    unrelate_functions[index](card.id, id_game)
+    relate_card_with_player(card.id, id_player)
+
+    return card.id
 
 
 # DISCARD phase
