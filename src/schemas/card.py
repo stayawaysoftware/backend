@@ -13,7 +13,8 @@ class CardOut(BaseModel):
             idtype=card.idtype,
         )
 
-    def json(self, card: Card):
+    @classmethod
+    def to_json(cls, card: Card):
         # Return a JSON-serializable representation of the Player object954
-        cls = CardOut.from_card(card)
-        return {"id": cls.id, "idtype": cls.idtype}
+        card = cls.from_card(card)
+        return {"id": card.id, "idtype": card.idtype}

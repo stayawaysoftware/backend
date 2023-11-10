@@ -137,7 +137,7 @@ def handle_play(
     card = CardOut.from_card(card)
     response = {
         "type": "play",
-        "played_card": card.dict(by_alias=True, exclude_unset=True),
+        "played_card": card.model_dump(by_alias=True, exclude_unset=True),
         "card_target": target_player_id,
     }
     return response
@@ -150,7 +150,7 @@ def try_defense(played_card: int, card_target: int):
             print("No se puede defender")
         else:
             player = Player.get(id=card_target)
-            player = PlayerOut.json(player)
+            player = PlayerOut.to_json(player)
 
         card = Card.get(id=played_card)
         card = CardOut.from_card(card)
@@ -158,7 +158,7 @@ def try_defense(played_card: int, card_target: int):
         res = {
             "type": "try_defense",
             "target_player": card_target,
-            "played_card": card.dict(by_alias=True, exclude_unset=True),
+            "played_card": card.model_dump(by_alias=True, exclude_unset=True),
             "defended_by": defended_by,
         }
     return res
@@ -197,29 +197,32 @@ def not_defended_card(
     last_card_played_id: int,
     game_id: int,
     attacker_id: int,
-    defense_player_id : int,
+    defense_player_id: int,
 ):
     at = Card.get(id=last_card_played_id)
     attack_card = CardOut.from_card(at)
     try:
-       
+
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         response = {
-            "type" : "defense",
+            "type": "defense",
             "played_defense": 0,
             "target_player": defense_player_id,
-            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+            "last_played_card": attack_card.model_dump(
+                by_alias=True, exclude_unset=True
+            ),
         }
     except ValueError as e:
         print("ERROR:", str(e))
 
     return response, effect
 
+
 @db_session
 def defended_card(
-    game_id : int,
+    game_id: int,
     attacker_id: int,
-    defense_player_id : int,
+    defense_player_id: int,
     last_card_played_id: int,
     defense_card_id: int,
 ):
@@ -231,21 +234,26 @@ def defended_card(
         game = Game.get(id=game_id)
     except ValueError as e:
         print("ERROR:", str(e))
-    
+
     game.current_phase = "Discard"
     commit()
-    id1 = gu.discard(game_id, at.idtype, attacker_id)
-    id2 = gu.discard(game_id, de.idtype, defense_player_id)
-    game.current_phase="Draw"
+    gu.discard(game_id, at.idtype, attacker_id)
+    gu.discard(game_id, de.idtype, defense_player_id)
+    game.current_phase = "Draw"
     commit()
-    draw_response = draw_card(game_id, defense_player_id)
+    draw_card(game_id, defense_player_id)
     response = {
-            "type" : "defense",
-            "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
-            "target_player": defense_player_id,
-            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
-        }
+        "type": "defense",
+        "played_defense": defense_card.model_dump(
+            by_alias=True, exclude_unset=True
+        ),
+        "target_player": defense_player_id,
+        "last_played_card": attack_card.model_dump(
+            by_alias=True, exclude_unset=True
+        ),
+    }
     return response
+
 
 @db_session
 def handle_defense(
@@ -253,34 +261,40 @@ def handle_defense(
     card_type_id: int,
     attacker_id: int,
     last_card_played_id: int,
-    defense_player_id: int
+    defense_player_id: int,
 ):
     try:
-        draw_response = None
         response = None
         game = Game.get(id=game_id)
         effect = None
     except ValueError as e:
         print("ERROR:", str(e))
-    
 
     if card_type_id == 0:
         try:
-            response, effect = not_defended_card(last_card_played_id, game_id, attacker_id, defense_player_id)
+            response, effect = not_defended_card(
+                last_card_played_id, game_id, attacker_id, defense_player_id
+            )
         except ValueError as e:
             print("ERROR:", str(e))
     else:
         try:
-            response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
+            response = defended_card(
+                game_id,
+                attacker_id,
+                defense_player_id,
+                last_card_played_id,
+                card_type_id,
+            )
         except ValueError as e:
-            print("ERROR:", str(e)) 
+            print("ERROR:", str(e))
     try:
         check_winners(game_id)
         game.current_phase = "Exchange"
         commit()
     except ValueError as e:
         print("ERROR:", str(e))
-        
+
     return response, effect
 
 
@@ -292,7 +306,7 @@ def draw_card(game_id: int, player_id: int):
 
     draw_response = {
         "type": "draw",
-        "new_card": card.dict(by_alias=True, exclude_unset=True),
+        "new_card": card.model_dump(by_alias=True, exclude_unset=True),
     }
 
     return draw_response
@@ -308,7 +322,7 @@ def handle_exchange(
     exchange_response = {
         "type": "exchange_defense",
         "defended_by": exchange_defense,
-        "last_chosen_card": card.dict(by_alias=True, exclude_unset=True),
+        "last_chosen_card": card.model_dump(by_alias=True, exclude_unset=True),
         "target_player": target_player,
         "exchange_requester": exchange_requester,
     }
@@ -379,7 +393,7 @@ def handle_exchange_defense(
 def analisis_effect(game_id: int, adyacent_id: int):
     # TODO: Revisar que sea adyacente
     adyacent_player = Player.get(id=adyacent_id)
-    adyacent_player_json = PlayerOut.json(adyacent_player)
+    adyacent_player_json = PlayerOut.to_json(adyacent_player)
     cards = adyacent_player_json["hand"]
     players = Game.get(id=game_id).players
     target = []
@@ -472,7 +486,7 @@ def sospecha_effect(target_id: int, user_id: int):
         "type": "show_card",
         "player_name": target.name,
         "target": [user_id],
-        "cards": [random_card.dict(by_alias=True, exclude_unset=True)],
+        "cards": [random_card.model_dump(by_alias=True, exclude_unset=True)],
     }
     return response
 
@@ -480,7 +494,7 @@ def sospecha_effect(target_id: int, user_id: int):
 @db_session
 def whisky_effect(game_id, user_id: int):
     player = Player.get(id=user_id)
-    player_json = PlayerOut.json(player)
+    player_json = PlayerOut.to_json(player)
     cards = player_json["hand"]
     # Add every player from game_id to targe tarray
     players = Game.get(id=game_id).players

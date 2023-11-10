@@ -32,7 +32,6 @@ class EndpointValidators:
     @classmethod
     @validator("max_users", "min_users", allow_reuse=True)
     def validate_max_min_users(cls, max_users, values):
-        max_users = max_users
         min_users = values["min_users"]
 
         if max_users < min_users:

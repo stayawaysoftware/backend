@@ -69,12 +69,12 @@ def join_room(room_id: int, user_id: int):
     room = Room.get(id=room_id)
     if len(room.users) >= room.max_users:
         raise PermissionError("Room is full")
-    if User[user_id].room is not None:
+    if user.room is not None:
         raise PermissionError("User is already in a room")
     if Room.get(id=room_id).in_game:
         raise PermissionError("Game is already in progress")
     room = Room.get(id=room_id)
-    User[user_id].room = room
+    user.room = room
     commit()
 
 

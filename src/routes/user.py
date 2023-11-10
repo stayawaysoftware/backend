@@ -9,18 +9,6 @@ from schemas.user import UserOut
 user = APIRouter(tags=["users"])
 
 
-@user.get(  # ONLY FOR DEBUG
-    "/user/list",
-    response_model=list[UserOut],
-    response_description="List the users that were uploaded to the database",
-    status_code=status.HTTP_200_OK,
-)
-def get_users():
-    with db_session:
-        result = users.get_users()
-    return result
-
-
 @user.post(
     "/user/new",
     response_model=UserOut,
