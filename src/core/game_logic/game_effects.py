@@ -1,11 +1,26 @@
 """Function of play phase."""
 from typing import Optional
 
+from core.game_logic.card_creation import card_defense
 from core.game_logic.effects.effect_handler import do_effect
 from core.game_logic.game_action import GameAction
 from models.game import Game
 from models.game import Player
 from pony.orm import db_session
+
+
+# Get defense cards
+
+
+def get_defense_cards(idtype_card: int) -> list[int]:
+    """Return the list of cards that can be used as defense."""
+    if idtype_card not in range(0, 33):
+        raise ValueError(f"idtype_card {idtype_card} is not in range [0, 32]")
+
+    return card_defense[idtype_card]
+
+
+# Play function (to returns an effect)
 
 
 def play(
