@@ -10,6 +10,7 @@ from . import Deck
 from . import DisposableDeck
 from . import do_effect
 from . import Game
+from . import get_defense_cards
 from . import initialize_decks
 from . import play
 from . import Player
@@ -179,3 +180,70 @@ class TestPlay:
                 card_chosen_by_target=100,
                 target=2,
             )
+
+
+class TestGetDefense:
+    """Test Get Defense Function."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    def test_get_defense(self):
+        """Test get defense function."""
+
+        obtained_defense_cards = []
+        for i in range(0, 33):
+            obtained_defense_cards.append(get_defense_cards(i))
+
+        assert obtained_defense_cards == [
+            [],  # None 0 --> Fictional card
+            [],  # The Thing 1
+            [],  # Infected 2
+            [17],  # Flamethrower 3
+            [],  # Analysis 4
+            [],  # Axe 5
+            [],  # Suspicion 6
+            [],  # Determination 7
+            [],  # Whisky 8
+            [13],  # Change of position 9
+            [],  # Watch your back 10
+            [14, 15, 16],  # Seduction 11
+            [13],  # You better run 12
+            [],  # I'm fine here 13
+            [],  # Terrifying 14
+            [],  # No, thanks 15
+            [],  # You failed 16
+            [],  # No Barbecues 17
+            [],  # Quarantine 18
+            [],  # Locked Door 19
+            [],  # Revelations 20
+            [],  # Rotten ropes 21
+            [],  # Get out of here 22
+            [],  # Forgetful 23
+            [],  # One, two... 24
+            [],  # Three, four... 25
+            [],  # Is the party here? 26
+            [],  # Let it stay between us 27
+            [],  # Turn and turn 28
+            [],  # Can't we be friends? 29
+            [],  # Blind date 30
+            [],  # Ups! 31
+            [14, 15, 16],  # Exchange 32 --> Fictional card
+        ]
+
+    def test_get_defense_with_invalid_card(self):
+        """Test get defense function with invalid card."""
+
+        with pytest.raises(ValueError):
+            get_defense_cards(-1)
+
+        with pytest.raises(ValueError):
+            get_defense_cards(33)
