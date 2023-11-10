@@ -193,79 +193,94 @@ def check_winners(game_id: int):
 
 
 @db_session
+def not_defended_card(
+    last_card_played_id: int,
+    game_id: int,
+    attacker_id: int,
+    defense_player_id : int,
+):
+    at = Card.get(id=last_card_played_id)
+    attack_card = CardOut.from_card(at)
+    try:
+       
+        effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
+        response = {
+            "type" : "defense",
+            "played_defense": 0,
+            "target_player": defense_player_id,
+            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+        }
+    except ValueError as e:
+        print("ERROR:", str(e))
+
+    return response, effect
+
+@db_session
+def defended_card(
+    game_id : int,
+    attacker_id: int,
+    defense_player_id : int,
+    last_card_played_id: int,
+    defense_card_id: int,
+):
+    try:
+        at = Card.get(id=last_card_played_id)
+        de = Card.get(id=defense_card_id)
+        attack_card = CardOut.from_card(at)
+        defense_card = CardOut.from_card(de)
+        game = Game.get(id=game_id)
+    except ValueError as e:
+        print("ERROR:", str(e))
+    
+    game.current_phase = "Discard"
+    commit()
+    id1 = gu.discard(game_id, at.idtype, attacker_id)
+    id2 = gu.discard(game_id, de.idtype, defense_player_id)
+    game.current_phase="Draw"
+    commit()
+    draw_response = draw_card(game_id, defense_player_id)
+    response = {
+            "type" : "defense",
+            "played_defense": defense_card.dict(by_alias=True, exclude_unset=True),
+            "target_player": defense_player_id,
+            "last_played_card": attack_card.dict(by_alias=True, exclude_unset=True)
+        }
+    return response
+
+@db_session
 def handle_defense(
     game_id: int,
     card_type_id: int,
     attacker_id: int,
     last_card_played_id: int,
-    defense_player_id: int,
+    defense_player_id: int
 ):
+    try:
+        draw_response = None
+        response = None
+        game = Game.get(id=game_id)
+        effect = None
+    except ValueError as e:
+        print("ERROR:", str(e))
+    
 
-    response = None
-    defense_card = Card.get(id=card_type_id)
-    defense_card = CardOut.from_card(defense_card)
-    attack_card = Card.get(id=last_card_played_id)
-    attack_card = CardOut.from_card(attack_card)
-    game = Game.get(id=game_id)
-    effect = None
-    if last_card_played_id == 11:
-        effect = seduccion_effect(game_id)
-        response = {
-            "type": "defense",
-            "played_defense": 0,
-            "target_player": defense_player_id,
-            "last_played_card": attack_card.dict(
-                by_alias=True, exclude_unset=True
-            ),
-        }
+    if card_type_id == 0:
+        try:
+            response, effect = not_defended_card(last_card_played_id, game_id, attacker_id, defense_player_id)
+        except ValueError as e:
+            print("ERROR:", str(e))
     else:
-        if card_type_id == 0:
-            try:
-                at = Card.get(id=last_card_played_id)
-                effect = play_card(
-                    game_id, at.idtype, attacker_id, defense_player_id
-                )
-            except ValueError as e:
-                print("ERROR:", str(e))
-            response = {
-                "type": "defense",
-                "played_defense": 0,
-                "target_player": defense_player_id,
-                "last_played_card": attack_card.dict(
-                    by_alias=True, exclude_unset=True
-                ),
-            }
-        else:
-            at = Card.get(id=last_card_played_id)
-            de = Card.get(id=card_type_id)
-            try:
-                game.current_phase = "Discard"
-                commit()
-                gu.discard(game_id, at.idtype, attacker_id)
-                gu.discard(game_id, de.idtype, defense_player_id)
-                game.current_phase = "Draw"
-                commit()
-                draw_card(game_id, defense_player_id)
-                response = {
-                    "type": "defense",
-                    "played_defense": defense_card.dict(
-                        by_alias=True, exclude_unset=True
-                    ),
-                    "target_player": defense_player_id,
-                    "last_played_card": attack_card.dict(
-                        by_alias=True, exclude_unset=True
-                    ),
-                }
-            except ValueError as e:
-                print(
-                    "ERROR:", str(e)
-                )  # Imprime el mensaje de error de la excepciÃ³n
-
+        try:
+            response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
+        except ValueError as e:
+            print("ERROR:", str(e)) 
+    try:
         check_winners(game_id)
-        print("DRAW RESPONSE")
         game.current_phase = "Exchange"
         commit()
-
+    except ValueError as e:
+        print("ERROR:", str(e))
+        
     return response, effect
 
 
