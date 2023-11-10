@@ -199,10 +199,10 @@ def not_defended_card(
     attacker_id: int,
     defense_player_id : int,
 ):
-    attack_card = Card.get(id=last_card_played_id)
-    attack_card = CardOut.from_card(attack_card)
+    at = Card.get(id=last_card_played_id)
+    attack_card = CardOut.from_card(at)
     try:
-        at = Card.get(id=last_card_played_id)
+       
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         response = {
             "type" : "defense",
@@ -226,10 +226,8 @@ def defended_card(
     try:
         at = Card.get(id=last_card_played_id)
         de = Card.get(id=defense_card_id)
-        attack_card = Card.get(id=last_card_played_id)
-        attack_card = CardOut.from_card(attack_card)
-        defense_card = Card.get(id=defense_card_id)
-        defense_card = CardOut.from_card(defense_card)
+        attack_card = CardOut.from_card(at)
+        defense_card = CardOut.from_card(de)
         game = Game.get(id=game_id)
     except ValueError as e:
         print("ERROR:", str(e))
@@ -264,6 +262,8 @@ def handle_defense(
         effect = None
     except ValueError as e:
         print("ERROR:", str(e))
+    
+
     if card_type_id == 0:
         try:
             response, effect = not_defended_card(last_card_played_id, game_id, attacker_id, defense_player_id)

@@ -9,10 +9,15 @@ from . import create_user
 from . import delete_room
 from . import delete_user
 from . import flamethower_effect
+from . import defended_card
+from . import handle_defense
+from . import discard
 from . import Game
 from . import join_room
 from . import Room
 from . import start_game
+from . import draw_specific
+from . import PlayerOut
 
 
 # =============================== Human Win Testing =================================
@@ -135,3 +140,85 @@ class TestWinnerCheckoutHuman:
         assert game.winners != "None"
         assert game.winners == "The Thing"
         assert game.status == "Finished"
+
+# =============================== Defense testing =================================
+
+    def generalized_test_for_defended_card(self,resources, idtype_attack, idtype_defense):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+        first_human = human_players[0]
+        second_human = human_players[1]
+        first_human.alive = True
+        second_human.alive = True
+        game.current_phase = "Discard"
+        commit()
+        for p in players:
+            phand_list = list(p.hand)
+            for card in phand_list:
+                if card.idtype == idtype_attack:
+                    discard(game.id, card.idtype, p.id)
+                if card.idtype == idtype_defense:
+                    discard(game.id, card.idtype, p.id)
+        game.current_phase = "Draw"
+        commit()
+        card_id1 = draw_specific(game.id, first_human.id, idtype_attack)
+        card_id2 = draw_specific(game.id, second_human.id, idtype_defense)
+        response = handle_defense(game.id, card_id1, second_human.id, card_id2, first_human.id)
+
+        return response, human_players, card_id1, card_id2
+    
+    def has_card(self, card_id, player):
+        player = PlayerOut.from_player(player).dict(by_alias=True, exclude_unset=True)
+        has_card = False
+        for card in player["hand"]:
+            if card["id"] == card_id:
+                has_card = True
+        return has_card
+
+    @db_session
+    def test_defended_card_flamethower(self, resources):
+        response, human_players, card_id1, card_id2 = self.generalized_test_for_defended_card(resources,3,17)
+        has_card = self.has_card(card_id1, human_players[0])
+        assert not has_card
+        has_card = self.has_card(card_id2, human_players[1])
+        assert human_players[1].alive 
+        assert response is not None
+
+    @db_session
+    def test_defended_card_change_position(self, resources):
+        response, human_players, card_id1, card_id2 = self.generalized_test_for_defended_card(resources,9,13)
+        has_card = self.has_card(card_id1, human_players[0])
+        assert not has_card
+        has_card = self.has_card(card_id2, human_players[1])
+        assert not has_card
+        assert response is not None
+        
+    @db_session
+    def test_defended_card_seduction_by_15(self, resources):
+        response, human_players, card_id1, card_id2 = self.generalized_test_for_defended_card(resources,11,15)
+        has_card = self.has_card(card_id1, human_players[0])
+        assert not has_card
+        has_card = self.has_card(card_id2, human_players[1])
+        assert not has_card
+        assert response is not None
+
+    @db_session
+    def test_defended_card_seduction_by_16(self, resources):
+        response, human_players, card_id1, card_id2 = self.generalized_test_for_defended_card(resources,11,16)
+        has_card = self.has_card(card_id1, human_players[0])
+        assert not has_card
+        has_card = self.has_card(card_id2, human_players[1])
+        assert not has_card
+        assert response is not None
+
+    @db_session
+    def test_defended_card_you_better_run(self, resources):
+        response, human_players, card_id1, card_id2 = self.generalized_test_for_defended_card(resources,12,13)
+        has_card = self.has_card(card_id1, human_players[0])
+        assert not has_card
+        has_card = self.has_card(card_id2, human_players[1])
+        assert not has_card
+        assert response is not None
+    
