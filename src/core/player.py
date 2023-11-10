@@ -1,4 +1,4 @@
-import core.game_utility as gu
+import core.game_logic.game_utility as gu
 from models.game import Game
 from models.game import Player
 from models.room import Room
@@ -47,6 +47,6 @@ def dealing_cards(room_id: int, player: Player, index: int):
             i += 1
             card = cards[i]
         gu.unrelate_card_with_available_deck(card.id, room_id)
-        gu.relate_card_with_player(card.id, player.id)        
+        gu.relate_card_with_player(card.id, player.id)
     for i in range(4):
         gu.draw(room_id, player.id)
