@@ -1,7 +1,7 @@
 """Card creation and relationship functions for Stay Away!'s cards."""
-from core.card import create_card
-from core.card import relate_card_with_available_deck
-from core.deck import get_available_deck
+from core.game_logic.card import create_card
+from core.game_logic.card import relate_card_with_available_deck
+from core.game_logic.deck import get_available_deck
 from models.game import Card
 from pony.orm import db_session
 
