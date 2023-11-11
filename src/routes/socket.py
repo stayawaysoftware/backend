@@ -38,9 +38,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                 if data["type"] == "message":
                     try:
                         ChatMessage.validate(user_id, room_id)
-                        message = ChatMessage.create(
-                            data["message"], user_id, room_id
-                        )
+                        message = ChatMessage.create(data["message"], user_id)
                         await connection_manager.broadcast(room_id, message)
                     except ValidationError as error:
                         await connection_manager.send_to(

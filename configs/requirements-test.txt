@@ -1,5 +1,6 @@
 pyflakes
 pytest
-flake8
-pep8
 pytest-cov
+pylint
+vulture
+mypy
