@@ -10,6 +10,7 @@ from core.game_logic.card_creation import card_defense
 from core.player import create_player
 from core.player import dealing_cards
 from fastapi import HTTPException
+from core.game_logic.game_effects import get_defense_cards
 from models.game import Card
 from models.game import Game
 from models.game import Player
@@ -272,7 +273,10 @@ def handle_defense(
     else:
         attack_card = Card.get(id=last_card_played_id)
         defense_card = Card.get(id=card_type_id)
-        if card_type_id in card_defense[attack_card.idtype]:
+        print(get_defense_cards(attack_card.idtype))
+        print(defense_card.idtype)
+        print(attack_card.idtype)
+        if defense_card.idtype in get_defense_cards(attack_card.idtype):
             try:
                 response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
                 effect = effect_handler(game_id, defense_card.idtype, defense_player_id, attacker_id, last_card_played_id)
@@ -357,7 +361,8 @@ def handle_exchange_defense(
     game = Game.get(id=game_id)
     effect = None
     if is_defense:
-        if chosen_card in card_defense[32]:
+        defense_card = Card.get(id=chosen_card)
+        if defense_card.idtype in get_defense_cards(32):
             try:
                 defense_card = Card.get(id=chosen_card)
                 exchange_defended(game_id, current_player_id, chosen_card)
@@ -489,6 +494,7 @@ def sospecha_effect(target_id: int, user_id: int):
 def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
     target = Player.get(id=target_id)
     target_card = Card.get(id=target_chosen_card_id)
+    target_card = CardOut.from_card(target_card)
     response = {
         "type": "show_card",
         "player_name" : target.name,
@@ -496,6 +502,7 @@ def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
         "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
 
     }
+    return response
 
 @db_session
 def whisky_effect(game_id, user_id: int):

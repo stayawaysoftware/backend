@@ -10,6 +10,7 @@ from . import delete_room
 from . import delete_user
 from . import flamethower_effect
 from . import defended_card
+from . import card_defense
 from . import handle_exchange_defense
 from . import handle_defense
 from . import discard
@@ -19,6 +20,7 @@ from . import Room
 from . import start_game
 from . import draw_specific
 from . import PlayerOut
+
 
 
 # =============================== Human Win Testing =================================
@@ -143,7 +145,7 @@ class TestWinnerCheckoutHuman:
         assert game.status == "Finished"
 
 # =============================== Defense testing =================================
-
+    """
     def generalized_test_for_defended_card(self,resources, idtype_attack, idtype_defense):
         room = resources[1]
         game = Game.get(id=room.id)
@@ -169,7 +171,9 @@ class TestWinnerCheckoutHuman:
         response = handle_defense(game.id, card_id1, second_human.id, card_id2, first_human.id)
 
         return response, human_players, card_id1, card_id2
-    
+    """
+        
+
     def has_card(self, card_id, player):
         player = PlayerOut.from_player(player).dict(by_alias=True, exclude_unset=True)
         has_card = False
@@ -177,7 +181,7 @@ class TestWinnerCheckoutHuman:
             if card["id"] == card_id:
                 has_card = True
         return has_card
-
+    
     @db_session
     def test_defended_card_flamethower(self, resources):
         response, human_players, card_id1, card_id2 = self.generalized_test_for_defended_card(resources,3,17)
@@ -222,7 +226,7 @@ class TestWinnerCheckoutHuman:
         has_card = self.has_card(card_id2, human_players[1])
         assert not has_card
         assert response is not None
-    
+
     @db_session
     def test_exchange_not_defended(self, resources):
         room = resources[1]
