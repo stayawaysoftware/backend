@@ -24,7 +24,7 @@ class PlayersInfo(BaseModel):
         players = list(game.players)
         players.sort(key=lambda player: player.id)
         # Crear una instancia de PlayerOut jsonificado
-        players = [PlayerOut.json(player) for player in players]
+        players = [PlayerOut.to_json(player) for player in players]
         return players
 
 

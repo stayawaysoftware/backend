@@ -1,13 +1,12 @@
 from enum import Enum
 
-import schemas.validators as validators
 from models.game import Game
 from models.room import Room
 from models.room import User
 from pydantic import BaseModel
 from pydantic import Field
-from pydantic import validator
 from pydantic.config import ConfigDict
+from schemas import validators
 from schemas.game import GameInfo
 
 from .room import RoomId
@@ -48,15 +47,6 @@ class GameEventTypes(str, Enum):
 # ======================= Input Schemas =======================
 
 
-class EventInRoom(BaseModel):
-    model_config = ConfigDict(title="EventInRoom")
-    type: RoomEventTypes = Field(...)
-
-
-class EventInGame(BaseModel):
-    pass
-
-
 class ChatMessage(BaseModel):
     type: str = Field("message")
     message: str = Field(...)
@@ -73,7 +63,7 @@ class ChatMessage(BaseModel):
         )
 
     @classmethod
-    def create(cls, message: str, sender: int, room_id: int):
+    def create(cls, message: str, sender: int):
         sendername = User.get(id=sender).username
         return {
             "type": "message",
@@ -112,11 +102,6 @@ class RoomMessage(BaseModel):
 
     type: RoomEventTypes = Field(...)
 
-    @validator("type", pre=True, allow_reuse=True)
-    def validate_type(cls, type):
-        assert RoomEventTypes.has_type(type), "Invalid type"
-        return type
-
     @classmethod
     def create(cls, type: RoomEventTypes, room_id: RoomId):
         room = Room.get(id=room_id)
@@ -143,11 +128,6 @@ class GameMessage(BaseModel):
     model_config = ConfigDict(title="GameMessage")
 
     type: GameEventTypes = Field(...)
-
-    @validator("type", pre=True, allow_reuse=True)
-    def validate_type(cls, type):
-        assert GameEventTypes.has_type(type), "Invalid type"
-        return type
 
     @classmethod
     def create(cls, type: GameEventTypes, room_id: RoomId):

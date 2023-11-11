@@ -6,7 +6,6 @@ from . import create_room
 from . import create_user
 from . import delete_room
 from . import delete_user
-from . import get_users
 from . import User
 
 
@@ -44,25 +43,6 @@ class TestUser:
         # Create a user with the same username
         with pytest.raises(PermissionError):
             create_user("test_user")
-
-    @db_session
-    def test_get_users(self, test_user):
-        # Get the users
-        users = get_users()
-        # Check if the users have the user created
-        assert len(users) == 1
-        # Check if the user has the correct username
-        assert list(users)[0].username == "test_user"
-        # Create another user
-        user = create_user("test_user2")
-        # Check if the user has been created
-        assert user is not None
-        # Get the users
-        users = get_users()
-        # Check if the users are not empty
-        assert len(users) == 2
-        # Delete the user
-        delete_user(user.id)
 
     @db_session
     def test_delete_user(self):
