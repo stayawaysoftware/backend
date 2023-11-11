@@ -9,6 +9,7 @@ from core.game_logic.card import unrelate_card_with_player
 from core.game_logic.card_creation import card_defense
 from core.player import create_player
 from fastapi import HTTPException
+from core.game_logic.game_effects import get_defense_cards
 from models.game import Card
 from models.game import Game
 from models.game import Player
@@ -81,13 +82,10 @@ def play_card(
         current_player = Player.get(id=current_player_id)
         if target_player_id == 0:
             target_player_id = None
-        print("Llego al handler")
 
         effect = effect_handler(
             game_id, card_idtype, current_player_id, target_player_id
         )
-        print("effect")
-        print("Sale del handler")
         game.current_phase = "Discard"
         commit()
         gu.discard(
@@ -126,7 +124,6 @@ def calculate_next_turn(game_id: int):
             break
 
     game.current_position = next_player_position
-    print("Next player is: " + str(next_player_position))
     commit()
 
 
@@ -257,11 +254,7 @@ def defended_card(
     gu.discard(game_id, at.idtype, attacker_id)
     gu.discard(game_id, de.idtype, defense_player_id)
     game.current_phase = "Draw"
-    gu.discard(game_id, at.idtype, attacker_id)
-    gu.discard(game_id, de.idtype, defense_player_id)
-    game.current_phase = "Draw"
     commit()
-    draw_card(game_id, defense_player_id)
     draw_card(game_id, defense_player_id)
     response = {
         "type": "defense",
@@ -303,24 +296,16 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))
     else:
-        try:
-            response = defended_card(
-                game_id,
-                attacker_id,
-                defense_player_id,
-                last_card_played_id,
-                card_type_id,
-            )
-            response = defended_card(
-                game_id,
-                attacker_id,
-                defense_player_id,
-                last_card_played_id,
-                card_type_id,
-            )
-        except ValueError as e:
-            print("ERROR:", str(e))
-            print("ERROR:", str(e))
+        attack_card = Card.get(id=last_card_played_id)
+        defense_card = Card.get(id=card_type_id)
+        if defense_card.idtype in get_defense_cards(attack_card.idtype):
+            try:
+                response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
+                effect = effect_handler(game_id, defense_card.idtype, defense_player_id, attacker_id, last_card_played_id)
+            except ValueError as e:
+                print("ERROR:", str(e)) 
+        else:
+            raise ValueError("Card cant be defended with that card")
     try:
         check_winners(game_id)
         game.current_phase = "Exchange"
@@ -330,7 +315,6 @@ def handle_defense(
 
 
     return response, effect
-
 
 @db_session
 def draw_card(game_id: int, player_id: int):
@@ -362,6 +346,31 @@ def handle_exchange(
     }
     return exchange_response
 
+@db_session
+def exchange_defended(
+    game_id : int,
+    current_player_id: int,
+    defense_card_id: int,
+):
+    game = Game.get(id=game_id)
+    game.current_phase = "Discard"
+    defense_card = Card.get(id=defense_card_id)
+    commit()
+    gu.discard(game_id, defense_card.idtype, current_player_id)
+    game.current_phase = "Draw"
+    commit()
+    gu.draw(game_id, current_player_id)
+
+@db_session
+def exchange_not_defended(
+    game_id : int,
+    current_player_id: int,
+    last_chosen_card: int,
+    exchange_requester: int,
+    chosen_card: int,
+):
+    effect = effect_handler(game_id ,32,current_player_id,exchange_requester,last_chosen_card,chosen_card)
+    return effect
 
 @db_session
 def handle_exchange_defense(
@@ -373,55 +382,34 @@ def handle_exchange_defense(
     is_defense: bool,
 ):
     game = Game.get(id=game_id)
+    effect = None
     if is_defense:
-        try:
-            print("Pre-disc")
-            game.current_phase = "Discard"
-            commit()
-            print("Aft-disc")
-            gu.discard(game_id, last_chosen_card, current_player_id)
-            print("Aft-disc")
-            game.current_phase = "Draw"
-            commit()
-            gu.draw(game_id, current_player_id)
-            print("Aft-draw")
-        except ValueError as e:
-            print("ERROR:", str(e))
+        defense_card = Card.get(id=chosen_card)
+        if defense_card.idtype in get_defense_cards(32):
+            try:
+                defense_card = Card.get(id=chosen_card)
+                exchange_defended(game_id, current_player_id, chosen_card)
+                effect = effect_handler(game_id, defense_card.idtype, current_player_id, exchange_requester, last_chosen_card)
+            except ValueError as e:
+                print("ERROR:", str(e))
+        else:
+            raise ValueError("Exchange cant be defended with that card")
     else:
         try:
-            print("Pre-EffectHandler")
-            print(
-                "Effect handler args: ",
-                game_id,
-                32,
-                current_player_id,
-                exchange_requester,
-                last_chosen_card,
-                chosen_card,
-            )
-            effect = effect_handler(
-                game_id,
-                32,
-                current_player_id,
-                exchange_requester,
-                last_chosen_card,
-                chosen_card,
-            )
-            print("After-EffectHandler")
+            effect = exchange_not_defended(game_id, current_player_id, last_chosen_card, exchange_requester, chosen_card)
         except ValueError as e:
             print("ERROR:", str(e))
     calculate_next_turn(game_id)
-    next_player = Player.select(
-        lambda p: p.round_position == game.current_position
-    ).first()
+    players = list(game.players)
+    next_player =list(filter(lambda p: p.round_position == game.current_position, players))[0]
     game.current_phase = "Draw"
     commit()
     try:
         gu.draw(game_id, next_player.id)
     except ValueError as e:
-        print("ERROR:", str(e))
-    print("Exchange finalizado")
+            print("ERROR:", str(e))
 
+    return effect
 
 @db_session
 def analisis_effect(game_id: int, adyacent_id: int):
@@ -456,7 +444,6 @@ def exchange_effect(
     target_chosen_card: int,
     user_chosen_card: int,
 ):
-    print("Entra en exchange effect")
     target = Player.get(id=target_id)
     user = Player.get(id=user_id)
     target_card = Card.get(id=target_chosen_card)
@@ -524,6 +511,19 @@ def sospecha_effect(target_id: int, user_id: int):
     }
     return response
 
+@db_session
+def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
+    target = Player.get(id=target_id)
+    target_card = Card.get(id=target_chosen_card_id)
+    target_card = CardOut.from_card(target_card)
+    response = {
+        "type": "show_card",
+        "player_name" : target.name,
+        "target" : [user_id],
+        "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
+
+    }
+    return response
 
 @db_session
 def whisky_effect(game_id, user_id: int):

@@ -139,6 +139,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "defense":
+                                print(data)
                                 response, effect = handle_defense(
                                     game_id=room_id,
                                     card_type_id=data["played_defense"],
@@ -175,7 +176,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "exchange_defense":
-                                handle_exchange_defense(
+                                effect = handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
                                     exchange_requester=data[
@@ -185,6 +186,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     chosen_card=data["chosen_card"],
                                     is_defense=data["is_defense"],
                                 )
+
+                                if effect is not None:
+                                    await connection_manager.broadcast(
+                                        room_id, effect
+                                    )
 
                                 res = {"type": "exchange_end"}
                                 await connection_manager.broadcast(

@@ -49,8 +49,8 @@ def effect_handler(
             print("I'm fine here")
             return None
         case 14:  # Terrifying
-            print("Terrifying")
-            return None
+            effect = ga.aterrador_effect(target,attacker,last_chosen_card)
+            return effect
         case 15:  # No, thanks
             print("No, thanks")
             return None
