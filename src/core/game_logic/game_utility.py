@@ -57,15 +57,21 @@ def get_initial_player_hand(id_game: int, id_player: int) -> None:
         card_idtype = get_card(card).idtype
         cnt_assigned_cards += 1
 
+    cards_to_restore = []
+
     while cnt_assigned_cards < 4:
         card = draw_no_panic(id_game, id_player)
         card_idtype = get_card(card).idtype
 
         if card_idtype == 2:
             unrelate_card_with_player(card, id_player)
-            relate_card_with_available_deck(card, id_game)
+            cards_to_restore.append(card)
         else:
             cnt_assigned_cards += 1
+
+    # Restore the cards that are of type 2 (PANIC)
+    for card in cards_to_restore:
+        relate_card_with_available_deck(card, id_game)
 
 
 # Delete decks (end of the game)
