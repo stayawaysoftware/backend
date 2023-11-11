@@ -10,6 +10,7 @@ from . import delete_room
 from . import delete_user
 from . import flamethower_effect
 from . import defended_card
+from . import handle_exchange_defense
 from . import handle_defense
 from . import discard
 from . import Game
@@ -222,3 +223,33 @@ class TestWinnerCheckoutHuman:
         assert not has_card
         assert response is not None
     
+    @db_session
+    def test_exchange_not_defended(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        game.current_phase = "Exchange"
+        commit()
+        players = list(game.players)
+        first_player = players[0]
+        second_player = players[1]
+
+        first_player_card = list(first_player.hand)[0]
+        second_player_card = list(second_player.hand)[0]
+        first_player_card_id = first_player_card.id
+        second_player_card_id = second_player_card.id
+
+        first_player_id = first_player.id
+        second_player_id = second_player.id
+
+        effect = handle_exchange_defense(
+            game.id, 
+            first_player_id, 
+            second_player_id, 
+            second_player_card_id, 
+            first_player_card_id, 
+            False)
+        exchange_success = self.has_card(first_player_card_id, second_player)
+        assert not exchange_success
+        exchange_success = self.has_card(second_player_card_id, first_player)
+        assert not exchange_success
+        assert effect == None
