@@ -1,4 +1,6 @@
 """Functions used to all the game operation (internal logic)."""
+from core.game_logic.card import get_card
+from core.game_logic.card import relate_card_with_available_deck
 from core.game_logic.card import relate_card_with_disposable_deck
 from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_available_deck
@@ -35,6 +37,35 @@ def initialize_decks(id_game: int, quantity_players: int) -> Deck:
     init_available_deck(id_game, quantity_players)
 
     return get_deck(id_game)
+
+
+# Initialization of player's hand (start of the game)
+
+
+def get_initial_player_hand(id_game: int, id_player: int) -> None:
+    """Initialize the player's hand."""
+    with db_session:
+        if not Player.exists(id=id_player):
+            raise ValueError(f"Player with id {id_player} doesn't exist")
+        if not Game.exists(id=id_game):
+            raise ValueError(f"Game with id {id_game} doesn't exist")
+
+    cnt_assigned_cards = 0
+
+    if len(get_deck(id_game).available_deck.cards.filter(idtype=1)) > 0:
+        card = draw_specific(id_game, id_player, 1)
+        card_idtype = get_card(card).idtype
+        cnt_assigned_cards += 1
+
+    while cnt_assigned_cards < 4:
+        card = draw_no_panic(id_game, id_player)
+        card_idtype = get_card(card).idtype
+
+        if card_idtype == 2:
+            unrelate_card_with_player(card, id_player)
+            relate_card_with_available_deck(card, id_game)
+        else:
+            cnt_assigned_cards += 1
 
 
 # Delete decks (end of the game)
