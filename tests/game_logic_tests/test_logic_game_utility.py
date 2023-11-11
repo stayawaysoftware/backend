@@ -14,6 +14,7 @@ from . import draw
 from . import draw_no_panic
 from . import draw_specific
 from . import Game
+from . import get_initial_player_hand
 from . import initialize_decks
 from . import Player
 
@@ -113,6 +114,95 @@ class TestGameUtilityBasic:
         for i in range(109):
             if Card.exists(id=i):
                 Card[i].delete()
+
+
+class TestGameUtilityBasicInitialHand:
+    """Test basic game functions with initial hand."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        Game(id=1)
+        for i in range(1, 13):
+            Player(id=i, name=f"Player{i}", round_position=i, game=Game[1])
+        initialize_decks(1, 12)
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        delete_decks(1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
+
+    @db_session
+    def test_get_initial_player_hand(self):
+        """Test get_initial_player_hand function."""
+        player1 = 1
+
+        get_initial_player_hand(1, player1)
+
+        assert len(Player[player1].hand) == 4
+        assert Player[player1].hand.select(idtype=1).count() == 1
+        for card in Player[player1].hand:
+            assert len(card.players) == 1
+            assert Player[player1] in card.players
+            assert len(card.available_deck) == 0
+            assert len(card.disposable_deck) == 0
+
+            assert card.idtype != 2
+            assert card.type != "PANIC"
+
+        for i in range(1, 13):
+            if i != player1:
+                assert len(Player[i].hand) == 0
+
+        # Check other players
+
+        for player1 in range(2, 13):
+            get_initial_player_hand(1, player1)
+
+            assert len(Player[player1].hand) == 4
+            assert Player[player1].hand.select(idtype=1).count() == 0
+            for card in Player[player1].hand:
+                assert len(card.players) == 1
+                assert Player[player1] in card.players
+                assert len(card.available_deck) == 0
+                assert len(card.disposable_deck) == 0
+
+                assert card.idtype != 2
+                assert card.type != "PANIC"
+
+            for i in range(player1 + 1, 13):
+                assert len(Player[i].hand) == 0
+
+    @db_session
+    def test_get_initial_player_hand_with_invalid_player(self):
+        """Test get_initial_player_hand function with invalid player."""
+        with pytest.raises(ValueError):
+            get_initial_player_hand(1, 0)
+
+        with pytest.raises(ValueError):
+            get_initial_player_hand(1, 13)
+
+    @db_session
+    def test_get_initial_player_hand_with_invalid_game(self):
+        """Test get_initial_player_hand function with invalid game."""
+        with pytest.raises(ValueError):
+            get_initial_player_hand(2, 1)
 
 
 # ===================== GAME PHASES FUNCTIONS =====================
