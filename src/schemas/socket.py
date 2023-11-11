@@ -17,11 +17,11 @@ from .room import UsersInfo
 
 
 class RoomEventTypes(Enum):
-    INFO = "info"
-    LEAVE = "leave"
-    START = "start"
-    JOIN = "join"
-    DELETE = "delete"
+    info = "info"
+    leave = "leave"
+    start = "start"
+    join = "join"
+    delete = "delete"
 
     @classmethod
     def has_type(cls, key):
@@ -29,15 +29,15 @@ class RoomEventTypes(Enum):
 
 
 class GameEventTypes(str, Enum):
-    START = "start"
-    PLAY = "play"
-    GAME_STATUS = "game_status"
-    DEFENSE = "defense"
-    EXCHANGE = "exchange"
-    EXCHANGE_DEFENSE = "exchange_defense"
-    FINISHED = "finished"
-    DISCARD = "discard"
-    END = "end"
+    start = "start"
+    play = "play"
+    game_status = "game_status"
+    defense = "defense"
+    exchange = "exchange"
+    exchange_defense = "exchange_defense"
+    finished = "finished"
+    discard = "discard"
+    end = "end"
 
     @classmethod
     def has_type(cls, key):
