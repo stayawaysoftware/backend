@@ -141,6 +141,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "defense":
+                                print(data)
                                 response, effect = handle_defense(
                                     game_id=room_id,
                                     card_type_id=data["played_defense"],

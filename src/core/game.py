@@ -69,13 +69,10 @@ def play_card(
         current_player = Player.get(id=current_player_id)
         if target_player_id == 0:
             target_player_id = None
-        print("Llego al handler")
 
         effect = effect_handler(
             game_id, card_idtype, current_player_id, target_player_id
         )
-        print("effect")
-        print("Sale del handler")
         game.current_phase = "Discard"
         commit()
         gu.discard(
@@ -114,7 +111,6 @@ def calculate_next_turn(game_id: int):
             break
 
     game.current_position = next_player_position
-    print("Next player is: " + str(next_player_position))
     commit()
 
 
@@ -273,9 +269,6 @@ def handle_defense(
     else:
         attack_card = Card.get(id=last_card_played_id)
         defense_card = Card.get(id=card_type_id)
-        print(get_defense_cards(attack_card.idtype))
-        print(defense_card.idtype)
-        print(attack_card.idtype)
         if defense_card.idtype in get_defense_cards(attack_card.idtype):
             try:
                 response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
@@ -377,9 +370,8 @@ def handle_exchange_defense(
         except ValueError as e:
             print("ERROR:", str(e))
     calculate_next_turn(game_id)
-    next_player = Player.select(
-        lambda p: p.round_position == game.current_position
-    ).first()
+    players = list(game.players)
+    next_player =list(filter(lambda p: p.round_position == game.current_position, players))[0]
     game.current_phase = "Draw"
     commit()
     try:
@@ -422,7 +414,6 @@ def exchange_effect(
     target_chosen_card: int,
     user_chosen_card: int,
 ):
-    print("Entra en exchange effect")
     target = Player.get(id=target_id)
     user = Player.get(id=user_id)
     target_card = Card.get(id=target_chosen_card)

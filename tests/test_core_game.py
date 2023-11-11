@@ -145,7 +145,7 @@ class TestWinnerCheckoutHuman:
         assert game.status == "Finished"
 
 # =============================== Defense testing =================================
-    """
+
     def generalized_test_for_defended_card(self,resources, idtype_attack, idtype_defense):
         room = resources[1]
         game = Game.get(id=room.id)
@@ -168,10 +168,10 @@ class TestWinnerCheckoutHuman:
         commit()
         card_id1 = draw_specific(game.id, first_human.id, idtype_attack)
         card_id2 = draw_specific(game.id, second_human.id, idtype_defense)
-        response = handle_defense(game.id, card_id1, second_human.id, card_id2, first_human.id)
+        response = handle_defense(game.id, card_id2, first_human.id, card_id1, second_human.id)
 
         return response, human_players, card_id1, card_id2
-    """
+
         
 
     def has_card(self, card_id, player):
@@ -227,6 +227,59 @@ class TestWinnerCheckoutHuman:
         assert not has_card
         assert response is not None
 
+    def exchange_defended_generalized_test(self, resources, defense_card_idtype):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+        first_human = human_players[0]
+        second_human = human_players[1]
+        first_human.alive = True
+        second_human.alive = True
+        game.current_phase = "Discard"
+        commit()
+        for p in players:
+            phand_list = list(p.hand)
+            for card in phand_list:
+                if card.idtype == defense_card_idtype:
+                    discard(game.id, card.idtype, p.id)
+        game.current_phase = "Draw"
+        commit()
+        #get first_human card
+        first_player_card = list(first_human.hand)[0]
+        card_id1 = draw_specific(game.id, second_human.id, defense_card_idtype)
+        response = handle_exchange_defense(game.id, second_human.id, first_human.id, first_player_card.id, card_id1, True)
+
+        return response, card_id1, first_player_card
+    
+    @db_session
+    def test_exchange_defended_by_15(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+        second_human = human_players[1]
+        response, card_id1, first_player_card =self.exchange_defended_generalized_test(resources, 15)
+        has_defense = self.has_card(card_id1, second_human)
+        assert not has_defense
+        has_exchange_card = self.has_card(first_player_card.id, second_human)
+        assert not has_exchange_card
+        assert response is None
+
+    @db_session
+    def test_exchange_defended_by_16(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+        second_human = human_players[1]
+        response, card_id1, first_player_card =self.exchange_defended_generalized_test(resources, 16)
+        has_defense = self.has_card(card_id1, second_human)
+        assert not has_defense
+        has_exchange_card = self.has_card(first_player_card.id, second_human)
+        assert not has_exchange_card
+        assert response is None
+
     @db_session
     def test_exchange_not_defended(self, resources):
         room = resources[1]
@@ -252,8 +305,113 @@ class TestWinnerCheckoutHuman:
             second_player_card_id, 
             first_player_card_id, 
             False)
-        exchange_success = self.has_card(first_player_card_id, second_player)
-        assert not exchange_success
         exchange_success = self.has_card(second_player_card_id, first_player)
-        assert not exchange_success
+        assert exchange_success
+        exchange_success = self.has_card(first_player_card_id, second_player)
+        assert exchange_success
         assert effect == None
+
+    @db_session
+    def test_exchange_infected_between_humans(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        game.current_phase = "Exchange"
+        commit()
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+
+        first_human_player = human_players[0]
+        second_human_player = human_players[1]
+        card_id1 = draw_specific(game.id, first_human_player.id, 2)
+        card_id2 = draw_specific(game.id, second_human_player.id, 2)
+        effect = handle_exchange_defense(
+            game.id, 
+            first_human_player.id, 
+            second_human_player.id, 
+            card_id2, 
+            card_id1, 
+            False)
+        assert first_human_player.role == "Human"
+        assert second_human_player.role == "Human"
+
+    @db_session
+    def test_exchange_infected_between_infected_and_human(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        game.current_phase = "Exchange"
+        commit()
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+
+        first_human_player = human_players[0]
+        first_human_player.role = "Infected"
+        commit()
+        second_human_player = human_players[1]
+        card_id1 = draw_specific(game.id, first_human_player.id, 2)
+        card_id2 = draw_specific(game.id, second_human_player.id, 2)
+        effect = handle_exchange_defense(
+            game.id, 
+            first_human_player.id, 
+            second_human_player.id, 
+            card_id2, 
+            card_id1, 
+            False)
+        assert first_human_player.role == "Infected"
+        assert second_human_player.role == "Human"
+        first_human_player.role = "Human"
+
+    @db_session
+    def test_exchange_infected_between_Thing_and_human(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        game.current_phase = "Exchange"
+        commit()
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+
+        first_human_player = human_players[0]
+        first_human_player.role = "The Thing"
+        commit()
+        second_human_player = human_players[1]
+        card_id1 = draw_specific(game.id, first_human_player.id, 2)
+        card_id2 = draw_specific(game.id, second_human_player.id, 2)
+        effect = handle_exchange_defense(
+            game.id, 
+            first_human_player.id, 
+            second_human_player.id, 
+            card_id2, 
+            card_id1, 
+            False)
+        assert first_human_player.role == "The Thing"
+        assert second_human_player.role == "Infected"
+        first_human_player.role = "Human"
+        second_human_player.role = "Human"
+
+    @db_session
+    def test_exchange_infected_between_thing_and_infected(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        game.current_phase = "Exchange"
+        commit()
+        players = list(game.players)
+        human_players = list(filter(lambda p: p.role == "Human", players))
+
+        first_human_player = human_players[0]
+        first_human_player.role = "The Thing"
+        commit()
+        second_human_player = human_players[1]
+        second_human_player.role = "Infected"
+        commit()
+        card_id1 = draw_specific(game.id, first_human_player.id, 2)
+        card_id2 = draw_specific(game.id, second_human_player.id, 2)
+        effect = handle_exchange_defense(
+            game.id, 
+            first_human_player.id, 
+            second_human_player.id, 
+            card_id2, 
+            card_id1, 
+            False)
+        assert first_human_player.role == "The Thing"
+        assert second_human_player.role == "Infected"
+        first_human_player.role = "Human"
+        second_human_player.role = "Human"
