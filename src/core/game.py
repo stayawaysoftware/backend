@@ -254,11 +254,7 @@ def defended_card(
     gu.discard(game_id, at.idtype, attacker_id)
     gu.discard(game_id, de.idtype, defense_player_id)
     game.current_phase = "Draw"
-    gu.discard(game_id, at.idtype, attacker_id)
-    gu.discard(game_id, de.idtype, defense_player_id)
-    game.current_phase = "Draw"
     commit()
-    draw_card(game_id, defense_player_id)
     draw_card(game_id, defense_player_id)
     response = {
         "type": "defense",

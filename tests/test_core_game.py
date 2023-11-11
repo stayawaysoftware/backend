@@ -13,6 +13,7 @@ from . import draw_specific
 from . import flamethower_effect
 from . import defended_card
 from . import card_defense
+from . import Game
 from . import handle_exchange_defense
 from . import handle_defense
 from . import join_room
