@@ -147,7 +147,7 @@ class TestWinnerCheckoutHuman:
         assert game.status == "Finished"
 
     # =============================== Defense testing =================================
-
+    @db_session
     def generalized_test_for_defended_card(
         self, resources, idtype_attack, idtype_defense
     ):
@@ -257,6 +257,8 @@ class TestWinnerCheckoutHuman:
         has_card = self.has_card(card_id2, human_players[1])
         assert not has_card
         assert response is not None
+    
+    @db_session
     def exchange_defended_generalized_test(self, resources, defense_card_idtype):
         room = resources[1]
         game = Game.get(id=room.id)
@@ -279,7 +281,6 @@ class TestWinnerCheckoutHuman:
         first_player_card = list(first_human.hand)[0]
         card_id1 = draw_specific(game.id, second_human.id, defense_card_idtype)
         response = handle_exchange_defense(game.id, second_human.id, first_human.id, first_player_card.id, card_id1, True)
-
         return response, card_id1, first_player_card
     
     @db_session
