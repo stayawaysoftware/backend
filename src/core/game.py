@@ -270,10 +270,16 @@ def handle_defense(
         except ValueError as e:
             print("ERROR:", str(e))
     else:
-        try:
-            response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
-        except ValueError as e:
-            print("ERROR:", str(e)) 
+        attack_card = Card.get(id=last_card_played_id)
+        defense_card = Card.get(id=card_type_id)
+        if card_type_id in card_defense[attack_card.idtype]:
+            try:
+                response = defended_card(game_id, attacker_id, defense_player_id, last_card_played_id, card_type_id)
+                effect = effect_handler(game_id, defense_card.idtype, defense_player_id, attacker_id, last_card_played_id)
+            except ValueError as e:
+                print("ERROR:", str(e)) 
+        else:
+            raise ValueError("Card cant be defended with that card")
     try:
         check_winners(game_id)
         game.current_phase = "Exchange"
@@ -282,7 +288,6 @@ def handle_defense(
         print("ERROR:", str(e))
         
     return response, effect
-
 
 @db_session
 def draw_card(game_id: int, player_id: int):
@@ -350,11 +355,17 @@ def handle_exchange_defense(
     is_defense: bool,
 ):
     game = Game.get(id=game_id)
+    effect = None
     if is_defense:
-        try:
-            exchange_defended(game_id, current_player_id, chosen_card)
-        except ValueError as e:
-            print("ERROR:", str(e))
+        if chosen_card in card_defense[32]:
+            try:
+                defense_card = Card.get(id=chosen_card)
+                exchange_defended(game_id, current_player_id, chosen_card)
+                effect = effect_handler(game_id, defense_card.idtype, current_player_id, exchange_requester, last_chosen_card)
+            except ValueError as e:
+                print("ERROR:", str(e))
+        else:
+            raise ValueError("Exchange cant be defended with that card")
     else:
         try:
             effect = exchange_not_defended(game_id, current_player_id, last_chosen_card, exchange_requester, chosen_card)
@@ -371,6 +382,7 @@ def handle_exchange_defense(
     except ValueError as e:
             print("ERROR:", str(e))
 
+    return effect
 
 @db_session
 def analisis_effect(game_id: int, adyacent_id: int):
@@ -473,6 +485,17 @@ def sospecha_effect(target_id: int, user_id: int):
     }
     return response
 
+@db_session
+def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
+    target = Player.get(id=target_id)
+    target_card = Card.get(id=target_chosen_card_id)
+    response = {
+        "type": "show_card",
+        "player_name" : target.name,
+        "target" : [user_id],
+        "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
+
+    }
 
 @db_session
 def whisky_effect(game_id, user_id: int):
