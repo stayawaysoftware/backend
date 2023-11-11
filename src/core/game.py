@@ -211,7 +211,6 @@ def not_defended_card(
     game_id: int,
     attacker_id: int,
     defense_player_id: int,
-    defense_player_id: int,
 ):
     at = Card.get(id=last_card_played_id)
     attack_card = CardOut.from_card(at)
@@ -238,9 +237,7 @@ def not_defended_card(
 @db_session
 def defended_card(
     game_id: int,
-    game_id: int,
     attacker_id: int,
-    defense_player_id: int,
     defense_player_id: int,
     last_card_played_id: int,
     defense_card_id: int,
@@ -286,7 +283,6 @@ def handle_defense(
     card_type_id: int,
     attacker_id: int,
     last_card_played_id: int,
-    defense_player_id: int,
     defense_player_id: int,
 ):
     try:
