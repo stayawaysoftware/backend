@@ -4,6 +4,7 @@ from typing import Optional
 from core.game_logic.effects.change_of_position_effect import (
     im_fine_here_effect,
 )
+from core.game_logic.effects.exchange_effect import no_thanks_effect
 from pony.orm import db_session
 
 # Import effect functions
@@ -139,7 +140,7 @@ def do_effect_defense(
             return None
         case 15:
             # No, thanks
-            return None
+            return no_thanks_effect(defense_player_id)
         case 16:
             # You failed
             return None
