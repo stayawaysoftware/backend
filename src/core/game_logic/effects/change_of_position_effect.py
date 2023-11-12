@@ -1,10 +1,10 @@
 """Change of position effect."""
 from typing import Optional
 
-from core.game_logic.effects.nothing_effect import nothing_effect
 from core.game_logic.game_action import ActionType
 from core.game_logic.game_action import GameAction
 from models.game import Game
+from models.game import Player
 from pony.orm import db_session
 
 
@@ -35,12 +35,12 @@ def change_of_position_effect(
         )
 
 
-def im_fine_here_effect(id_game: int) -> GameAction:
+def im_fine_here_effect(defense_player_id: int):
     """I'm fine here effect."""
-    with db_session:
-        game = Game[id_game]
 
-        if game.current_phase != "Defense":
-            raise ValueError("You can't use this card in this phase.")
+    if Player[defense_player_id].alive is False:
+        raise ValueError("The player with id {defense_player_id} is dead.")
 
-        return nothing_effect(id_game)
+    # Without modifications in the game and without effects to show in the frontend
+
+    return None

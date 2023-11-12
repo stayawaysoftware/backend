@@ -1,7 +1,12 @@
 """Effect handler"""
 from typing import Optional
 
+from core.game_logic.effects.change_of_position_effect import (
+    im_fine_here_effect,
+)
 from pony.orm import db_session
+
+# Import effect functions
 
 
 @db_session
@@ -128,7 +133,7 @@ def do_effect_defense(
             )
         case 13:
             # I'm fine here
-            return None
+            return im_fine_here_effect(defense_player_id)
         case 14:
             # Terrifying
             return None
