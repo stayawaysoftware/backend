@@ -9,6 +9,7 @@ from core.game_logic.effects.exchange_effect import no_thanks_effect
 from core.game_logic.effects.exchange_effect import terrifying_effect
 from core.game_logic.effects.flamethrower_effect import flamethrower_effect
 from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
+from core.game_logic.effects.suspicion_effect import suspicion_effect
 from pony.orm import db_session
 
 # Import effect functions
@@ -47,7 +48,11 @@ def do_effect_attack(
             return None
         case 6:
             # Suspicion
-            return None
+            return suspicion_effect(
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+                defense_player_id=defense_player_id,
+            )
         case 7:
             # Determination
             return None
