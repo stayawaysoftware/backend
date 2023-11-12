@@ -5,6 +5,7 @@ from core.game_logic.effects.change_of_position_effect import (
     im_fine_here_effect,
 )
 from core.game_logic.effects.exchange_effect import no_thanks_effect
+from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
 from pony.orm import db_session
 
 # Import effect functions
@@ -146,7 +147,7 @@ def do_effect_defense(
             return None
         case 17:
             # No Barbecues
-            return None
+            return no_barbecues_effect(defense_player_id)
         case _:
             # The card is not a defense card. If do_effect is called, it means that the card is in the defense list of the attack card.
             # So, this never happens.
