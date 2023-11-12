@@ -15,14 +15,12 @@ from core.game_logic.deck import *  # noqa : F401
 from core.game_logic.card import *  # noqa : F401
 from core.game_logic.game_utility import *  # noqa : F401
 from core.game_logic.game_effects import *  # noqa : F401
-from core.game_logic.game_action import *  # noqa : F401
 from core.game_logic.card_creation import *  # noqa : F401
 from core.game_logic.effects.analysis_effect import *  # noqa : F401
 from core.game_logic.effects.change_of_position_effect import *  # noqa : F401
 from core.game_logic.effects.effect_handler import *  # noqa : F401
 from core.game_logic.effects.exchange_effect import *  # noqa : F401
 from core.game_logic.effects.flamethrower_effect import *  # noqa : F401
-from core.game_logic.effects.nothing_effect import *  # noqa : F401
 from core.game_logic.effects.suspicion_effect import *  # noqa : F401
 from core.game_logic.effects.watch_your_back_effect import *  # noqa : F401
 from core.game_logic.effects.whisky_effect import *  # noqa : F401

@@ -3,10 +3,7 @@ from typing import Optional
 
 from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_player
-from core.game_logic.game_action import ActionType
-from core.game_logic.game_action import GameAction
 from core.player import get_alive_neighbors
-from models.game import Game
 from models.game import Player
 from pony.orm import db_session
 from schemas.card import CardOut
@@ -229,35 +226,3 @@ def no_thanks_effect(defense_player_id: int):
     # Without modifications in the game and without effects to show in the frontend
 
     return None
-
-
-def you_failed_effect(
-    id_game: int,
-    player: int,
-    target: Optional[int],
-    card_chosen_by_target: Optional[int],
-) -> GameAction:
-    """You failed effect."""
-    with db_session:
-        game = Game[id_game]
-
-        if game.current_phase != "Defense":
-            raise ValueError("You can't use this card in this phase.")
-        if target is None:
-            raise ValueError("You must select a target.")
-        if game.players.select(id=target).count() == 0:
-            raise ValueError("Target doesn't exists.")
-        if not game.players.select(id=target).first().alive:
-            raise ValueError("Target is dead.")
-        if game.players.select(id=player).count() == 0:
-            raise ValueError("Player doesn't exists.")
-        if game.players.select(id=player).first().id == target:
-            raise ValueError("You can't use this card on yourself.")
-        if card_chosen_by_target is None:
-            raise ValueError("You must select a card before.")
-
-        return GameAction(
-            action=ActionType.ASK_EXCHANGE,
-            target=[target, player],
-            card_target=[card_chosen_by_target],
-        )
