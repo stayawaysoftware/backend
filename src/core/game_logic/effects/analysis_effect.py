@@ -1,32 +1,42 @@
 """Analysis Effect."""
-from typing import Optional
-
-from core.game_logic.game_action import ActionType
-from core.game_logic.game_action import GameAction
-from models.game import Game
-from pony.orm import db_session
+from core.player import get_alive_neighbors
+from models.game import Player
+from schemas.card import CardOut
 
 
 def analysis_effect(
-    id_game: int, id_player: int, target: Optional[int]
-) -> GameAction:
+    id_game: int, attack_player_id: int, defense_player_id: int
+):
     """Analysis effect."""
-    with db_session:
-        game = Game[id_game]
 
-        if game.current_phase != "Play":
-            raise ValueError("You can't use this card in this phase.")
-        if target is None:
-            raise ValueError("You must select a target.")
-        if game.players.select(id=target).count() == 0:
-            raise ValueError("Target doesn't exists.")
-        if not game.players.select(id=target).first().alive:
-            raise ValueError("Target is dead.")
-        if game.players.select(id=id_player).count() == 0:
-            raise ValueError("Player doesn't exists.")
-        if game.players.select(id=id_player).first().id == target:
-            raise ValueError("You can't use this card on yourself.")
+    # The defense player must to be alive
+    if Player[defense_player_id].alive is False:
+        raise ValueError("The player with id {defense_player_id} is dead.")
 
-        return GameAction(
-            action=ActionType.SHOW_ALL, target=[target, id_player]
+    # The defense player must to be neighbor of the attack player
+    attack_neighbors = get_alive_neighbors(
+        id_game=id_game, id_player=attack_player_id
+    )
+    if defense_player_id not in attack_neighbors:
+        raise ValueError(
+            "The player with id {defense_player_id} is not a neighbor of the player with id {attack_player_id}."
         )
+
+    # Without modifications in the game
+    # With effects to show in the frontend
+
+    card_list_to_show = [
+        CardOut.from_card(card) for card in Player[defense_player_id].hand
+    ]
+
+    effect = {
+        "type": "show_card",
+        "player_name": Player[defense_player_id].name,
+        "target": [attack_player_id],
+        "cards": [
+            card.dict(by_alias=True, exclude_unset=True)
+            for card in card_list_to_show
+        ],
+    }
+
+    return effect
