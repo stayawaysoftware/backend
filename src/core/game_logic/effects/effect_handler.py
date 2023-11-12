@@ -6,6 +6,7 @@ from core.game_logic.effects.change_of_position_effect import (
 )
 from core.game_logic.effects.exchange_effect import no_thanks_effect
 from core.game_logic.effects.exchange_effect import terrifying_effect
+from core.game_logic.effects.flamethrower_effect import flamethrower_effect
 from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
 from pony.orm import db_session
 
@@ -28,7 +29,11 @@ def do_effect_attack(
     match idtype_attack_card:
         case 3:
             # Flamethrower
-            return None
+            return flamethrower_effect(
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+                defense_player_id=defense_player_id,
+            )
         case 4:
             # Analysis
             return None
@@ -127,12 +132,12 @@ def do_effect_defense(
         case 0:
             # Without defense
             return do_effect_attack(
-                id_game,
-                attack_player_id,
-                defense_player_id,
-                idtype_attack_card,
-                card_chosen_by_attacker,
-                card_chosen_by_defender,
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+                defense_player_id=defense_player_id,
+                idtype_attack_card=idtype_attack_card,
+                card_chosen_by_attacker=card_chosen_by_attacker,
+                card_chosen_by_defender=card_chosen_by_defender,
             )
         case 13:
             # I'm fine here
