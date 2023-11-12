@@ -105,7 +105,10 @@ def play(
         raise ValueError(
             f"Card with idtype {idtype_defense_card} cannot be played as defense to card with idtype {idtype_attack_card}"
         )
-    if Card.select(idtype=idtype_attack_card).first().type == "DEFENSE":
+    if (
+        idtype_attack_card != 32
+        and Card.select(idtype=idtype_attack_card).first().type == "DEFENSE"
+    ):
         raise ValueError(
             f"Card with idtype {idtype_attack_card} cannot be played as attack"
         )
