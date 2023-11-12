@@ -10,6 +10,7 @@ from core.game_logic.effects.exchange_effect import terrifying_effect
 from core.game_logic.effects.flamethrower_effect import flamethrower_effect
 from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
 from core.game_logic.effects.suspicion_effect import suspicion_effect
+from core.game_logic.effects.whisky_effect import whisky_effect
 from pony.orm import db_session
 
 # Import effect functions
@@ -58,7 +59,10 @@ def do_effect_attack(
             return None
         case 8:
             # Whisky
-            return None
+            return whisky_effect(
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+            )
         case 9:
             # Change of position
             return None
