@@ -3,7 +3,6 @@ from typing import Optional
 
 from core.game_logic.game_action import ActionType
 from core.game_logic.game_action import GameAction
-from models.game import Card
 from models.game import Game
 from models.game import Player
 from pony.orm import db_session
@@ -167,7 +166,9 @@ def terrifying_effect(
     # With effects to show in the frontend !!!
 
     card_to_show = CardOut.from_card(
-        Card.select(idtype=card_chosen_by_attacker).first()
+        Player[attack_player_id]
+        .hand.select(idtype=card_chosen_by_attacker)
+        .first()
     )
 
     effect = {

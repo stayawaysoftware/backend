@@ -168,11 +168,13 @@ class TestTerrifying:
         assert game_data == self.get_game_data(id_game=1)
 
         # With message to front
+        card_id = Player[1].hand.select(idtype=3).first().id
+
         assert effect == {
             "type": "show_card",
             "player_name": Player[1].name,
             "target": [2],
-            "cards": [{"id": 21, "idtype": 3}],
+            "cards": [{"id": card_id, "idtype": 3}],
         }
 
     @db_session
