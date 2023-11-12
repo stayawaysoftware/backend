@@ -8,6 +8,9 @@ from core.game_logic.effects.change_of_position_effect import (
 from core.game_logic.effects.change_of_position_effect import (
     im_fine_here_effect,
 )
+from core.game_logic.effects.change_of_position_effect import (
+    you_better_run_effect,
+)
 from core.game_logic.effects.exchange_effect import no_thanks_effect
 from core.game_logic.effects.exchange_effect import terrifying_effect
 from core.game_logic.effects.flamethrower_effect import flamethrower_effect
@@ -81,7 +84,11 @@ def do_effect_attack(
             return None
         case 12:
             # You better run
-            return None
+            return you_better_run_effect(
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+                defense_player_id=defense_player_id,
+            )
         case 18:
             # Quarantine
             return None
