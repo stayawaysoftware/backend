@@ -3,6 +3,7 @@ from typing import Optional
 
 from core.game_logic.card_creation import card_defense
 from core.game_logic.effects.effect_handler import do_effect
+from models.game import Card
 from models.game import Game
 from models.game import Player
 from pony.orm import db_session
@@ -88,6 +89,25 @@ def play(
     ):
         raise ValueError(
             f"Player with id {defense_player_id} has no card with idtype {card_chosen_by_defender} in hand"
+        )
+
+    # The Thing and Infected cards cannot be played
+    if idtype_attack_card == 1 or idtype_defense_card == 1:
+        raise ValueError("The Thing cannot be played")
+    if idtype_attack_card == 2 or idtype_defense_card == 2:
+        raise ValueError("Infected cannot be played")
+
+    # Defense card must to be of Defense type
+    if (
+        idtype_defense_card != 0
+        and idtype_defense_card not in get_defense_cards(idtype_attack_card)
+    ):
+        raise ValueError(
+            f"Card with idtype {idtype_defense_card} cannot be played as defense to card with idtype {idtype_attack_card}"
+        )
+    if Card.select(idtype=idtype_attack_card).first().type == "DEFENSE":
+        raise ValueError(
+            f"Card with idtype {idtype_attack_card} cannot be played as attack"
         )
 
     # Call do_effect method to do the modifications of the game
