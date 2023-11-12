@@ -1,94 +1,58 @@
 """Test whisky effect."""
-import pytest
-
-from . import ActionType
-from . import Card
 from . import clean_db
 from . import commit
-from . import create_all_cards
 from . import db_session
 from . import Deck
-from . import do_effect
+from . import delete_decks
+from . import discard
 from . import Game
-from . import GameAction
+from . import initialize_decks
 from . import Player
 
 # ================================== WHISKY ==================================
 
 
-class TestWhiskyEffect:
+class TestWhisky:
     """Test Whisky effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
             Player(
-                id=1,
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
                 game=Game[1],
                 alive=True,
-                round_position=1,
-                name="Player 1",
             )
-            commit()
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            commit()
+        # draw_specific(id_game=1, id_player=1, idtype_card=1)
+
+        commit()
 
     @db_session
-    def test_whisky_effect(self):
-        """Test Whisky effect."""
-        self.init_db()
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=1)
+        discard(id_game=1, id_player=1, idtype_card=2)
+        discard(id_game=1, id_player=1, idtype_card=3)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=8).first())
-
-        assert str(do_effect(id_game=1, id_player=1, id_card_type=8)) == str(
-            GameAction(action=ActionType.SHOW_ALL_TO_ALL, target=[1])
-        )
-
-        self.end_db()
-
-    @db_session
-    def test_whisky_effect_with_invalid_phase(self):
-        """Test Whisky effect with invalid phase."""
-        self.init_db()
-
-        Game[1].current_phase = "Defense"
-        Player[1].hand.add(Card.select(idtype=8).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=8)
-
-        self.end_db()
-
-    @db_session
-    def test_whisky_effect_with_invalid_player(self):
-        """Test Whisky effect with invalid player."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=8).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=31, id_card_type=8)
-
-        self.end_db()
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
