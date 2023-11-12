@@ -16,6 +16,9 @@ from core.game_logic.effects.exchange_effect import terrifying_effect
 from core.game_logic.effects.flamethrower_effect import flamethrower_effect
 from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
 from core.game_logic.effects.suspicion_effect import suspicion_effect
+from core.game_logic.effects.watch_your_back_effect import (
+    watch_your_back_effect,
+)
 from core.game_logic.effects.whisky_effect import whisky_effect
 from pony.orm import db_session
 
@@ -78,7 +81,7 @@ def do_effect_attack(
             )
         case 10:
             # Watch your back
-            return None
+            return watch_your_back_effect(id_game=id_game)
         case 11:
             # Seduction
             return None
