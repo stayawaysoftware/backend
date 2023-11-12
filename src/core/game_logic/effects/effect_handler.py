@@ -5,6 +5,7 @@ from core.game_logic.effects.change_of_position_effect import (
     im_fine_here_effect,
 )
 from core.game_logic.effects.exchange_effect import no_thanks_effect
+from core.game_logic.effects.exchange_effect import terrifying_effect
 from core.game_logic.effects.flamethrower_effect import no_barbecues_effect
 from pony.orm import db_session
 
@@ -138,7 +139,11 @@ def do_effect_defense(
             return im_fine_here_effect(defense_player_id)
         case 14:
             # Terrifying
-            return None
+            return terrifying_effect(
+                attack_player_id,
+                defense_player_id,
+                card_chosen_by_attacker,
+            )
         case 15:
             # No, thanks
             return no_thanks_effect(defense_player_id)
