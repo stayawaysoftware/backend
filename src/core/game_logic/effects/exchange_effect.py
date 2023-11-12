@@ -1,142 +1,180 @@
 """Exchange effect."""
 from typing import Optional
 
+from core.game_logic.card import relate_card_with_player
+from core.game_logic.card import unrelate_card_with_player
 from core.game_logic.game_action import ActionType
 from core.game_logic.game_action import GameAction
+from core.player import get_alive_neighbors
 from models.game import Game
 from models.game import Player
 from pony.orm import db_session
 from schemas.card import CardOut
 
 
+@db_session
 def exchange_effect(
     id_game: int,
-    player: int,
-    target: Optional[int],
-    card_chosen_by_player: Optional[int],
-    card_chosen_by_target: Optional[int],
-) -> GameAction:
+    attack_player_id: int,
+    defense_player_id: Optional[int],
+    card_chosen_by_attacker: Optional[int],
+    card_chosen_by_defender: Optional[int],
+):
     """Exchange effect."""
-    with db_session:
-        game = Game[id_game]
 
-        if game.current_phase != "Defense":
-            raise ValueError("You can't use this card in this phase.")
-        if target is None:
-            raise ValueError("You must select a target.")
-        if game.players.select(id=target).count() == 0:
-            raise ValueError("Target doesn't exists.")
-        if not game.players.select(id=target).first().alive:
-            raise ValueError("Target is dead.")
-        if game.players.select(id=player).count() == 0:
-            raise ValueError("Player doesn't exists.")
-        if game.players.select(id=player).first().id == target:
-            raise ValueError("You can't use this card on yourself.")
-        if card_chosen_by_player is None:
-            raise ValueError("You must select a card before.")
-        if card_chosen_by_target is None:
-            raise ValueError("You must select a card before.")
+    # The two players must be alive
 
-        player_infected = None
+    if Player[attack_player_id].alive is False:
+        raise ValueError("The player with id {attack_player_id} is dead.")
+    if Player[defense_player_id].alive is False:
+        raise ValueError("The player with id {defense_player_id} is dead.")
 
-        player_role = game.players.select(id=player).first().role
-        target_role = game.players.select(id=target).first().role
+    # The defense player must to be neighbor of the attack player
 
-        player_hand = list(game.players.select(id=player).first().hand)
-        target_hand = list(game.players.select(id=target).first().hand)
+    attack_neighbors = get_alive_neighbors(
+        id_game=id_game, id_player=attack_player_id
+    )
+    if defense_player_id not in attack_neighbors:
+        raise ValueError(
+            "The player with id {defense_player_id} is not a neighbor of the player with id {attack_player_id}."
+        )
 
-        player_cnt_infected_cards = 0
-        target_cnt_infected_cards = 0
+    # The cards chosen by the attacker and the defender must be not None
 
-        for card in player_hand:
-            if card.idtype == 2:
-                player_cnt_infected_cards += 1
+    if card_chosen_by_attacker is None:
+        raise ValueError("The attacker must choose a card.")
+    if card_chosen_by_defender is None:
+        raise ValueError("The defender must choose a card.")
 
-        for card in target_hand:
-            if card.idtype == 2:
-                target_cnt_infected_cards += 1
+    # Do the exchange
 
-        if card_chosen_by_player == 1 or card_chosen_by_target == 1:
-            raise ValueError("You can't exchange The Thing card.")
+    # Calculate important values to do the exchange and check if the exchange is possible
 
-        if card_chosen_by_player == 2 and card_chosen_by_target == 2:
-            raise ValueError(
-                "You can't exchange Infected card from both sides."
-            )
+    player_infected = None
 
-        elif card_chosen_by_player == 2:
-            if player_role == "The Thing":
-                if target_role == "Infected":
-                    raise ValueError(
-                        f"Player with id {player} can't exchange Infected card with another Infected player."
-                    )
+    attack_player_role = Player[attack_player_id].role
+    defense_player_role = Player[defense_player_id].role
 
-                elif target_role == "Human":
-                    player_infected = target
+    attack_player_hand = list(Player[attack_player_id].hand)
+    defense_player_hand = list(Player[defense_player_id].hand)
 
-            elif player_role == "Infected":
-                if player_cnt_infected_cards == 1:
-                    raise ValueError(
-                        f"Player with id {player} can't exchange Infected card because he has only one Infected card."
-                    )
+    attack_player_cnt_infection_cards = 0
+    defense_player_cnt_infection_cards = 0
 
-                if target_role == "The Thing":
-                    pass  # Nothing to do
+    for card in attack_player_hand:
+        if card.idtype == 2:
+            attack_player_cnt_infection_cards += 1
 
-                elif target_role == "Infected" or target_role == "Human":
-                    raise ValueError(
-                        f"Player with id {player} can't exchange Infected card with another Infected or Human player."
-                    )
+    for card in defense_player_hand:
+        if card.idtype == 2:
+            defense_player_cnt_infection_cards += 1
 
-            elif player_role == "Human":
+    # Check if the exchange is possible
+
+    # You can't exchange The Thing card
+    if card_chosen_by_attacker == 1 or card_chosen_by_defender == 1:
+        raise ValueError("You can't exchange The Thing card.")
+
+    # You can't exchange the Infection card from both sides
+    if card_chosen_by_attacker == 2 and card_chosen_by_defender == 2:
+        raise ValueError(
+            "You can't exchange the Infection card from both sides."
+        )
+    elif card_chosen_by_attacker == 2:
+        # Attacker is The Thing
+        if attack_player_role == "The Thing":
+
+            if defense_player_role == "Infected":
+                # Attacker is The Thing and defender is Infected
                 raise ValueError(
-                    f"Player with id {player} can't exchange Infected card because he's an human."
+                    "The Thing player can't exchange the Infection card with the Infected player."
+                )
+            elif defense_player_role == "Human":
+                # Attacker is The Thing and defender is Human
+                player_infected = defense_player_id
+
+        # Attacker is Infected
+        elif attack_player_role == "Infected":
+            if attack_player_cnt_infection_cards == 1:
+                # Attacker is Infected and has only one Infection card
+                raise ValueError(
+                    "The Infected player can't exchange the Infection card if he has only one Infection card."
                 )
 
-        elif card_chosen_by_target == 2:
-            if target_role == "The Thing":
-                if player_role == "Infected":
-                    raise ValueError(
-                        f"Player with id {target} can't exchange Infected card with another Infected player."
-                    )
-
-                elif player_role == "Human":
-                    player_infected = player
-
-            elif target_role == "Infected":
-                if target_cnt_infected_cards == 1:
-                    raise ValueError(
-                        f"Player with id {target} can't exchange Infected card because he has only one Infected card."
-                    )
-
-                if player_role == "The Thing":
-                    pass
-
-                elif player_role == "Infected" or player_role == "Human":
-                    raise ValueError(
-                        f"Player with id {target} can't exchange Infected card with another Infected or Human player."
-                    )
-
-            elif target_role == "Human":
+            if (
+                defense_player_role == "Infected"
+                or defense_player_role == "Human"
+            ):
+                # Attacker is Infected and defender is Infected or Human
                 raise ValueError(
-                    f"Player with id {target} can't exchange Infected card because he's an human."
+                    f"Player with id {attack_player_id} can't exchange Infected card with another Infected or Human player."
                 )
 
-        if player_infected is None:
-            return GameAction(
-                action=ActionType.EXCHANGE,
-                target=[player, target],
-                card_target=[card_chosen_by_player, card_chosen_by_target],
-                exchange_phase=False,
-            )
-        else:
-            return GameAction(
-                action=ActionType.EXCHANGE,
-                action2=ActionType.INFECT,
-                target=[player, target, player_infected],
-                card_target=[card_chosen_by_player, card_chosen_by_target],
-                exchange_phase=False,
-            )
+    elif card_chosen_by_defender == 2:
+        # Defender is The Thing
+        if defense_player_role == "The Thing":
+
+            if attack_player_role == "Infected":
+                # Defender is The Thing and attacker is Infected
+                raise ValueError(
+                    "The Thing player can't exchange the Infection card with the Infected player."
+                )
+            elif attack_player_role == "Human":
+                # Defender is The Thing and attacker is Human
+                player_infected = attack_player_id
+
+        # Defender is Infected
+        elif defense_player_role == "Infected":
+            if defense_player_cnt_infection_cards == 1:
+                # Defender is Infected and has only one Infection card
+                raise ValueError(
+                    "The Infected player can't exchange the Infection card if he has only one Infection card."
+                )
+
+            if (
+                attack_player_role == "Infected"
+                or attack_player_role == "Human"
+            ):
+                # Defender is Infected and attacker is Infected or Human
+                raise ValueError(
+                    f"Player with id {defense_player_id} can't exchange Infected card with another Infected or Human player."
+                )
+
+    # Do the exchange because it's possible
+
+    # Exchange the cards
+
+    id_chosen_attacker_card, id_chosen_defender_card = None, None
+
+    for card in attack_player_hand:
+        if card.idtype == card_chosen_by_attacker:
+            if (
+                id_chosen_attacker_card is None
+                or id_chosen_attacker_card > card.id
+            ):
+                id_chosen_attacker_card = card.id
+
+    for card in defense_player_hand:
+        if card.idtype == card_chosen_by_defender:
+            if (
+                id_chosen_defender_card is None
+                or id_chosen_defender_card > card.id
+            ):
+                id_chosen_defender_card = card.id
+
+    unrelate_card_with_player(id_chosen_attacker_card, attack_player_id)
+    unrelate_card_with_player(id_chosen_defender_card, defense_player_id)
+
+    relate_card_with_player(id_chosen_attacker_card, defense_player_id)
+    relate_card_with_player(id_chosen_defender_card, attack_player_id)
+
+    # Set the infection player
+    if player_infected is not None:
+        Player[player_infected].role = "Infected"
+
+    # Without effects to show in the frontend
+
+    return None
 
 
 @db_session

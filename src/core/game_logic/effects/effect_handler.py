@@ -11,6 +11,7 @@ from core.game_logic.effects.change_of_position_effect import (
 from core.game_logic.effects.change_of_position_effect import (
     you_better_run_effect,
 )
+from core.game_logic.effects.exchange_effect import exchange_effect
 from core.game_logic.effects.exchange_effect import no_thanks_effect
 from core.game_logic.effects.exchange_effect import terrifying_effect
 from core.game_logic.effects.flamethrower_effect import flamethrower_effect
@@ -136,7 +137,13 @@ def do_effect_attack(
             return None
         case 32:
             # Exchange
-            return None
+            return exchange_effect(
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+                defense_player_id=defense_player_id,
+                card_chosen_by_attacker=card_chosen_by_attacker,
+                card_chosen_by_defender=card_chosen_by_defender,
+            )
         case _:
             # The card is not an attack card. If do_effect is called, it means that the card is an attack card.
             # So, this never happens.
