@@ -1,4 +1,5 @@
 """Module to test the core.player module."""
+import pytest
 from pony.orm import commit
 from pony.orm import db_session
 
@@ -141,3 +142,13 @@ class TestGetAliveNeighbors:
         assert get_alive_neighbors(1, 2 * 10) == []
         assert get_alive_neighbors(1, 2 * 11) == []
         assert get_alive_neighbors(1, 2 * 12) == []
+
+    def test_get_alive_neighbors_with_invalid_game_id(self):
+        """Test get_alive_neighbors with invalid game id."""
+        with pytest.raises(ValueError):
+            get_alive_neighbors(2, 2 * 1)
+
+    def test_get_alive_neighbors_with_invalid_player_id(self):
+        """Test get_alive_neighbors with invalid player id."""
+        with pytest.raises(ValueError):
+            get_alive_neighbors(1, 2 * 13)
