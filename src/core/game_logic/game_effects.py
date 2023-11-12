@@ -2,7 +2,7 @@
 from typing import Optional
 
 from core.game_logic.card_creation import card_defense
-from core.game_logic.effects.effect_handler import do_effect
+from core.game_logic.effects.effect_handler import do_effect_defense
 from models.game import Card
 from models.game import Game
 from models.game import Player
@@ -112,5 +112,12 @@ def play(
 
     # Call do_effect method to do the modifications of the game
 
-    # TODO: Add parameters to do_effect
-    return do_effect()
+    return do_effect_defense(
+        id_game=id_game,
+        attack_player_id=attack_player_id,
+        defense_player_id=defense_player_id,
+        idtype_attack_card=idtype_attack_card,
+        idtype_defense_card=idtype_defense_card,
+        card_chosen_by_attacker=card_chosen_by_attacker,
+        card_chosen_by_defender=card_chosen_by_defender,
+    )
