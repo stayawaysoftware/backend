@@ -3,6 +3,9 @@ from typing import Optional
 
 from core.game_logic.effects.analysis_effect import analysis_effect
 from core.game_logic.effects.change_of_position_effect import (
+    change_of_position_effect,
+)
+from core.game_logic.effects.change_of_position_effect import (
     im_fine_here_effect,
 )
 from core.game_logic.effects.exchange_effect import no_thanks_effect
@@ -65,7 +68,11 @@ def do_effect_attack(
             )
         case 9:
             # Change of position
-            return None
+            return change_of_position_effect(
+                id_game=id_game,
+                attack_player_id=attack_player_id,
+                defense_player_id=defense_player_id,
+            )
         case 10:
             # Watch your back
             return None
