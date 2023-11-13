@@ -25,7 +25,7 @@ from schemas.socket import GameMessage
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
 
-PRIVATE_CARDTYPES = [4, 6, 14]
+PRIVATE_CARDTYPES = [4, 6, 14, 27]
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])
@@ -300,15 +300,15 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     "chosen_card", None
                                 ),
                             }
-
-                            await connection_manager.broadcast(
-                                room_id,
-                                GameMessage.create(
-                                    "quarantine",
+                            if card_dict[data["type"]] != 0:
+                                await connection_manager.broadcast(
                                     room_id,
-                                    user_id,
-                                    card_dict[data["type"]],
-                                ),
+                                    GameMessage.create(
+                                        "quarantine",
+                                        room_id,
+                                        user_id,
+                                        card_dict[data["type"]],
+                                    ),
                             )
                     except ValidationError as error:
                         await connection_manager.send_to(

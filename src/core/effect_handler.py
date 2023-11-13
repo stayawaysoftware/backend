@@ -70,18 +70,18 @@ def effect_handler(
             print("Revelations")
             return None
         case 21:  # Rotten ropes
-            print("Rotten ropes")
+            ga.cuerdas_podridas_effect(game_id, attacker)
             return None
         case 22:  # Get out of here
             return ga.position_change_effect(target, attacker)
         case 23:  # Forgetful
-            print("Forgetful")
+            ga.olvidadizo_effect(game_id, attacker)
             return None
         case 24:  # One, two...
             print("One, two...")
             return None
         case 25:  # Three, four...
-            print("Three, four...")
+            ga.test_cuatro_effect(game_id, attacker)
             return None
         case 26:  # Is the party here?
             print("Is the party here?")
@@ -95,7 +95,7 @@ def effect_handler(
             ga.seduccion_effect(game_id=game_id)
             return None
         case 30:  # Blind date
-            print("Blind date")
+            ga.cita_a_ciegas_effect(game_id, attacker)
             return None
         case 31:  # Ups!
             return ga.show_hand_effect(game_id, attacker)

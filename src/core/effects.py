@@ -115,3 +115,57 @@ def quarantine_effect(target_id: int):
     player = Player.get(id=target_id)
     player.quarantine = 2
     commit()
+
+@db_session
+def test_cuatro_effect(game_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    player = Player.get(id=user_id)
+    for i in list(player.hand):
+        if i.idtype == 18:
+            game.current_phase = "Discard"
+            commit()
+            gu.discard(game_id, 18, user_id)
+            game.current_phase = "Draw"
+            gu.draw(game_id, user_id)
+    commit()
+
+@db_session
+
+@db_session
+def cuerdas_podridas_effect(game_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    player = Player.get(id=user_id)
+    for i in list(player.hand):
+        if i.idtype == 19:
+            game.current_phase = "Discard"
+            commit()
+            gu.discard(game_id, 19, user_id)
+            game.current_phase = "Draw"
+            gu.draw_no_panic(game_id, user_id)
+    commit()
+
+@db_session
+def olvidadizo_effect(game_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    player = Player.get(id=user_id)
+    for i in list(player.hand):
+        if i.idtype != 0:
+            game.current_phase = "Discard"
+            commit()
+            gu.discard(game_id, i.idtype, user_id)
+            game.current_phase = "Draw"
+            gu.draw_no_panic(game_id, user_id)
+    commit()
+
+@db_session
+def cita_a_ciegas_effect(game_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    game.current_phase = "Discard"
+    commit()
+    user_hand = list(Player.get(id=user_id).hand)
+    random_card = CardOut.from_card(random.choice(user_hand))
+    gu.discard(game_id, random_card.idtype, user_id)
+    game.current_phase = "Draw"
+    gu.draw_no_panic(game_id, user_id)
+    commit()
+
