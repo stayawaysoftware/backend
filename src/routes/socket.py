@@ -8,6 +8,7 @@ from core.game import handle_play
 from core.game import get_card_idtype
 from core.game import try_defense
 from core.game import handle_discard
+from core.game import handle_not_target
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -132,15 +133,32 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id, response
                                 )
 
-                                defense_response = try_defense(
+                                if data["card_target"] == user_id:
+                                    response, effect = handle_not_target(
+                                        room_id,
+                                        data["played_card"],
+                                        user_id,
+                                    )
+                                    
+                                    if effect is not None:
+                                        await connection_manager.broadcast(
+                                            room_id, 
+                                            effect
+                                        )
+
+                                    await connection_manager.broadcast(
+                                        room_id,
+                                        GameMessage.create("game_info", room_id)
+                                    )
+                                else:
+                                    defense_response = try_defense(
                                     data["played_card"], data["card_target"]
-                                )
-                                await connection_manager.broadcast(
-                                    room_id, defense_response
-                                )
+                                    )
+                                    await connection_manager.broadcast(
+                                        room_id, defense_response
+                                    )
 
                             case "defense":
-                                print(data)
                                 response, effect = handle_defense(
                                     game_id=room_id,
                                     card_type_id=data["played_defense"],

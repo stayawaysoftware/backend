@@ -233,6 +233,29 @@ def not_defended_card(
     return response, effect
 
 @db_session
+def handle_not_target(
+    game_id: int,
+    card_id: int,
+    current_player_id: int,
+):
+    try:
+        response = None
+        effect = None
+        game = Game.get(id=game_id)
+        card = Card.get(id=card_id)
+        card_idtype = card.idtype
+        effect = effect_handler(game_id, card_idtype, current_player_id, current_player_id)
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(game_id, card_idtype, current_player_id)
+        game.current_phase = "Exchange"
+        commit()
+    except ValueError as e:
+        print("ERROR:", str(e))
+
+    return response, effect
+
+@db_session
 def defended_card(
     game_id: int,
     attacker_id: int,
