@@ -96,7 +96,7 @@ def draw(id_game: int, id_player: int) -> int:
             raise ValueError(f"Player with id {id_player} doesn't exist")
         if not Game.exists(id=id_game):
             raise ValueError(f"Game with id {id_game} doesn't exist")
-        if Game[1].current_phase != "Draw":
+        if Game[id_game].current_phase != "Draw":
             raise ValueError(
                 f"Game with id {id_game} is not in the Draw phase"
             )

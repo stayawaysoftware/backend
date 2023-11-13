@@ -1,3 +1,5 @@
+from time import sleep
+
 import core.room as rooms
 from core.connections import ConnectionManager
 from core.game import delete_game
@@ -72,6 +74,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         data["type"], validated_data.room_id
                                     ),
                                 )
+                                sleep(1)
                                 await connection_manager.broadcast(
                                     room_id,
                                     GameMessage.create("game_info", room_id),
@@ -238,20 +241,26 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     ),
                                 )
                         if player.quarantine > 0:
-                            card = {
-                                "play": data["played_card"],
-                                "discard": data["played_card"],
-                                "defense": data["played_defense"],
-                                "exchange": data["chosen_card"],
-                                "exchange_defense": data["chosen_card"],
+                            print(
+                                f"Quien entra a cuarentena es: {player.name}"
+                            )
+                            card_dict = {
+                                "play": data.get("played_card", None),
+                                "discard": data.get("played_card", None),
+                                "defense": data.get("played_defense", None),
+                                "exchange": data.get("chosen_card", None),
+                                "exchange_defense": data.get(
+                                    "chosen_card", None
+                                ),
                             }
+
                             await connection_manager.broadcast(
                                 room_id,
                                 GameMessage.create(
                                     "quarantine",
                                     room_id,
                                     user_id,
-                                    card[data["type"]],
+                                    card_dict[data["type"]],
                                 ),
                             )
                     except ValidationError as error:

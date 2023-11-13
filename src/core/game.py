@@ -287,9 +287,6 @@ def handle_defense(
             response, effect = not_defended_card(
                 last_card_played_id, game_id, attacker_id, defense_player_id
             )
-            response, effect = not_defended_card(
-                last_card_played_id, game_id, attacker_id, defense_player_id
-            )
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -433,6 +430,7 @@ def handle_exchange_defense(
     calculate_next_turn(game_id)
     player = Player.get(id=exchange_requester)
     player.quarantine = player.quarantine - 1 if player.quarantine > 0 else 0
+    commit()
     players = list(game.players)
     next_player = list(
         filter(lambda p: p.round_position == game.current_position, players)
@@ -603,5 +601,5 @@ def axe_effect(game_id: int, target_id: int):
 
 def quarantine_effect(target_id: int):
     player = Player.get(id=target_id)
-    player.quarantine = 3
+    player.quarantine = 2
     commit()

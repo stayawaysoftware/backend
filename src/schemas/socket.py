@@ -150,11 +150,17 @@ class GameMessage(BaseModel):
             case "quarantine":
                 assert quarantined is not None
                 assert card_id is not None
-                card = CardOut.from_db(Card.get(id=card_id))
+                card = CardOut.from_card(Card.get(id=card_id))
+                all_players_except_quarantined = [
+                    player.id
+                    for player in game.players
+                    if player.id != quarantined
+                ]
                 return {
                     "type": "show_card",
                     "player_name": User.get(id=quarantined).username,
                     "cards": [
                         card.model_dump(by_alias=True, exclude_unset=True)
                     ],
+                    "target": all_players_except_quarantined,
                 }
