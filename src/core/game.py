@@ -487,7 +487,23 @@ def seduccion_effect(game_id: int):
     game.current_phase = "Exchange"
     commit()
 
+@db_session
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
     commit()
+
+@db_session
+def handle_discard(game_id: int, card_id: int, player_id: int):
+    try:
+        game = Game.get(id=game_id)
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(game_id, card_id, player_id)
+        game.current_phase = "Draw"
+        commit()
+        draw_card(game_id, player_id)
+        game.current_phase = "Exchange"
+        commit()
+    except ValueError as e:
+        print("ERROR:", str(e))
