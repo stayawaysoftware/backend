@@ -7,6 +7,7 @@ from core.effect_handler import effect_handler
 from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_player
 from core.game_logic.card_creation import card_defense
+from core.game_logic.game_utility import draw_no_panic
 from core.player import create_player
 from fastapi import HTTPException
 from core.game_logic.game_effects import get_defense_cards
@@ -255,7 +256,7 @@ def defended_card(
     gu.discard(game_id, de.idtype, defense_player_id)
     game.current_phase = "Draw"
     commit()
-    draw_card(game_id, defense_player_id)
+    id = draw_no_panic(game_id, defense_player_id)
     response = {
         "type": "defense",
         "played_defense": defense_card.model_dump(
@@ -359,7 +360,8 @@ def exchange_defended(
     gu.discard(game_id, defense_card.idtype, current_player_id)
     game.current_phase = "Draw"
     commit()
-    gu.draw(game_id, current_player_id)
+    id = draw_no_panic(game_id, current_player_id)
+
 
 @db_session
 def exchange_not_defended(
@@ -504,7 +506,7 @@ def handle_discard(game_id: int, card_id: int, player_id: int):
         gu.discard(game_id, card_id, player_id)
         game.current_phase = "Draw"
         commit()
-        draw_card(game_id, player_id)
+        id = draw_no_panic(game_id, player_id)
         game.current_phase = "Exchange"
         commit()
     except ValueError as e:
