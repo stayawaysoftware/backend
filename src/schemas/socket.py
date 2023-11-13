@@ -12,6 +12,7 @@ from schemas import validators
 from schemas.game import GameInfo
 from schemas.card import CardOut
 from schemas.player import PlayerOut
+from core.game_logic.game_effects import get_defense_cards
 
 from .room import RoomId
 from .room import RoomInfo
@@ -141,7 +142,8 @@ class GameMessage(BaseModel):
         quarantined: Optional[int] = None,
         card_id: Optional[int] = None,
         player_id: Optional[int] = None,
-
+        target_id: Optional[int] = None,
+        defense_card_id: Optional[int] = None,
     ):
         game = Game.get(id=room_id)
         match type:
@@ -183,4 +185,65 @@ class GameMessage(BaseModel):
                         card.model_dump(by_alias=True, exclude_unset=True)
                     ],
                 }
-                
+            case "play":
+                assert target_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(Player.get(id=target_id)).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "played_card": card.model_dump(by_alias=True, exclude_unset=True),
+                    "card_target": target_id,
+                }
+            case "try_defense":
+                assert target_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(Player.get(id=target_id)).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "target_player": target_id,
+                    "played_card": card.model_dump(by_alias=True, exclude_unset=True),
+                    "defended_by": get_defense_cards(card.idtype)
+                }
+            case "defense":
+                assert target_id is not None
+                assert card_id is not None
+                target_id = PlayerOut.from_player(Player.get(id=target_id)).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                if defense_card_id != 0:
+                    defense_card = CardOut.from_card(Card.get(id=defense_card_id))
+                else:
+                    defense_card = 0
+                return {
+                    "type": type,
+                    "played_card": defense_card,
+                    "target_player": target_id,
+                    "last_played_card": card.model_dump(by_alias=True, exclude_unset=True)
+                }
+            case "draw":
+                assert player_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(Player.get(id=player_id)).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "new_card": card.model_dump(by_alias=True, exclude_unset=True),
+                    "card_type": card.type,
+                }
+            case "exchange_defense":
+                assert target_id is not None
+                assert card_id is not None
+                assert player is not None 
+                assert defense_card_id is not None
+                target = PlayerOut.from_player(Player.get(id=target_id)).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                player = PlayerOut.from_player(Player.get(id=player_id)).model_dump(by_alias=True, exclude_unset=True)
+                defense_card = CardOut.from_card(Card.get(id=defense_card_id))
+                return {
+                    "type": type,
+                    "defended_by": get_defense_cards(32),
+                    "last_chosen_card": defense_card.model_dump(by_alias=True, exclude_unset=True),
+                    "target_player": player,
+                    "exchange_requester": target,
+                }

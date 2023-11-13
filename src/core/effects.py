@@ -95,3 +95,4 @@ def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
     commit()
+
