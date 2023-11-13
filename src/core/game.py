@@ -506,7 +506,6 @@ def handle_discard(game_id: int, card_id: int, player_id: int):
         gu.discard(game_id, card_id, player_id)
         game.current_phase = "Draw"
         commit()
-        id = draw_no_panic(game_id, player_id)
         game.current_phase = "Exchange"
         commit()
     except ValueError as e:
