@@ -1,3 +1,4 @@
+from pony.orm import IntArray
 from pony.orm import Optional
 from pony.orm import PrimaryKey
 from pony.orm import Required
@@ -14,6 +15,7 @@ class Player(db.Entity):
     name = Required(str)
     round_position = Required(int, unsigned=True)
     alive = Required(bool, default=1)
+    quarantine = Required(int, default=0)
     game = Set("Game")
     hand = Set("Card")
 
@@ -29,6 +31,7 @@ class Game(db.Entity):
     winners = Optional(str, default="None")  # Human, The Thing, Infected
     players = Set("Player")
     deck = Optional("Deck")
+    locked_doors = Required(IntArray, default=[])
 
 
 class Card(db.Entity):

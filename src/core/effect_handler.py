@@ -4,7 +4,7 @@ import core.game as ga
 
 
 def effect_handler(
-    id_game: int,
+    game_id: int,
     id_card_type: int,
     attacker: int,
     target: int,
@@ -22,9 +22,9 @@ def effect_handler(
             ga.flamethower_effect(target)
             return None
         case 4:  # Analysis
-            return ga.analisis_effect(id_game, target)
+            return ga.analisis_effect(game_id, target)
         case 5:  # Axe
-            print("Axe")
+            ga.axe_effect(target)
             return None
         case 6:  # Suspicion
             return ga.sospecha_effect(target, attacker)
@@ -32,15 +32,15 @@ def effect_handler(
             print("Determination")
             return None
         case 8:  # Whisky
-            return ga.whisky_effect(id_game, attacker)
+            return ga.whisky_effect(game_id, attacker)
         case 9:  # Change of position
             ga.cambio_de_lugar_effect(target, attacker)
             return None
         case 10:  # Watch your back
-            ga.vigila_tus_espaldas_effect(id_game)
+            ga.vigila_tus_espaldas_effect(game_id)
             return None
         case 11:  # Seduction
-            ga.seduccion_effect(game_id=id_game)
+            ga.seduccion_effect(game_id)
             return None
         case 12:  # You better run
             ga.mas_vale_que_corras_effect(target, attacker)
@@ -49,7 +49,7 @@ def effect_handler(
             print("I'm fine here")
             return None
         case 14:  # Terrifying
-            effect = ga.aterrador_effect(target,attacker,last_chosen_card)
+            effect = ga.aterrador_effect(target, attacker, last_chosen_card)
             return effect
         case 15:  # No, thanks
             print("No, thanks")
@@ -61,10 +61,10 @@ def effect_handler(
             print("No Barbecues")
             return None
         case 18:  # Quarantine
-            print("Quarantine")
+            ga.quarantine_effect(target)
             return None
         case 19:  # Locked Door
-            print("Locked Door")
+            ga.locked_door_effect(game_id, target)
             return None
         case 20:  # Revelations
             print("Revelations")

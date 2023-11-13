@@ -10,6 +10,7 @@ from core.game_logic.game_utility import discard
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from models.game import Player
 from pony.orm import db_session
 from pydantic import ValidationError
 from schemas.room import RoomEventValidator
@@ -20,6 +21,7 @@ from schemas.socket import GameMessage
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
 
+PUBLIC_RESPONSES = {"game_status", "discard", "exchange_end", "quarantine"}
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])
@@ -119,7 +121,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
-                    print(data)
+                    player = Player.get(id=user_id)
                     try:
                         match data["type"]:
                             case "play":
@@ -235,6 +237,23 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         "DEBUGGING: Invalid game event"
                                     ),
                                 )
+                        if player.quarantine > 0:
+                            card = {
+                                "play": data["played_card"],
+                                "discard": data["played_card"],
+                                "defense": data["played_defense"],
+                                "exchange": data["chosen_card"],
+                                "exchange_defense": data["chosen_card"],
+                            }
+                            await connection_manager.broadcast(
+                                room_id,
+                                GameMessage.create(
+                                    "quarantine",
+                                    room_id,
+                                    user_id,
+                                    card[data["type"]],
+                                ),
+                            )
                     except ValidationError as error:
                         await connection_manager.send_to(
                             websocket,

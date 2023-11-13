@@ -1,5 +1,7 @@
 from enum import Enum
+from typing import Optional
 
+from models.game import Card
 from models.game import Game
 from models.room import Room
 from models.room import User
@@ -7,6 +9,7 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic.config import ConfigDict
 from schemas import validators
+from schemas.card import CardOut
 from schemas.game import GameInfo
 
 from .room import RoomId
@@ -130,11 +133,28 @@ class GameMessage(BaseModel):
     type: GameEventTypes = Field(...)
 
     @classmethod
-    def create(cls, type: GameEventTypes, room_id: RoomId):
+    def create(
+        cls,
+        type: GameEventTypes,
+        room_id: RoomId,
+        quarantined: Optional[int] = None,
+        card_id: Optional[int] = None,
+    ):
         game = Game.get(id=room_id)
         match type:
             case "game_info":
                 return {
                     "type": type,
                     "game": GameInfo.from_db(game),
+                }
+            case "quarantine":
+                assert quarantined is not None
+                assert card_id is not None
+                card = CardOut.from_db(Card.get(id=card_id))
+                return {
+                    "type": "show_card",
+                    "player_name": User.get(id=quarantined).username,
+                    "cards": [
+                        card.model_dump(by_alias=True, exclude_unset=True)
+                    ],
                 }
