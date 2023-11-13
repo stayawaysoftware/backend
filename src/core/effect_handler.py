@@ -1,6 +1,6 @@
 from typing import Optional
 
-import core.game as ga
+import core.effects as ga
 
 
 def effect_handler(
@@ -73,8 +73,7 @@ def effect_handler(
             print("Rotten ropes")
             return None
         case 22:  # Get out of here
-            print("Get out of here")
-            return None
+            return ga.position_change_effect(target, attacker)
         case 23:  # Forgetful
             print("Forgetful")
             return None
@@ -88,20 +87,18 @@ def effect_handler(
             print("Is the party here?")
             return None
         case 27:  # Let it stay between us
-            print("Let it stay between us")
-            return None
+            return ga.show_hand_effect(game_id, attacker)
         case 28:  # Turn and turn
             print("Turn and turn")
             return None
         case 29:  # Can't we be friends?
-            print("Can't we be friends?")
+            ga.seduccion_effect(game_id=game_id)
             return None
         case 30:  # Blind date
             print("Blind date")
             return None
         case 31:  # Ups!
-            print("Ups!")
-            return None
+            return ga.show_hand_effect(game_id, attacker)
         case 32:  # Exchange (Fictional card)
             ga.exchange_effect(target, attacker, last_chosen_card, chosen_card)
             return None

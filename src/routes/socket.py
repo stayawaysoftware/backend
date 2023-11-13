@@ -9,7 +9,8 @@ from core.game import handle_exchange
 from core.game import handle_exchange_defense
 from core.game import handle_play
 from core.game import try_defense
-from core.game_logic.game_utility import discard
+from core.game import handle_discard
+from core.game import handle_not_target
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -130,6 +131,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                         match data["type"]:
                             case "play":
                                 response = handle_play(
+                                    room_id,
                                     data["played_card"],
                                     data["card_target"],
                                 )
@@ -137,15 +139,34 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id, response
                                 )
 
-                                defense_response = try_defense(
-                                    data["played_card"], data["card_target"]
-                                )
-                                await connection_manager.broadcast(
-                                    room_id, defense_response
-                                )
+                                if data["card_target"] == user_id:
+                                    response, effect = handle_not_target(
+                                        room_id,
+                                        data["played_card"],
+                                        user_id,
+                                    )
+                                    
+                                    if effect is not None:
+                                        await connection_manager.broadcast(
+                                            room_id, 
+                                            effect
+                                        )
+
+                                    await connection_manager.broadcast(
+                                        room_id,
+                                        GameMessage.create("game_info", room_id)
+                                    )
+                                else:
+                                    defense_response = try_defense(
+                                        room_id, 
+                                        data["played_card"], 
+                                        data["card_target"]
+                                    )
+                                    await connection_manager.broadcast(
+                                        room_id, defense_response
+                                    )
 
                             case "defense":
-                                print(data)
                                 response, effect = handle_defense(
                                     game_id=room_id,
                                     card_type_id=data["played_defense"],
@@ -170,19 +191,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 no_defense = data["played_defense"] == 0
                                 if effect is not None:
                                     if private_attack and no_defense:
-                                        await connection_manager.send_to_user_id(
-                                            data["target_player"], effect
-                                        )
-                                        print(
-                                            "Ataque con mensaje privado efectuado"
-                                        )
+                                        await connection_manager.send_to_user_id(data["target_player"], effect)
                                     elif private_defense:
-                                        await connection_manager.send_to_user_id(
-                                            user_id, effect
-                                        )
-                                        print(
-                                            "Defensa con mensaje privado efectuada"
-                                        )
+                                        await connection_manager.send_to_user_id(user_id, effect)
                                     else:
                                         await connection_manager.broadcast(
                                             room_id, effect
@@ -205,7 +216,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "exchange_defense":
-                                effect = handle_exchange_defense(
+                                draw_response, next_player_id, effect = handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
                                     exchange_requester=data[
@@ -222,16 +233,13 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
                                 if effect is not None:
                                     if private_defense and data["is_defense"]:
-                                        await connection_manager.send_to_user_id(
-                                            user_id, effect
-                                        )
-                                        print(
-                                            "Defensa con mensaje privado efectuado"
-                                        )
+                                        await connection_manager.send_to_user_id(user_id, effect)
                                     else:
                                         await connection_manager.broadcast(
                                             room_id, effect
                                         )
+                                
+                                await connection_manager.send_to_user_id(next_player_id, draw_response)
 
                                 res = {"type": "exchange_end"}
                                 await connection_manager.broadcast(
@@ -244,11 +252,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "discard":
-                                id = discard(
-                                    room_id,
-                                    data["played_card"],
-                                    user_id,
-                                )
+                                handle_discard(room_id,
+                                               data["played_card"],
+                                               user_id)
 
                                 res = {
                                     "type": "discard",
@@ -258,6 +264,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id,
                                     res,
+                                )
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create("game_info", room_id)
                                 )
 
                             case "finished":

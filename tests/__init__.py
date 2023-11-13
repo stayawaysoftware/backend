@@ -10,6 +10,7 @@ sys.path.append(src_dir)
 from core.user import *  # noqa : F401
 from core.room import *  # noqa : F401
 from core.game import *  # noqa : F401
+from core.effects import *  # noqa : F401
 from core.player import *  # noqa : F401
 from core.game_logic.deck import *  # noqa : F401
 from core.game_logic.card import *  # noqa : F401

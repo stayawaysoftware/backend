@@ -7,10 +7,12 @@ from core.effect_handler import effect_handler
 from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_player
 from core.game_logic.card_creation import card_defense
+from core.game_logic.game_utility import draw_no_panic
 from core.game_logic.game_effects import get_defense_cards
 from core.player import create_player
 from fastapi import HTTPException
 from models.game import Card
+from schemas.socket import GameMessage
 from models.game import Game
 from models.game import Player
 from models.room import Room
@@ -18,7 +20,6 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.card import CardOut
 from schemas.player import PlayerOut
-from schemas.socket import GameMessage
 
 
 connection_manager = ConnectionManager()
@@ -155,37 +156,21 @@ def delete_game(game_id: int):
 
 
 def handle_play(
+    game_id: int,
     card_id: int,
     target_player_id: int,
 ):
-    card = Card.get(id=card_id)
-    card = CardOut.from_card(card)
-    response = {
-        "type": "play",
-        "played_card": card.model_dump(by_alias=True, exclude_unset=True),
-        "card_target": target_player_id,
-    }
+    response = GameMessage.create("play",room_id=game_id, card_id=card_id, target_id=target_player_id)
     return response
 
 
 @db_session
-def try_defense(played_card: int, card_target: int):
+def try_defense(game_id: int, played_card: int, card_target: int):
     with db_session:
-        if card_target == 0:
-            print("No se puede defender")
-        else:
-            player = Player.get(id=card_target)
-            player = PlayerOut.to_json(player)
-
-        card = Card.get(id=played_card)
-        card = CardOut.from_card(card)
-        defended_by = card_defense[card.idtype]
-        res = {
-            "type": "try_defense",
-            "target_player": card_target,
-            "played_card": card.model_dump(by_alias=True, exclude_unset=True),
-            "defended_by": defended_by,
-        }
+        res = GameMessage.create(type="try_defense",
+                                  room_id= game_id,
+                                  target_id=card_target,
+                                  card_id=played_card)
     return res
 
 
@@ -216,7 +201,6 @@ def check_winners(game_id: int):
         game.status = "Finished"
         commit()
 
-
 @db_session
 def not_defended_card(
     last_card_played_id: int,
@@ -227,7 +211,6 @@ def not_defended_card(
     at = Card.get(id=last_card_played_id)
     attack_card = CardOut.from_card(at)
     try:
-
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         response = {
             "type": "defense",
@@ -242,6 +225,28 @@ def not_defended_card(
 
     return response, effect
 
+@db_session
+def handle_not_target(
+    game_id: int,
+    card_id: int,
+    current_player_id: int,
+):
+    try:
+        response = None
+        effect = None
+        game = Game.get(id=game_id)
+        card = Card.get(id=card_id)
+        card_idtype = card.idtype
+        effect = effect_handler(game_id, card_idtype, current_player_id, current_player_id)
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(game_id, card_idtype, current_player_id)
+        game.current_phase = "Exchange"
+        commit()
+    except ValueError as e:
+        print("ERROR:", str(e))
+
+    return response, effect
 
 @db_session
 def defended_card(
@@ -260,13 +265,14 @@ def defended_card(
     except ValueError as e:
         print("ERROR:", str(e))
 
+
     game.current_phase = "Discard"
     commit()
     gu.discard(game_id, at.idtype, attacker_id)
     gu.discard(game_id, de.idtype, defense_player_id)
     game.current_phase = "Draw"
     commit()
-    draw_card(game_id, defense_player_id)
+    id = draw_no_panic(game_id, defense_player_id)
     response = {
         "type": "defense",
         "played_defense": defense_card.model_dump(
@@ -278,7 +284,6 @@ def defended_card(
         ),
     }
     return response
-
 
 @db_session
 def handle_defense(
@@ -300,10 +305,7 @@ def handle_defense(
             response, effect = not_defended_card(
                 last_card_played_id, game_id, attacker_id, defense_player_id
             )
-
-            response, effect = not_defended_card(
-                last_card_played_id, game_id, attacker_id, defense_player_id
-            )
+            
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -343,11 +345,13 @@ def handle_defense(
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
     card = Card.get(id=id3)
+    card_type = card.type
     card = CardOut.from_card(card)
 
     draw_response = {
         "type": "draw",
         "new_card": card.model_dump(by_alias=True, exclude_unset=True),
+        "card_type": card_type,
     }
 
     return draw_response
@@ -383,7 +387,8 @@ def exchange_defended(
     gu.discard(game_id, defense_card.idtype, current_player_id)
     game.current_phase = "Draw"
     commit()
-    gu.draw(game_id, current_player_id)
+    id = draw_no_panic(game_id, current_player_id)
+
 
 
 @db_session
@@ -394,14 +399,6 @@ def exchange_not_defended(
     exchange_requester: int,
     chosen_card: int,
 ):
-    effect = effect_handler(
-        game_id,
-        32,
-        current_player_id,
-        exchange_requester,
-        last_chosen_card,
-        chosen_card,
-    )
     effect = effect_handler(
         game_id,
         32,
@@ -437,13 +434,6 @@ def handle_exchange_defense(
                     exchange_requester,
                     last_chosen_card,
                 )
-                effect = effect_handler(
-                    game_id,
-                    defense_card.idtype,
-                    current_player_id,
-                    exchange_requester,
-                    last_chosen_card,
-                )
             except ValueError as e:
                 print("ERROR:", str(e))
         else:
@@ -470,122 +460,27 @@ def handle_exchange_defense(
     game.current_phase = "Draw"
     commit()
     try:
-        gu.draw(game_id, next_player.id)
+        draw_response = draw_card(game_id, next_player.id)
     except ValueError as e:
         print("ERROR:", str(e))
 
-    return effect
+    return draw_response, next_player.id, effect
 
 
 @db_session
-def sospecha_effect(game_id: int, target_id: int, user_id: int):
-    # TODO: Mirar una carta aleatoria de un jugador adyacente
-    target_hand = list(Player.get(id=target_id).hand)
-    random_card = CardOut.from_card(random.choice(target_hand))
-    response = show_one_card_effect(game_id, user_id, random_card.id)
-    return response
-
-
-@db_session
-def show_one_card_effect(game_id, target_id: int, target_chosen_card_id: int):
-    response = GameMessage.create(
-        type="show_card",
-        room_id=game_id,
-        quarantined=None,
-        card_id=target_chosen_card_id,
-        player_id=target_id,
-    )
-    return response
-
-
-@db_session
-def show_hand_effect(game_id: int, target_id: int):
-    response = GameMessage.create(
-        type="show_hand",
-        room_id=game_id,
-        quarantined=None,
-        card_id=None,
-        player_id=target_id,
-    )
-    return response
-
-
-@db_session
-def vigila_tus_espaldas_effect(game_id: int):
-    game = Game.get(id=game_id)
-    game.round_left_direction = not game.round_left_direction
-    commit()
-
-
-@db_session
-def position_change_effect(target_id: int, user_id: int):
-    target = Player.get(id=target_id)
-    user = Player.get(id=user_id)
-    user_position = user.round_position
-    user.round_position = target.round_position
-    target.round_position = user_position
-    commit()
-
-
-@db_session
-def exchange_effect(
-    target_id: int,
-    user_id: int,
-    target_chosen_card: int,
-    user_chosen_card: int,
-):
-    target = Player.get(id=target_id)
-    user = Player.get(id=user_id)
-    target_card = Card.get(id=target_chosen_card)
-    user_card = Card.get(id=user_chosen_card)
-
-    unrelate_card_with_player(target_card.id, target.id)
-    unrelate_card_with_player(user_card.id, user.id)
-    relate_card_with_player(target_card.id, user.id)
-    relate_card_with_player(user_card.id, target.id)
-
-    user_is_the_thing = (user_card.idtype == 2) and (user.role == "The Thing")
-    target_is_the_thing = (target_card.idtype == 2) and (
-        target.role == "The Thing"
-    )
-
-    if user_is_the_thing:
-        target.role = "Infected"
+def handle_discard(game_id: int, card_id: int, player_id: int):
+    try:
+        game = Game.get(id=game_id)
+        game.current_phase = "Discard"
         commit()
-
-    if target_is_the_thing:
-        user.role = "Infected"
+        gu.discard(game_id, card_id, player_id)
+        game.current_phase = "Draw"
         commit()
+        game.current_phase = "Exchange"
+        commit()
+    except ValueError as e:
+        print("ERROR:", str(e))
 
 
-@db_session
-def seduccion_effect(game_id: int):
-    game = Game.get(id=game_id)
-    game.current_phase = "Exchange"
-    commit()
 
 
-def flamethower_effect(target_id: int):
-    target_player = Player.get(id=target_id)
-    target_player.alive = False
-    commit()
-
-
-def locked_door_effect(game_id: int, target_id: int):
-    game = Game.get(id=game_id)
-    position = Player.get(id=target_id).round_position - 1
-    game.locked_doors[position] = 1
-    commit()
-
-
-def axe_effect(game_id: int, target_id: int):
-    game = Game.get(id=game_id)
-    position = Player.get(id=target_id).round_position - 1
-    game.locked_doors[position] = 0
-    commit()
-
-
-def quarantine_effect(target_id: int):
-    player = Player.get(id=target_id)
-    player.quarantine = 2
-    commit()
