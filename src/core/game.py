@@ -11,6 +11,7 @@ from core.player import create_player
 from fastapi import HTTPException
 from core.game_logic.game_effects import get_defense_cards
 from models.game import Card
+from schemas.socket import GameMessage
 from models.game import Game
 from models.game import Player
 from models.room import Room
@@ -412,28 +413,31 @@ def handle_exchange_defense(
     return effect
 
 @db_session
-def sospecha_effect(target_id: int, user_id: int):
+def sospecha_effect(game_id: int,target_id: int, user_id: int):
     # TODO: Mirar una carta aleatoria de un jugador adyacente
     target_hand = list(Player.get(id=target_id).hand)
     random_card = CardOut.from_card(random.choice(target_hand))
-    response = show_one_card_effect(target_id, user_id, random_card.id)
+    response = show_one_card_effect(game_id, user_id, random_card.id)
     return response
 
 @db_session
-def show_one_card_effect(target_id: int, user_id: int, target_chosen_card_id: int):
-    target = Player.get(id=target_id)
-    target_card = CardOut.from_card(Card.get(id=target_chosen_card_id))
-    response = {
-        "type": "show_card",
-        "player_name" : target.name,
-        "target" : [user_id],
-        "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
-    }
+def show_one_card_effect(game_id, target_id: int, target_chosen_card_id: int):
+    response = GameMessage.create(type="show_card",
+                                   room_id=game_id, 
+                                   quarantined=None, 
+                                   card_id=target_chosen_card_id,
+                                   player_id=target_id)
     return response
 
 @db_session
 def show_hand_effect(game_id: int, target_id: int):
-    target_player = PlayerOut.to_json(Player.get(id=target_id))
+    response = GameMessage.create(type="show_hand",
+                                  room_id=game_id,
+                                  quarantined=None,
+                                  card_id=None,
+                                  player_id=target_id)
+    return response
+"""    target_player = PlayerOut.to_json(Player.get(id=target_id))
     target_hand = target_player["hand"]
     players = Game.get(id=game_id).players
     target = []
@@ -445,7 +449,8 @@ def show_hand_effect(game_id: int, target_id: int):
         "target": target,
         "cards": target_hand,
     }
-    return response
+"""
+
 
 @db_session
 def vigila_tus_espaldas_effect(game_id: int):
