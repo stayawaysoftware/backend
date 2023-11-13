@@ -1,13 +1,17 @@
 from enum import Enum
+from typing import Optional
 
-from models.game import Game
+from models.game import Card, Game
 from models.room import Room
 from models.room import User
+from models.game import Player
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic.config import ConfigDict
 from schemas import validators
 from schemas.game import GameInfo
+from schemas.card import CardOut
+from schemas.player import PlayerOut
 
 from .room import RoomId
 from .room import RoomInfo
@@ -130,7 +134,15 @@ class GameMessage(BaseModel):
     type: GameEventTypes = Field(...)
 
     @classmethod
-    def create(cls, type: GameEventTypes, room_id: RoomId):
+    def create(
+        cls,
+        type: GameEventTypes,
+        room_id: RoomId,
+        quarantined: Optional[int] = None,
+        card_id: Optional[int] = None,
+        player_id: Optional[int] = None,
+
+    ):
         game = Game.get(id=room_id)
         match type:
             case "game_info":
@@ -138,3 +150,37 @@ class GameMessage(BaseModel):
                     "type": type,
                     "game": GameInfo.from_db(game),
                 }
+            case "quarantine":
+                assert quarantined is not None
+                assert card_id is not None
+                card = CardOut.from_db(Card.get(id=card_id))
+                return {
+                    "type": "show_card",
+                    "player_name": User.get(id=quarantined).username,
+                    "cards": [
+                        card.model_dump(by_alias=True, exclude_unset=True)
+                    ],
+                }
+            case "show_hand":
+                assert player_id is not None
+                player = PlayerOut.from_player(Player.get(id=player_id)).model_dump(by_alias=True, exclude_unset=True)
+                return {
+                    "type": "show_card",
+                    "player_name": player["name"],
+                    "target": [1,2,3,4],
+                    "cards": player["hand"],
+                }
+            case "show_card":
+                assert player_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(Player.get(id=player_id)).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "player_name": player["name"],
+                    "target": [1,2,3,4],
+                    "cards": [
+                        card.model_dump(by_alias=True, exclude_unset=True)
+                    ],
+                }
+                
