@@ -22,7 +22,7 @@ def effect_handler(
             ga.flamethower_effect(target)
             return None
         case 4:  # Analysis
-            return ga.analisis_effect(id_game, target)
+            return ga.show_hand_effect(id_game, attacker)
         case 5:  # Axe
             print("Axe")
             return None
@@ -32,7 +32,7 @@ def effect_handler(
             print("Determination")
             return None
         case 8:  # Whisky
-            return ga.whisky_effect(id_game, attacker)
+            return ga.show_hand_effect(id_game, attacker)
         case 9:  # Change of position
             ga.cambio_de_lugar_effect(target, attacker)
             return None

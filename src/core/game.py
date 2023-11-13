@@ -290,9 +290,6 @@ def handle_defense(
             response, effect = not_defended_card(
                 last_card_played_id, game_id, attacker_id, defense_player_id
             )
-            response, effect = not_defended_card(
-                last_card_played_id, game_id, attacker_id, defense_player_id
-            )
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -412,6 +409,53 @@ def handle_exchange_defense(
     return effect
 
 @db_session
+def sospecha_effect(target_id: int, user_id: int):
+    # TODO: Mirar una carta aleatoria de un jugador adyacente
+    target = Player.get(id=target_id)
+    target_hand = list(target.hand)
+    random_card = random.choice(target_hand)
+    random_card = CardOut.from_card(random_card)
+    response = {
+        "type": "show_card",
+        "player_name": target.name,
+        "target": [user_id],
+        "cards": [random_card.model_dump(by_alias=True, exclude_unset=True)],
+    }
+    return response
+
+@db_session
+def whisky_effect(game_id, user_id: int):
+    player = Player.get(id=user_id)
+    player_json = PlayerOut.to_json(player)
+    cards = player_json["hand"]
+    # Add every player from game_id to targe tarray
+    players = Game.get(id=game_id).players
+    target = []
+    for p in players:
+        target.append(p.id)
+    response = {
+        "type": "show_card",
+        "player_name": player.name,
+        "target": target,
+        "cards": cards,
+    }
+    return response
+
+@db_session
+def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
+    target = Player.get(id=target_id)
+    target_card = Card.get(id=target_chosen_card_id)
+    target_card = CardOut.from_card(target_card)
+    response = {
+        "type": "show_card",
+        "player_name" : target.name,
+        "target" : [user_id],
+        "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
+
+    }
+    return response
+
+@db_session
 def analisis_effect(game_id: int, adyacent_id: int):
     # TODO: Revisar que sea adyacente
     adyacent_player = Player.get(id=adyacent_id)
@@ -429,6 +473,21 @@ def analisis_effect(game_id: int, adyacent_id: int):
     }
     return response
 
+@db_session
+def show_hand_effect(game_id: int, target_id: int):
+    target_player = PlayerOut.to_json(Player.get(id=target_id))
+    target_hand = target_player["hand"]
+    players = Game.get(id=game_id).players
+    target = []
+    for p in players:
+        target.append(p.id)
+    response = {
+        "type": "show_card",
+        "player_name": target_player["name"],
+        "target": target,
+        "cards": target_hand,
+    }
+    return response
 
 @db_session
 def vigila_tus_espaldas_effect(game_id: int):
@@ -494,55 +553,6 @@ def seduccion_effect(game_id: int):
     game = Game.get(id=game_id)
     game.current_phase = "Exchange"
     commit()
-
-
-@db_session
-def sospecha_effect(target_id: int, user_id: int):
-    # TODO: Mirar una carta aleatoria de un jugador adyacente
-    target = Player.get(id=target_id)
-    target_hand = list(target.hand)
-    random_card = random.choice(target_hand)
-    random_card = CardOut.from_card(random_card)
-    response = {
-        "type": "show_card",
-        "player_name": target.name,
-        "target": [user_id],
-        "cards": [random_card.model_dump(by_alias=True, exclude_unset=True)],
-    }
-    return response
-
-@db_session
-def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
-    target = Player.get(id=target_id)
-    target_card = Card.get(id=target_chosen_card_id)
-    target_card = CardOut.from_card(target_card)
-    response = {
-        "type": "show_card",
-        "player_name" : target.name,
-        "target" : [user_id],
-        "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
-
-    }
-    return response
-
-@db_session
-def whisky_effect(game_id, user_id: int):
-    player = Player.get(id=user_id)
-    player_json = PlayerOut.to_json(player)
-    cards = player_json["hand"]
-    # Add every player from game_id to targe tarray
-    players = Game.get(id=game_id).players
-    target = []
-    for p in players:
-        target.append(p.id)
-    response = {
-        "type": "show_card",
-        "player_name": player.name,
-        "target": target,
-        "cards": cards,
-    }
-    return response
-
 
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
