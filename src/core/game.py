@@ -12,7 +12,6 @@ from core.game_logic.game_effects import get_defense_cards
 from core.player import create_player
 from fastapi import HTTPException
 from models.game import Card
-from schemas.socket import GameMessage
 from models.game import Game
 from models.game import Player
 from models.room import Room
@@ -20,14 +19,17 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.card import CardOut
 from schemas.player import PlayerOut
+from schemas.socket import GameMessage
 
 
 connection_manager = ConnectionManager()
+
 
 @db_session
 def get_card_idtype(card_id: int):
     card = Card.get(id=card_id)
     return card.idtype
+
 
 @db_session
 def init_players(room_id: int, game: Game):
@@ -76,7 +78,8 @@ def init_game(room_id: int):
     deck = gu.initialize_decks(
         id_game=room_id, quantity_players=len(room.users)
     )
-    game = Game(id=room_id, deck=deck)
+    locked_doors = [0 for i in range(len(room.users))]
+    game = Game(id=room_id, deck=deck, locked_doors=locked_doors)
     commit()
     init_players(room_id, game)
 
@@ -208,6 +211,7 @@ def not_defended_card(
 ):
     at = Card.get(id=last_card_played_id)
     try:
+
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         response = GameMessage.create(type="defense",
                                       room_id=game_id,
@@ -242,6 +246,7 @@ def handle_not_target(
         print("ERROR:", str(e))
 
     return response, effect
+
 
 @db_session
 def defended_card(
@@ -295,7 +300,10 @@ def handle_defense(
             response, effect = not_defended_card(
                 last_card_played_id, game_id, attacker_id, defense_player_id
             )
-            
+
+            response, effect = not_defended_card(
+                last_card_played_id, game_id, attacker_id, defense_player_id
+            )
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -397,6 +405,14 @@ def exchange_not_defended(
         last_chosen_card,
         chosen_card,
     )
+    effect = effect_handler(
+        game_id,
+        32,
+        current_player_id,
+        exchange_requester,
+        last_chosen_card,
+        chosen_card,
+    )
     return effect
 
 
@@ -424,6 +440,13 @@ def handle_exchange_defense(
                     exchange_requester,
                     last_chosen_card,
                 )
+                effect = effect_handler(
+                    game_id,
+                    defense_card.idtype,
+                    current_player_id,
+                    exchange_requester,
+                    last_chosen_card,
+                )
             except ValueError as e:
                 print("ERROR:", str(e))
         else:
@@ -440,6 +463,9 @@ def handle_exchange_defense(
         except ValueError as e:
             print("ERROR:", str(e))
     calculate_next_turn(game_id)
+    player = Player.get(id=exchange_requester)
+    player.quarantine = player.quarantine - 1 if player.quarantine > 0 else 0
+    commit()
     players = list(game.players)
     next_player = list(
         filter(lambda p: p.round_position == game.current_position, players)
@@ -463,7 +489,26 @@ def handle_discard(game_id: int, card_id: int, player_id: int):
         gu.discard(game_id, card_id, player_id)
         game.current_phase = "Draw"
         commit()
-        game.current_phase = "Exchange"
-        commit()
-    except ValueError as e:
-        print("ERROR:", str(e))
+    
+
+
+
+
+def locked_door_effect(game_id: int, target_id: int):
+    game = Game.get(id=game_id)
+    position = Player.get(id=target_id).round_position - 1
+    game.locked_doors[position] = 1
+    commit()
+
+
+def axe_effect(game_id: int, target_id: int):
+    game = Game.get(id=game_id)
+    position = Player.get(id=target_id).round_position - 1
+    game.locked_doors[position] = 0
+    commit()
+
+
+def quarantine_effect(target_id: int):
+    player = Player.get(id=target_id)
+    player.quarantine = 2
+    commit()

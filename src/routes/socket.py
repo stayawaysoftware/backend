@@ -1,17 +1,20 @@
+from time import sleep
+
 import core.room as rooms
 from core.connections import ConnectionManager
 from core.game import delete_game
+from core.game import get_card_idtype
 from core.game import handle_defense
 from core.game import handle_exchange
 from core.game import handle_exchange_defense
 from core.game import handle_play
-from core.game import get_card_idtype
 from core.game import try_defense
 from core.game import handle_discard
 from core.game import handle_not_target
 from fastapi import APIRouter
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from models.game import Player
 from pony.orm import db_session
 from pydantic import ValidationError
 from schemas.room import RoomEventValidator
@@ -73,6 +76,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         data["type"], validated_data.room_id
                                     ),
                                 )
+                                sleep(1)
                                 await connection_manager.broadcast(
                                     room_id,
                                     GameMessage.create("game_info", room_id),
@@ -122,6 +126,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 ),
                             )
                 elif GameEventTypes.has_type(data["type"]):
+                    player = Player.get(id=user_id)
                     try:
                         match data["type"]:
                             case "play":
@@ -172,8 +177,14 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 await connection_manager.broadcast(
                                     room_id, response
                                 )
-                                private_attack = get_card_idtype(data["last_played_card"]) in PRIVATE_CARDTYPES
-                                private_defense = get_card_idtype(data["played_defense"]) in PRIVATE_CARDTYPES
+                                private_attack = (
+                                    get_card_idtype(data["last_played_card"])
+                                    in PRIVATE_CARDTYPES
+                                )
+                                private_defense = (
+                                    get_card_idtype(data["played_defense"])
+                                    in PRIVATE_CARDTYPES
+                                )
                                 no_defense = data["played_defense"] == 0
                                 if effect is not None:
                                     if private_attack and no_defense:
@@ -213,7 +224,10 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     is_defense=data["is_defense"],
                                 )
 
-                                private_defense = get_card_idtype(data["chosen_card"]) in PRIVATE_CARDTYPES
+                                private_defense = (
+                                    get_card_idtype(data["chosen_card"])
+                                    in PRIVATE_CARDTYPES
+                                )
                                 if effect is not None:
                                     if private_defense and data["is_defense"]:
                                         await connection_manager.send_to_user_id(user_id, effect)
@@ -270,6 +284,29 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         "DEBUGGING: Invalid game event"
                                     ),
                                 )
+                        if player.quarantine > 0:
+                            print(
+                                f"Quien entra a cuarentena es: {player.name}"
+                            )
+                            card_dict = {
+                                "play": data.get("played_card", None),
+                                "discard": data.get("played_card", None),
+                                "defense": data.get("played_defense", None),
+                                "exchange": data.get("chosen_card", None),
+                                "exchange_defense": data.get(
+                                    "chosen_card", None
+                                ),
+                            }
+
+                            await connection_manager.broadcast(
+                                room_id,
+                                GameMessage.create(
+                                    "quarantine",
+                                    room_id,
+                                    user_id,
+                                    card_dict[data["type"]],
+                                ),
+                            )
                     except ValidationError as error:
                         await connection_manager.send_to(
                             websocket,
