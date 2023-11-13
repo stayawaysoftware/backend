@@ -258,6 +258,7 @@ class TestWinnerCheckoutHuman:
         assert not has_card
         assert response is not None
     
+# ================================ Exchange Testing ====================================================
     @db_session
     def exchange_defended_generalized_test(self, resources, defense_card_idtype):
         room = resources[1]
@@ -446,3 +447,26 @@ class TestWinnerCheckoutHuman:
         assert second_human_player.role == "Infected"
         first_human_player.role = "Human"
         second_human_player.role = "Human"
+# ================================ Card play and effects Testing ====================================================
+
+        @db_session
+        def return_all_players_to_alive(self, resources):
+            room = resources[1]
+            game = Game.get(id=room.id)
+            players = list(game.players)
+            for player in players:
+                player.alive = True
+                commit()
+
+        @db_session
+        def return_all_infected_to_human(self, resources):
+            room = resources[1]
+            game = Game.get(id=room.id)
+            players = list(game.players)
+            for player in players:
+                if player.role == "Infected":
+                    player.role = "Human"
+                    commit()
+
+        
+   
