@@ -25,7 +25,7 @@ from schemas.socket import GameMessage
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
 
-PRIVATE_CARDTYPES = [4, 6, 14, 27]
+PRIVATE_CARDTYPES = [4, 6, 14, 27, 31]
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])
