@@ -197,10 +197,15 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     is_defense=data["is_defense"],
                                 )
 
+                                private_defense = get_card_idtype(data["chosen_card"]) in PRIVATE_CARDTYPES
                                 if effect is not None:
-                                    await connection_manager.broadcast(
-                                        room_id, effect
-                                    )
+                                    if private_defense and data["is_defense"]:
+                                        await connection_manager.send_to_user_id(user_id, effect)
+                                        print("Defensa con mensaje privado efectuado")
+                                    else:
+                                        await connection_manager.broadcast(
+                                            room_id, effect
+                                        )
 
                                 res = {"type": "exchange_end"}
                                 await connection_manager.broadcast(
