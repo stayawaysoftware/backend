@@ -22,6 +22,10 @@ from schemas.player import PlayerOut
 
 connection_manager = ConnectionManager()
 
+@db_session
+def get_card_idtype(card_id: int):
+    card = Card.get(id=card_id)
+    return card.idtype
 
 @db_session
 def init_players(room_id: int, game: Game):
@@ -228,8 +232,6 @@ def not_defended_card(
         print("ERROR:", str(e))
 
     return response, effect
-
-
 
 @db_session
 def defended_card(

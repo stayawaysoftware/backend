@@ -50,8 +50,7 @@ def effect_handler(
             print("I'm fine here")
             return None
         case 14:  # Terrifying
-            effect = ga.show_one_card_effect(target,attacker,last_chosen_card)
-            return effect
+            return ga.show_one_card_effect(target,attacker,last_chosen_card)
         case 15:  # No, thanks
             print("No, thanks")
             return None
