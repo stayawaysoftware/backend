@@ -178,10 +178,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 if effect is not None:
                                     if private_attack and no_defense:
                                         await connection_manager.send_to_user_id(data["target_player"], effect)
-                                        print("Ataque con mensaje privado efectuado")
                                     elif private_defense:
                                         await connection_manager.send_to_user_id(user_id, effect)
-                                        print("Defensa con mensaje privado efectuada")
                                     else:
                                         await connection_manager.broadcast(
                                             room_id, effect
@@ -219,7 +217,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 if effect is not None:
                                     if private_defense and data["is_defense"]:
                                         await connection_manager.send_to_user_id(user_id, effect)
-                                        print("Defensa con mensaje privado efectuado")
                                     else:
                                         await connection_manager.broadcast(
                                             room_id, effect

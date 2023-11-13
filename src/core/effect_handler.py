@@ -1,6 +1,6 @@
 from typing import Optional
 
-import core.game as ga
+import core.effects as ga
 
 
 def effect_handler(
