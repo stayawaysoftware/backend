@@ -248,7 +248,6 @@ def handle_not_target(
 
     return response, effect
 
-
 @db_session
 def defended_card(
     game_id: int,
@@ -266,6 +265,7 @@ def defended_card(
     except ValueError as e:
         print("ERROR:", str(e))
 
+
     game.current_phase = "Discard"
     commit()
     gu.discard(game_id, at.idtype, attacker_id)
@@ -273,11 +273,16 @@ def defended_card(
     game.current_phase = "Draw"
     commit()
     id = draw_no_panic(game_id, defense_player_id)
-    response = GameMessage.create(type="defense",
-                                    room_id=game_id,
-                                    target_id=defense_player_id,
-                                    card_id=last_card_played_id,
-                                    defense_card_id=defense_card_id)
+    response = {
+        "type": "defense",
+        "played_defense": defense_card.model_dump(
+            by_alias=True, exclude_unset=True
+        ),
+        "target_player": defense_player_id,
+        "last_played_card": attack_card.model_dump(
+            by_alias=True, exclude_unset=True
+        ),
+    }
     return response
 
 @db_session

@@ -175,10 +175,14 @@ class GameMessage(BaseModel):
                 player = PlayerOut.from_player(
                     Player.get(id=player_id)
                 ).model_dump(by_alias=True, exclude_unset=True)
+                all_players = [
+                    player.id
+                    for player in game.players
+                ]
                 return {
                     "type": "show_card",
                     "player_name": player["name"],
-                    "target": [1, 2, 3, 4],
+                    "target": all_players,
                     "cards": player["hand"],
                 }
             case "show_card":
@@ -188,10 +192,14 @@ class GameMessage(BaseModel):
                     Player.get(id=player_id)
                 ).model_dump(by_alias=True, exclude_unset=True)
                 card = CardOut.from_card(Card.get(id=card_id))
+                all_players = [
+                    player.id
+                    for player in game.players
+                ]
                 return {
                     "type": type,
                     "player_name": player["name"],
-                    "target": [1, 2, 3, 4],
+                    "target": all_players,
                     "cards": [
                         card.model_dump(by_alias=True, exclude_unset=True)
                     ],
