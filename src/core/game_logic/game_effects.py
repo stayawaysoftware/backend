@@ -2,8 +2,8 @@
 from typing import Optional
 
 from core.game_logic.card_creation import card_defense
-from core.game_logic.effects.effect_handler import do_effect
-from core.game_logic.game_action import GameAction
+from core.game_logic.effects.effect_handler import do_effect_defense
+from models.game import Card
 from models.game import Game
 from models.game import Player
 from pony.orm import db_session
@@ -20,55 +20,107 @@ def get_defense_cards(idtype_card: int) -> list[int]:
     return card_defense[idtype_card]
 
 
-# Play function (to returns an effect)
+# Play function of defense phase (to returns an effect)
 
 
+@db_session
 def play(
     id_game: int,
-    id_player: int,
-    idtype_card: int,
-    idtype_card_before: Optional[int] = None,
-    target: Optional[int] = None,
-    card_chosen_by_player: Optional[int] = None,
-    card_chosen_by_target: Optional[int] = None,
-) -> GameAction:
-    """Play a card from player hand."""
-    with db_session:
-        if not Game.exists(id=id_game):
-            raise ValueError(f"Game with id {id_game} doesn't exist")
-        if Game[id_game].current_phase not in ["Play", "Defense"]:
-            raise ValueError(
-                f"Game with id {id_game} is not in the Play/Defense phase"
-            )
-        if target is not None and not Player.exists(id=target):
-            raise ValueError(f"Player with id {target} doesn't exist")
-        if not Player.exists(id=id_player):
-            raise ValueError(f"Player with id {id_player} doesn't exist")
-        if idtype_card not in [0, 32]:
-            if len(Player[id_player].hand.select(idtype=idtype_card)) == 0:
-                raise ValueError(
-                    f"Player with id {id_player} has no card with idtype {idtype_card} in hand"
-                )
-        if card_chosen_by_player is not None:
-            if (
-                len(Player[id_player].hand.select(id=card_chosen_by_player))
-                == 0
-            ):
-                raise ValueError(
-                    f"Player with id {id_player} has no card with id {card_chosen_by_player} in hand"
-                )
-        if card_chosen_by_target is not None:
-            if len(Player[target].hand.select(id=card_chosen_by_target)) == 0:
-                raise ValueError(
-                    f"Player with id {target} has no card with id {card_chosen_by_target} in hand"
-                )
+    attack_player_id: int,
+    defense_player_id: int,
+    idtype_attack_card: int,
+    idtype_defense_card: int,
+    card_chosen_by_attacker: Optional[int] = None,
+    card_chosen_by_defender: Optional[int] = None,
+):
+    """Play a combination of cards between attacker and defender players."""
 
-    return do_effect(
+    # Game doesn't exist
+    if not Game.exists(id=id_game):
+        raise ValueError(f"Game with id {id_game} doesn't exist")
+
+    # Game is not in the Defense phase
+    if Game[id_game].current_phase != "Defense":
+        raise ValueError(f"Game with id {id_game} is not in the Defense phase")
+
+    # Player doesn't exist
+    if not Player.exists(id=attack_player_id):
+        raise ValueError(f"Player with id {attack_player_id} doesn't exist")
+    if not Player.exists(id=defense_player_id):
+        raise ValueError(f"Player with id {defense_player_id} doesn't exist")
+
+    # Card is not in hand
+    if (
+        idtype_attack_card not in [0, 32]
+        and Player[attack_player_id]
+        .hand.select(idtype=idtype_attack_card)
+        .count()
+        == 0
+    ):
+        raise ValueError(
+            f"Player with id {attack_player_id} has no card with idtype {idtype_attack_card} in hand"
+        )
+    if (
+        idtype_defense_card not in [0, 32]
+        and Player[defense_player_id]
+        .hand.select(idtype=idtype_defense_card)
+        .count()
+        == 0
+    ):
+        raise ValueError(
+            f"Player with id {defense_player_id} has no card with idtype {idtype_defense_card} in hand"
+        )
+    if (
+        card_chosen_by_attacker is not None
+        and Player[attack_player_id]
+        .hand.select(idtype=card_chosen_by_attacker)
+        .count()
+        == 0
+    ):
+        raise ValueError(
+            f"Player with id {attack_player_id} has no card with idtype {card_chosen_by_attacker} in hand"
+        )
+    if (
+        card_chosen_by_defender is not None
+        and Player[defense_player_id]
+        .hand.select(idtype=card_chosen_by_defender)
+        .count()
+        == 0
+    ):
+        raise ValueError(
+            f"Player with id {defense_player_id} has no card with idtype {card_chosen_by_defender} in hand"
+        )
+
+    # The Thing and Infected cards cannot be played
+    if idtype_attack_card == 1 or idtype_defense_card == 1:
+        raise ValueError("The Thing cannot be played")
+    if idtype_attack_card == 2 or idtype_defense_card == 2:
+        raise ValueError("Infected cannot be played")
+
+    # Defense card must to be of Defense type
+    if (
+        idtype_defense_card != 0
+        and idtype_defense_card not in get_defense_cards(idtype_attack_card)
+    ):
+        raise ValueError(
+            f"Card with idtype {idtype_defense_card} cannot be played as defense to card with idtype {idtype_attack_card}"
+        )
+    if (
+        idtype_attack_card != 32
+        and Card.select(idtype=idtype_attack_card).first().type == "DEFENSE"
+    ):
+        raise ValueError(
+            f"Card with idtype {idtype_attack_card} cannot be played as attack"
+        )
+
+    # Call do_effect method to do the modifications of the game
+
+    return do_effect_defense(
         id_game=id_game,
-        id_player=id_player,
-        id_card_type=idtype_card,
-        id_card_type_before=idtype_card_before,
-        target=target,
-        card_chosen_by_player=card_chosen_by_player,
-        card_chosen_by_target=card_chosen_by_target,
+        attack_player_id=attack_player_id,
+        defense_player_id=defense_player_id,
+        idtype_attack_card=idtype_attack_card,
+        idtype_defense_card=idtype_defense_card,
+        card_chosen_by_attacker=card_chosen_by_attacker,
+        card_chosen_by_defender=card_chosen_by_defender,
     )

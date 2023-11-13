@@ -1,16 +1,16 @@
 """Test analysis effect."""
 import pytest
 
-from . import ActionType
-from . import Card
 from . import clean_db
 from . import commit
-from . import create_all_cards
 from . import db_session
 from . import Deck
-from . import do_effect
+from . import delete_decks
+from . import discard
+from . import draw_specific
 from . import Game
-from . import GameAction
+from . import initialize_decks
+from . import play
 from . import Player
 
 # ================================= ANALYSIS =================================
@@ -20,137 +20,142 @@ class TestAnalysisEffect:
     """Test Analysis effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
-            Player(
-                id=1,
-                game=Game[1],
-                alive=True,
-                round_position=1,
-                name="Player 1",
-            )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": [card.id for card in player.hand],
+        }
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        return player_data
+
+    @db_session
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": sorted(
+                (self.get_player_data(player.id) for player in game.players),
+                key=lambda player: player["id"],
+            ),
+            "deck": game.deck.id,
+        }
+
+        return game_data
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
+            Player(
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
+                game=Game[1],
+                alive=True,
+            )
+
+        draw_specific(id_game=1, id_player=1, idtype_card=4)
+
+        draw_specific(id_game=1, id_player=2, idtype_card=1)
+        draw_specific(id_game=1, id_player=2, idtype_card=2)
+        draw_specific(id_game=1, id_player=2, idtype_card=3)
+        draw_specific(id_game=1, id_player=2, idtype_card=12)
+
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=4)
+
+        discard(id_game=1, id_player=2, idtype_card=1)
+        discard(id_game=1, id_player=2, idtype_card=2)
+        discard(id_game=1, id_player=2, idtype_card=3)
+        discard(id_game=1, id_player=2, idtype_card=12)
+
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
 
     @db_session
     def test_analysis_effect(self):
-        """Test Analysis effect."""
-        self.init_db()
+        """Test analysis effect."""
+        game_data = self.get_game_data(id_game=1)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=4).first())
+        effect = play(
+            id_game=1,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=4,
+            idtype_defense_card=0,
+        )
 
-        assert str(
-            do_effect(id_game=1, id_player=1, id_card_type=4, target=2)
-        ) == str(GameAction(action=ActionType.SHOW_ALL, target=[2, 1]))
+        # With message to front
+        card_list_to_show = [
+            {"id": card.id, "idtype": card.idtype} for card in Player[2].hand
+        ]
 
-        self.end_db()
+        assert effect == {
+            "type": "show_card",
+            "player_name": Player[2].name,
+            "target": [1],
+            "cards": card_list_to_show,
+        }
 
-    @db_session
-    def test_analysis_effect_with_invalid_phase(self):
-        """Test Analysis effect with invalid phase."""
-        self.init_db()
-
-        Game[1].current_phase = "Defense"
-        Player[1].hand.add(Card.select(idtype=4).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=4, target=2)
-
-        self.end_db()
-
-    @db_session
-    def test_analysis_effect_without_target(self):
-        """Test Analysis effect without target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=4).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=4)
-
-        self.end_db()
+        # Without modifications in the game and players
+        assert game_data == self.get_game_data(id_game=1)
 
     @db_session
-    def test_analysis_effect_with_invalid_target(self):
-        """Test Analysis effect with invalid target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=4).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=4, target=31)
-
-        self.end_db()
-
-    @db_session
-    def test_analysis_effect_with_dead_target(self):
-        """Test Analysis effect with dead target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=4).first())
-
+    def test_analysis_effect_with_dead_player(self):
+        """Test analysis effect with dead player."""
         Player[2].alive = False
+        commit()
 
         with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=4, target=2)
-
-        self.end_db()
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=4,
+                idtype_defense_card=0,
+            )
 
     @db_session
-    def test_analysis_effect_with_invalid_player(self):
-        """Test Analysis effect with invalid player."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=4).first())
-
+    def test_analysis_effect_with_not_neighbor_player(self):
+        """Test analysis effect with not neighbor player."""
         with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=31, id_card_type=4, target=2)
-
-        self.end_db()
-
-    @db_session
-    def test_analysis_effect_with_player_as_target(self):
-        """Test Analysis effect with player as target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=4).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=4, target=1)
-
-        self.end_db()
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=3,
+                idtype_attack_card=4,
+                idtype_defense_card=0,
+            )
