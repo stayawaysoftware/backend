@@ -565,25 +565,6 @@ def seduccion_effect(game_id: int):
     commit()
 
 
-@db_session
-def whisky_effect(game_id, user_id: int):
-    player = Player.get(id=user_id)
-    player_json = PlayerOut.to_json(player)
-    cards = player_json["hand"]
-    # Add every player from game_id to targe tarray
-    players = Game.get(id=game_id).players
-    target = []
-    for p in players:
-        target.append(p.id)
-    response = {
-        "type": "show_card",
-        "player_name": player.name,
-        "target": target,
-        "cards": cards,
-    }
-    return response
-
-
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
