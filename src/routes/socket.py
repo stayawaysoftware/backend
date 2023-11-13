@@ -186,7 +186,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 )
 
                             case "exchange_defense":
-                                effect = handle_exchange_defense(
+                                draw_response, next_player_id, effect = handle_exchange_defense(
                                     game_id=room_id,
                                     current_player_id=user_id,
                                     exchange_requester=data[
@@ -206,6 +206,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                         await connection_manager.broadcast(
                                             room_id, effect
                                         )
+                                
+                                await connection_manager.send_to_user_id(next_player_id, draw_response)
 
                                 res = {"type": "exchange_end"}
                                 await connection_manager.broadcast(

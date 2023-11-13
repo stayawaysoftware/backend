@@ -318,11 +318,13 @@ def handle_defense(
 def draw_card(game_id: int, player_id: int):
     id3 = gu.draw(game_id, player_id)
     card = Card.get(id=id3)
+    card_type = card.type
     card = CardOut.from_card(card)
 
     draw_response = {
         "type": "draw",
         "new_card": card.model_dump(by_alias=True, exclude_unset=True),
+        "card_type": card_type,
     }
 
     return draw_response
@@ -403,11 +405,11 @@ def handle_exchange_defense(
     game.current_phase = "Draw"
     commit()
     try:
-        gu.draw(game_id, next_player.id)
+        draw_response = draw_card(game_id, next_player.id)
     except ValueError as e:
             print("ERROR:", str(e))
 
-    return effect
+    return draw_response, next_player.id, effect
 
 @db_session
 def sospecha_effect(game_id: int,target_id: int, user_id: int):
