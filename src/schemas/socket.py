@@ -141,6 +141,7 @@ class GameMessage(BaseModel):
         quarantined: Optional[int] = None,
         card_id: Optional[int] = None,
         player_id: Optional[int] = None,
+        
     ):
         game = Game.get(id=room_id)
         match type:
@@ -182,4 +183,5 @@ class GameMessage(BaseModel):
                         card.model_dump(by_alias=True, exclude_unset=True)
                     ],
                 }
+            case ""
                 

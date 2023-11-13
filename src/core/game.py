@@ -217,11 +217,8 @@ def not_defended_card(
     at = Card.get(id=last_card_played_id)
     attack_card = CardOut.from_card(at)
     try:
-
-
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         response = {
-            "type": "defense",
             "type": "defense",
             "played_defense": 0,
             "target_player": defense_player_id,
@@ -437,19 +434,6 @@ def show_hand_effect(game_id: int, target_id: int):
                                   card_id=None,
                                   player_id=target_id)
     return response
-"""    target_player = PlayerOut.to_json(Player.get(id=target_id))
-    target_hand = target_player["hand"]
-    players = Game.get(id=game_id).players
-    target = []
-    for p in players:
-        target.append(p.id)
-    response = {
-        "type": "show_card",
-        "player_name": target_player["name"],
-        "target": target,
-        "cards": target_hand,
-    }
-"""
 
 
 @db_session
