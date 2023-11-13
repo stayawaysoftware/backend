@@ -1,49 +1,39 @@
 """Suspicion effect."""
-from typing import Optional
-
-from core.game_logic.game_action import ActionType
-from core.game_logic.game_action import GameAction
-from models.game import Game
-from pony.orm import db_session
+from core.player import get_alive_neighbors
+from models.game import Player
+from schemas.card import CardOut
 
 
 def suspicion_effect(
-    id_game: int,
-    player: int,
-    target: Optional[int],
-    card_chosen_by_player: Optional[int],
-) -> GameAction:
+    id_game: int, attack_player_id: int, defense_player_id: int
+):
     """Suspicion effect."""
-    with db_session:
-        game = Game[id_game]
 
-        if game.current_phase != "Play":
-            raise ValueError("You can't use this card in this phase.")
-        if target is None:
-            raise ValueError("You must select a target.")
-        if game.players.select(id=target).count() == 0:
-            raise ValueError("Target doesn't exists.")
-        if not game.players.select(id=target).first().alive:
-            raise ValueError("Target is dead.")
-        if game.players.select(id=player).count() == 0:
-            raise ValueError("Player doesn't exists.")
-        if game.players.select(id=player).first().id == target:
-            raise ValueError("You can't use this card on yourself.")
-        if card_chosen_by_player is None:
-            raise ValueError("You must select a card before.")
-        if (
-            game.players.select(id=target)
-            .first()
-            .hand.select(idtype=card_chosen_by_player)
-            .count()
-            == 0
-        ):
-            raise ValueError(
-                f"Target doesn't have this card with id {card_chosen_by_player}"
-            )
+    # The defense player must to be alive
+    if Player[defense_player_id].alive is False:
+        raise ValueError("The player with id {defense_player_id} is dead.")
 
-        return GameAction(
-            action=ActionType.SHOW,
-            target=[target, player],
-            card_target=[card_chosen_by_player],
+    # The defense player must to be neighbor of the attack player
+    attack_neighbors = get_alive_neighbors(
+        id_game=id_game, id_player=attack_player_id
+    )
+    if defense_player_id not in attack_neighbors:
+        raise ValueError(
+            "The player with id {defense_player_id} is not a neighbor of the player with id {attack_player_id}."
         )
+
+    # Without modifications in the game
+
+    # With effects to show in the frontend - Get a random card to show
+    card_to_show = CardOut.from_card(
+        Player[defense_player_id].hand.random(1)[0]
+    )
+
+    effect = {
+        "type": "show_card",
+        "player_name": Player[defense_player_id].name,
+        "target": [attack_player_id],
+        "cards": [card_to_show.dict(by_alias=True, exclude_unset=True)],
+    }
+
+    return effect

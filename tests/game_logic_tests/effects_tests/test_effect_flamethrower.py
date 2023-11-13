@@ -1,24 +1,25 @@
 """Test flamethrower effect."""
 import pytest
 
-from . import ActionType
 from . import clean_db
 from . import commit
 from . import db_session
 from . import Deck
-from . import do_effect
+from . import delete_decks
+from . import discard
+from . import draw_specific
 from . import Game
-from . import GameAction
+from . import initialize_decks
+from . import play
 from . import Player
 
 # ============================ FLAMETHROWER EFFECT ============================
 
 
-class TestFlamethrowerEffectFIRSTPLAY:
-    """Tests for flamethrower effect (defense GameAction)."""
+class TestFlamethrower:
+    """Tests for flamethrower effect"""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
@@ -28,178 +29,137 @@ class TestFlamethrowerEffectFIRSTPLAY:
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": [card.id for card in player.hand],
+        }
+
+        return player_data
+
+    @db_session
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": sorted(
+                (self.get_player_data(player.id) for player in game.players),
+                key=lambda player: player["id"],
+            ),
+            "deck": game.deck.id,
+        }
+
+        return game_data
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
             Player(
-                id=1,
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
                 game=Game[1],
                 alive=True,
-                round_position=1,
-                name="Player 1",
             )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        draw_specific(id_game=1, id_player=1, idtype_card=3)
 
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=3)
+
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
+
+    @db_session
     def test_flamethrower_effect(self):
         """Test flamethrower effect."""
-        self.init_db()
+        game_data = self.get_game_data(id_game=1)
 
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=3,
-                target=2,
-                first_play=True,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.ASK_DEFENSE, target=[2], defense_cards=[17]
-            )
+        effect = play(
+            id_game=1,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=3,
+            idtype_defense_card=0,
         )
 
-        self.end_db()
+        # Without message to front
+        assert effect is None
 
-    def test_flamethrower_effect_without_target(self):
-        """Test flamethrower effect without target."""
-        self.init_db()
+        # With modifications in the game
+        # Check that the player with id 2 is dead (we consider 2 - 1 because the array is 0 indexed)
+        modified_game_data = self.get_game_data(id_game=1)
 
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=3, first_play=True)
+        assert game_data != modified_game_data
+        assert (
+            game_data["players"][2 - 1]["alive"] is True
+            and modified_game_data["players"][2 - 1]["alive"] is False
+        )
 
-        self.end_db()
-
-
-class TestFlamethrowerEffectREAL:
-    """Tests for flamethrower effect."""
-
-    @classmethod
-    @db_session
-    def setup_class(cls):
-        """Setup class."""
-        clean_db()
-
-    @classmethod
-    def teardown_class(cls):
-        """Teardown class."""
-        clean_db()
-
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
-            Player(
-                id=1,
-                game=Game[1],
-                alive=True,
-                round_position=1,
-                name="Player 1",
-            )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
-
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        # Check that the previous modifications are the only ones
+        game_data["players"][2 - 1]["alive"] = False
+        assert game_data == modified_game_data
 
     @db_session
-    def test_flamethrower_effect(self):
-        """Test flamethrower effect."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        do_effect(id_game=1, id_player=1, id_card_type=3, target=2)
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=3,
-                target=1,
-            )
-        ) == str(GameAction(action=ActionType.KILL, target=[2]))
-
-        self.end_db()
-
-    @db_session
-    def test_flamethrower_effect_without_target(self):
-        """Test flamethrower effect without target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        do_effect(id_game=1, id_player=1, id_card_type=3, target=2)
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1, id_player=2, id_card_type=0, id_card_type_before=3
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_flamethrower_effect_with_target_dead(self):
-        """Test flamethrower effect with target dead."""
-        self.init_db()
-
+    def test_flamethrower_effect_with_dead_player(self):
+        """Test flamethrower effect with dead player."""
         Player[2].alive = False
+        commit()
 
-        Game[1].current_phase = "Play"
-        do_effect(id_game=1, id_player=1, id_card_type=3, target=2)
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
+        with pytest.raises(ValueError) as excinfo:
+            play(
                 id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=3,
-                target=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=3,
+                idtype_defense_card=0,
             )
 
-        self.end_db()
+    @db_session
+    def test_flamethrower_effect_with_not_neighbor_player(self):
+        """Test flamethrower effect with not neighbor player."""
+        with pytest.raises(ValueError) as excinfo:
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=3,
+                idtype_attack_card=3,
+                idtype_defense_card=0,
+            )
 
 
 # ============================ FLAMETHROWER EFFECT (WITH DEFENSE) ============================
 
 
-class TestNoBarbacuesEffect:
+class TestNoBarbacues:
     """Tests for no barbacues effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
@@ -209,77 +169,103 @@ class TestNoBarbacuesEffect:
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
-            Player(
-                id=1,
-                game=Game[1],
-                alive=True,
-                round_position=1,
-                name="Player 1",
-            )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": [card.id for card in player.hand],
+        }
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        return player_data
 
     @db_session
-    def test_no_barbacues_effect(self):
-        """Test no barbacues effect."""
-        self.init_db()
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": [
+                self.get_player_data(player.id) for player in game.players
+            ],
+            "deck": game.deck.id,
+        }
 
-        Game[1].current_phase = "Play"
-        do_effect(
-            id_game=1, id_player=1, id_card_type=3, target=2
-        )  # Play flamethrower
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=17,
-                id_card_type_before=3,
-                target=1,
-            )
-        ) == str(GameAction(action=ActionType.NOTHING))
-
-        self.end_db()
+        return game_data
 
     @db_session
-    def test_no_barbacues_effect_in_invalid_phase(self):
-        """Test no barbacues effect in invalid phase."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        do_effect(
-            id_game=1, id_player=1, id_card_type=3, target=2
-        )  # Play flamethrower
-
-        Game[1].current_phase = "Play"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=17,
-                id_card_type_before=3,
-                target=1,
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
+            Player(
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
+                game=Game[1],
+                alive=True,
             )
 
-        self.end_db()
+        draw_specific(id_game=1, id_player=1, idtype_card=3)
+        draw_specific(id_game=1, id_player=2, idtype_card=17)
+
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=3)
+        discard(id_game=1, id_player=2, idtype_card=17)
+
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
+
+    @db_session
+    def test_no_barbecues_effect(self):
+        """Test no barbecues effect."""
+        game_data = self.get_game_data(id_game=1)
+
+        effect = play(
+            id_game=1,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=3,
+            idtype_defense_card=17,
+        )
+
+        # Without message to front
+        assert effect is None
+
+        # Without modifications in the game and players
+        assert game_data == self.get_game_data(id_game=1)
+
+    @db_session
+    def test_no_barbecues_effect_with_dead_player(self):
+        """Test no barbecues effect with dead player."""
+        Player[2].alive = False
+        commit()
+
+        with pytest.raises(ValueError) as excinfo:
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=3,
+                idtype_defense_card=17,
+            )

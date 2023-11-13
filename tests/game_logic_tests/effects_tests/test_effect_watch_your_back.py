@@ -1,16 +1,14 @@
 """Test watch your back effect."""
-import pytest
-
-from . import ActionType
-from . import Card
 from . import clean_db
 from . import commit
-from . import create_all_cards
 from . import db_session
 from . import Deck
-from . import do_effect
+from . import delete_decks
+from . import discard
+from . import draw_specific
 from . import Game
-from . import GameAction
+from . import initialize_decks
+from . import play
 from . import Player
 
 # ================================== WATCH YOUR BACK ==================================
@@ -20,75 +18,107 @@ class TestWatchYourBack:
     """Test Watch Your Back effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": [card.id for card in player.hand],
+        }
+
+        return player_data
+
+    @db_session
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": sorted(
+                (self.get_player_data(player.id) for player in game.players),
+                key=lambda player: player["id"],
+            ),
+            "deck": game.deck.id,
+        }
+
+        return game_data
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
             Player(
-                id=1,
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
                 game=Game[1],
                 alive=True,
-                round_position=1,
-                name="Player 1",
             )
-            commit()
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            commit()
+        draw_specific(id_game=1, id_player=1, idtype_card=10)
+
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=10)
+
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
 
     @db_session
     def test_watch_your_back_effect(self):
-        """Test Watch Your Back effect."""
-        self.init_db()
+        """Test watch your back effect."""
+        game_data = self.get_game_data(id_game=1)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=10).first())
-
-        assert str(do_effect(id_game=1, id_player=1, id_card_type=10)) == str(
-            GameAction(action=ActionType.REVERSE_ORDER)
+        effect = play(
+            id_game=1,
+            attack_player_id=1,
+            defense_player_id=1,
+            idtype_attack_card=10,
+            idtype_defense_card=0,
         )
 
-        self.end_db()
+        # Without message to front
+        assert effect is None
 
-    @db_session
-    def test_watch_your_back_effect_with_invalid_phase(self):
-        """Test Watch Your Back effect with invalid phase."""
-        self.init_db()
+        # With modifications in the game
+        modified_game_data = self.get_game_data(id_game=1)
 
-        Game[1].current_phase = "Defense"
-        Player[1].hand.add(Card.select(idtype=10).first())
+        # Check that the round direction has changed
+        assert game_data != modified_game_data
+        assert (
+            game_data["round_left_direction"]
+            != modified_game_data["round_left_direction"]
+        )
 
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=1, id_card_type=10)
-
-        self.end_db()
-
-    @db_session
-    def test_watch_your_back_effect_with_invalid_player(self):
-        """Test Watch Your Back effect with invalid player."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=10).first())
-
-        with pytest.raises(ValueError):
-            do_effect(id_game=1, id_player=31, id_card_type=10)
-
-        self.end_db()
+        # Check that the previous modifications are the only ones
+        modified_game_data["round_left_direction"] ^= 1
+        assert game_data == modified_game_data

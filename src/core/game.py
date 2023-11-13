@@ -63,7 +63,7 @@ def init_players(room_id: int, game: Game):
 
     # The first player to game must to have one extra card (role position 1)
     for player in game.players:
-        if player.round_position == 1:
+        if player.round_position == game.current_position:
             gu.draw(room_id, player.id)
             break
 

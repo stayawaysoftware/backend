@@ -1,1055 +1,400 @@
 """Test exchange effect."""
 import pytest
 
-from . import ActionType
-from . import Card
 from . import clean_db
 from . import commit
-from . import create_all_cards
 from . import db_session
 from . import Deck
-from . import do_effect
+from . import delete_decks
+from . import discard
+from . import draw_specific
 from . import Game
-from . import GameAction
+from . import initialize_decks
+from . import play
 from . import Player
 
 # ============================ EXCHANGE EFFECT ============================
 
 
-class TestExchangeEffectFIRSTPLAY:
+class TestExchange:
     """Tests for exchange effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": sorted(card.id for card in player.hand),
+        }
+
+        return player_data
+
+    @db_session
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": sorted(
+                (self.get_player_data(player.id) for player in game.players),
+                key=lambda player: player["id"],
+            ),
+            "deck": game.deck.id,
+        }
+
+        return game_data
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
             Player(
-                id=1,
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
                 game=Game[1],
                 alive=True,
-                round_position=1,
-                name="Player 1",
             )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        Player[1].role = "The Thing"
+
+        draw_specific(id_game=1, id_player=1, idtype_card=1)
+        draw_specific(id_game=1, id_player=1, idtype_card=2)
+        draw_specific(id_game=1, id_player=1, idtype_card=3)
+        draw_specific(id_game=1, id_player=1, idtype_card=4)
+
+        Player[2].role = "Human"
+
+        draw_specific(id_game=1, id_player=2, idtype_card=5)
+        draw_specific(id_game=1, id_player=2, idtype_card=6)
+        draw_specific(id_game=1, id_player=2, idtype_card=7)
+        draw_specific(id_game=1, id_player=2, idtype_card=8)
+
+        commit()
 
     @db_session
-    def test_exchange_effect_ask_defense(self):
-        """Test exchange effect ask defense."""
-        self.init_db()
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        for card in Player[1].hand:
+            discard(id_game=1, id_player=1, idtype_card=card.idtype)
+        for card in Player[2].hand:
+            discard(id_game=1, id_player=2, idtype_card=card.idtype)
 
-        Game[1].current_phase = "Play"
-
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=32,
-                target=2,
-                card_chosen_by_player=3,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.ASK_DEFENSE,
-                target=[2],
-                defense_cards=[14, 15, 16],
-            )
-        )
-
-        self.end_db()
-
-
-class TestExchangeREALEFFECT:
-    """Tests for exchange effect."""
-
-    @classmethod
-    @db_session
-    def setup_class(cls):
-        """Setup class."""
-        clean_db()
-        create_all_cards()
-
-    @classmethod
-    def teardown_class(cls):
-        """Teardown class."""
-        clean_db()
-
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
-            Player(
-                id=1,
-                game=Game[1],
-                alive=True,
-                round_position=1,
-                name="Player 1",
-            )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
-
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
 
     @db_session
-    def test_exchange_effect(self):
-        """Test exchange effect."""
-        self.init_db()
+    def test_exchange_effect_without_infection(self):
+        """Test exchange effect without infection."""
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
+        # Important data to testing
+        card_chosen = [
+            Player[1].hand.select(idtype=3).first().id,
+            Player[2].hand.select(idtype=5).first().id,
+        ]
 
-        do_effect(
+        # Do the testing
+        game_data = self.get_game_data(id_game=1)
+
+        effect = play(
             id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=32,
+            idtype_defense_card=0,
+            card_chosen_by_attacker=3,
+            card_chosen_by_defender=5,
         )
 
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.EXCHANGE,
-                target=[1, 2],
-                card_target=[3, 5],
-                exchange_phase=False,
-            )
+        # Without message to front
+        assert effect is None
+
+        # With modifications in the game and players
+        modified_game_data = self.get_game_data(id_game=1)
+
+        assert modified_game_data != game_data
+
+        # Check the cards in the hands
+        assert (
+            card_chosen[0] not in modified_game_data["players"][0]["hand"]
+            and card_chosen[1] in modified_game_data["players"][0]["hand"]
+        )
+        assert (
+            card_chosen[1] not in modified_game_data["players"][1]["hand"]
+            and card_chosen[0] in modified_game_data["players"][1]["hand"]
         )
 
-        self.end_db()
+        # Check that this is the only modification
+
+        for i in range(2):
+            for j in range(0, len(modified_game_data["players"][i]["hand"])):
+                if (
+                    modified_game_data["players"][i]["hand"][j]
+                    == card_chosen[1 - i]
+                ):
+                    modified_game_data["players"][i]["hand"][j] = card_chosen[
+                        i
+                    ]
+                    break
+
+        # Order the game_data cards to compare easily
+
+        for i in range(12):
+            list_for_game_data = list(modified_game_data["players"][i]["hand"])
+            list_for_game_data.sort()
+
+            modified_game_data["players"][i]["hand"] = list_for_game_data
+
+        assert game_data == modified_game_data
 
     @db_session
-    def test_exchange_effect_in_invalid_phase(self):
-        """Test exchange effect in invalid phase."""
-        self.init_db()
+    def test_exchange_effect_with_infection(self):
+        """Test exchange effect with infection."""
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
+        # Important data to testing
+        card_chosen = [
+            Player[1].hand.select(idtype=2).first().id,
+            Player[2].hand.select(idtype=5).first().id,
+        ]
 
-        do_effect(
+        # Do the testing
+        game_data = self.get_game_data(id_game=1)
+
+        effect = play(
             id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=32,
+            idtype_defense_card=0,
+            card_chosen_by_attacker=2,
+            card_chosen_by_defender=5,
         )
 
-        Game[1].current_phase = "Play"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
-            )
+        # Without message to front
+        assert effect is None
 
-        self.end_db()
+        # With modifications in the game and players
+        modified_game_data = self.get_game_data(id_game=1)
+
+        assert modified_game_data != game_data
+
+        # Check the cards in the hands
+        assert (
+            card_chosen[0] not in modified_game_data["players"][0]["hand"]
+            and card_chosen[1] in modified_game_data["players"][0]["hand"]
+        )
+        assert (
+            card_chosen[1] not in modified_game_data["players"][1]["hand"]
+            and card_chosen[0] in modified_game_data["players"][1]["hand"]
+        )
+
+        # Check the infection
+        assert (
+            game_data["players"][1]["role"] == "Human"
+            and modified_game_data["players"][1]["role"] == "Infected"
+        )
+
+        # Check that this is the only modification
+
+        modified_game_data["players"][1]["role"] = "Human"
+
+        for i in range(2):
+            for j in range(0, len(modified_game_data["players"][i]["hand"])):
+                if (
+                    modified_game_data["players"][i]["hand"][j]
+                    == card_chosen[1 - i]
+                ):
+                    modified_game_data["players"][i]["hand"][j] = card_chosen[
+                        i
+                    ]
+                    break
+
+        # Order the game_data cards to compare easily
+
+        for i in range(12):
+            list_for_game_data = list(modified_game_data["players"][i]["hand"])
+            list_for_game_data.sort()
+
+            modified_game_data["players"][i]["hand"] = list_for_game_data
+
+        assert game_data == modified_game_data
 
     @db_session
-    def test_exchange_effect_without_target(self):
-        """Test exchange effect without target."""
-        self.init_db()
+    def test_exchange_effect_from_infected_to_the_thing(self):
+        """Test exchange effect from infected to the thing."""
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
+        # Important data to testing
+        Player[2].role = "Infected"
+        draw_specific(id_game=1, id_player=2, idtype_card=2)
+        draw_specific(id_game=1, id_player=2, idtype_card=2)
 
-        do_effect(
+        card_chosen = [
+            min(card.id for card in Player[1].hand.select(idtype=3)),
+            min(card.id for card in Player[2].hand.select(idtype=2)),
+        ]
+
+        # Do the testing
+        game_data = self.get_game_data(id_game=1)
+
+        effect = play(
             id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=32,
+            idtype_defense_card=0,
+            card_chosen_by_attacker=3,
+            card_chosen_by_defender=2,
         )
 
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
-            )
+        # Without message to front
+        assert effect is None
 
-        self.end_db()
+        # With modifications in the game and players
+        modified_game_data = self.get_game_data(id_game=1)
+
+        assert modified_game_data != game_data
+
+        # Check the cards in the hands
+        assert (
+            card_chosen[0] not in modified_game_data["players"][0]["hand"]
+            and card_chosen[1] in modified_game_data["players"][0]["hand"]
+        )
+        assert (
+            card_chosen[1] not in modified_game_data["players"][1]["hand"]
+            and card_chosen[0] in modified_game_data["players"][1]["hand"]
+        )
+
+        # Check that this is the only modification
+
+        for i in range(2):
+            for j in range(0, len(modified_game_data["players"][i]["hand"])):
+                if (
+                    modified_game_data["players"][i]["hand"][j]
+                    == card_chosen[1 - i]
+                ):
+                    modified_game_data["players"][i]["hand"][j] = card_chosen[
+                        i
+                    ]
+                    break
+
+        # Order the game_data cards to compare easily
+
+        for i in range(12):
+            list_for_game_data = list(modified_game_data["players"][i]["hand"])
+            list_for_game_data.sort()
+
+            modified_game_data["players"][i]["hand"] = list_for_game_data
+
+        assert game_data == modified_game_data
 
     @db_session
-    def test_exchange_effect_with_invalid_target(self):
-        """Test exchange effect with invalid target."""
-        self.init_db()
+    def test_exchange_effect_infected_between_both_sides(self):
+        Player[2].role = "Infected"
+        draw_specific(id_game=1, id_player=2, idtype_card=2)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
+        with pytest.raises(ValueError) as excinfo:
+            play(
                 id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=100,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=0,
+                card_chosen_by_attacker=2,
+                card_chosen_by_defender=2,
             )
 
-        self.end_db()
+    @db_session
+    def test_exchange_effect_infected_from_the_thing_to_infected(self):
+        Player[2].role = "Infected"
+
+        with pytest.raises(ValueError) as excinfo:
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=0,
+                card_chosen_by_attacker=2,
+                card_chosen_by_defender=5,
+            )
 
     @db_session
-    def test_exchange_effect_with_dead_target(self):
-        """Test exchange effect with dead target."""
-        self.init_db()
+    def test_exchange_effect_infected_with_only_one_card(self):
+        Player[2].role = "Infected"
+        draw_specific(id_game=1, id_player=2, idtype_card=2)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
+        with pytest.raises(ValueError) as excinfo:
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=0,
+                card_chosen_by_attacker=3,
+                card_chosen_by_defender=2,
+            )
 
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
+    @db_session
+    def test_exchange_effect_with_dead_player(self):
+        """Test exchange effect with dead player."""
         Player[2].alive = False
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
-            )
+        commit()
 
-        self.end_db()
+        with pytest.raises(ValueError) as excinfo:
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=0,
+                card_chosen_by_attacker=3,
+                card_chosen_by_defender=5,
+            )
 
     @db_session
-    def test_exchange_effect_with_invalid_player(self):
-        """Test exchange effect with invalid player."""
-        self.init_db()
+    def test_exchange_effect_with_not_neighbor_player(self):
+        """Test exchange effect with not neighbor player."""
+        Player[2].round_position = 3
+        Player[3].round_position = 2
+        commit()
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
+        with pytest.raises(ValueError) as excinfo:
+            play(
                 id_game=1,
-                id_player=100,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=0,
+                card_chosen_by_attacker=3,
+                card_chosen_by_defender=5,
             )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_with_player_as_target(self):
-        """Test exchange effect with player as target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=5).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_without_card_chosen_by_player(self):
-        """Test exchange effect without card chosen by player."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_without_card_chosen_by_target(self):
-        """Test exchange effect without card chosen by target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_The_Thing_card(self):
-        """Test exchange effect with The Thing card."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=1).first())
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=1,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=1,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_both_sides(self):
-        """Test exchange effect with infected card both sides."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=2).first())
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=2).first())
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=2,
-                card_chosen_by_target=2,
-            )
-
-        self.end_db()
-
-    # INFECT CARD FROM PLAYER SIDE
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_The_Thing_and_target_as_Infected(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as The Thing and target as Infected."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=1).first())
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "The Thing"
-        Player[2].role = "Infected"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_The_Thing_and_target_as_human(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as The Thing and target as human."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=1).first())
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.EXCHANGE,
-                target=[1, 2, 2],
-                card_target=[2, 5],
-                action2=ActionType.INFECT,
-                exchange_phase=False,
-            )
-        )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_Infected_with_only_one(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as Infected with only one."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_Infected_and_target_as_The_Thing(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as Infected and target as The Thing."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-        Player[1].hand.add(infect_cards[1])
-
-        Player[2].hand.add(Card.select(idtype=1).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.EXCHANGE,
-                target=[1, 2],
-                card_target=[2, 5],
-                exchange_phase=False,
-            )
-        )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_Infected_and_target_as_Infected(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as Infected and target as Infected."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-        Player[1].hand.add(infect_cards[1])
-
-        Player[2].hand.add(infect_cards[2])
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "Infected"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_Infected_and_target_as_Human(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as Infected and target as Human."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-        Player[1].hand.add(infect_cards[1])
-
-        Player[2].hand.add(infect_cards[2])
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "Human"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_player_side_with_player_as_Human(
-        self,
-    ):
-        """Test exchange effect with infected card from player side with player as Human."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-
-        Player[2].hand.add(infect_cards[2])
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Human"
-        Player[2].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=32,
-            target=2,
-            card_chosen_by_player=2,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=1,
-                card_chosen_by_player=5,
-                card_chosen_by_target=2,
-            )
-
-        self.end_db()
-
-    # INFECT CARD FROM TARGET SIDE
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_player_as_Infected_and_target_as_The_Thing(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with player as Infected and target as The Thing."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=1).first())
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "The Thing"
-        Player[2].role = "Infected"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_player_as_Human_and_target_as_The_Thing(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with player as Human and target as The Thing."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=1).first())
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.EXCHANGE,
-                target=[2, 1, 2],
-                card_target=[5, 2],
-                action2=ActionType.INFECT,
-                exchange_phase=False,
-            )
-        )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_target_as_Infected_with_only_one(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with target as Infected with only one."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=2).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_player_as_The_Thing_and_target_as_Infected(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with target as Infected and player as The Thing."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-        Player[1].hand.add(infect_cards[1])
-
-        Player[2].hand.add(Card.select(idtype=1).first())
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.EXCHANGE,
-                target=[2, 1],
-                card_target=[5, 2],
-                exchange_phase=False,
-            )
-        )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_player_as_Infected_and_target_as_Infected(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with player as Infected and target as Infected."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-        Player[1].hand.add(infect_cards[1])
-
-        Player[2].hand.add(infect_cards[2])
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "Infected"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_player_as_Human_and_target_as_Infected(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with target as Infected and player as Human."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-        Player[1].hand.add(infect_cards[1])
-
-        Player[2].hand.add(infect_cards[2])
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Infected"
-        Player[2].role = "Human"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_exchange_effect_infected_card_from_target_side_with_target_as_Human(
-        self,
-    ):
-        """Test exchange effect with infected card from target side with target as Human."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        infect_cards = list(Card.select(idtype=2))
-        Player[1].hand.add(infect_cards[0])
-
-        Player[2].hand.add(infect_cards[2])
-        Player[2].hand.add(Card.select(idtype=5).first())
-
-        Player[1].role = "Human"
-        Player[2].role = "The Thing"
-
-        do_effect(
-            id_game=1,
-            id_player=2,
-            id_card_type=32,
-            target=1,
-            card_chosen_by_player=5,
-        )
-
-        Game[1].current_phase = "Defense"
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=0,
-                id_card_type_before=32,
-                target=2,
-                card_chosen_by_player=2,
-                card_chosen_by_target=5,
-            )
-
-        self.end_db()
 
 
 # ================================= EXCHANGE / SEDUCTION (WITH DEFENSE) =================================
@@ -1057,683 +402,309 @@ class TestExchangeREALEFFECT:
 # TERRIFYING
 
 
-class TestTerrifyingEffect:
+class TestTerrifying:
     """Test Terrifying effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
-            Player(
-                id=1,
-                game=Game[1],
-                alive=True,
-                round_position=1,
-                name="Player 1",
-            )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": [card.id for card in player.hand],
+        }
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        return player_data
+
+    @db_session
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": [
+                self.get_player_data(player.id) for player in game.players
+            ],
+            "deck": game.deck.id,
+        }
+
+        return game_data
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
+            Player(
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
+                game=Game[1],
+                alive=True,
+            )
+
+        draw_specific(id_game=1, id_player=1, idtype_card=3)
+        draw_specific(id_game=1, id_player=2, idtype_card=4)
+
+        draw_specific(id_game=1, id_player=2, idtype_card=14)
+
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=3)
+        discard(id_game=1, id_player=2, idtype_card=4)
+        discard(id_game=1, id_player=2, idtype_card=14)
+
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
 
     @db_session
     def test_terrifying_effect(self):
         """Test Terrifying effect."""
-        self.init_db()
+        game_data = self.get_game_data(id_game=1)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
+        effect = play(
             id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=32,
+            idtype_defense_card=14,
+            card_chosen_by_attacker=3,
         )
 
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        Player[2].hand.add(Card.select(idtype=14).first())
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-        ) == str(
-            GameAction(action=ActionType.SHOW, target=[1, 2], card_target=[3])
-        )
+        # Without modifications in the game and players
+        assert game_data == self.get_game_data(id_game=1)
 
-        self.end_db()
+        # With message to front
+        card_id = Player[1].hand.select(idtype=3).first().id
+
+        assert effect == {
+            "type": "show_card",
+            "player_name": Player[1].name,
+            "target": [2],
+            "cards": [{"id": card_id, "idtype": 3}],
+        }
 
     @db_session
-    def test_terrifying_effect_with_invalid_phase(self):
-        """Test Terrifying effect with invalid phase."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_terrifying_effect_without_target(self):
-        """Test Terrifying effect without target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=14,
-                id_card_type_before=11,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_terrifying_effect_with_invalid_target(self):
-        """Test Terrifying effect with invalid target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=31,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_terrifying_effect_with_dead_target(self):
-        """Test Terrifying effect with dead target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
+    def test_terrifying_effect_with_dead_attaker(self):
+        """Test Terrifying effect with dead attacker."""
         Player[1].alive = False
+        commit()
 
-        with pytest.raises(ValueError):
-            do_effect(
+        with pytest.raises(ValueError) as excinfo:
+            play(
                 id_game=1,
-                id_player=2,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=14,
+                card_chosen_by_attacker=3,
             )
-
-        self.end_db()
 
     @db_session
-    def test_terrifying_effect_with_invalid_player(self):
-        """Test Terrifying effect with invalid player."""
-        self.init_db()
+    def test_terrifying_effect_with_dead_defender(self):
+        """Test Terrifying effect with dead defender."""
+        Player[2].alive = False
+        commit()
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
+        with pytest.raises(ValueError) as excinfo:
+            play(
                 id_game=1,
-                id_player=31,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=14,
+                card_chosen_by_attacker=3,
             )
-
-        self.end_db()
-
-    @db_session
-    def test_terrifying_effect_with_player_as_target(self):
-        """Test Terrifying effect with player as target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_terrifying_effect_without_target_card(self):
-        """Test Terrifying effect without target card."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=14,
-                id_card_type_before=11,
-                target=1,
-            )
-
-        self.end_db()
 
 
 # NO, THANKS
 
 
-class TestNoThanksEffect:
+class TestNoThanks:
     """Test No Thanks effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
-            Player(
-                id=1,
-                game=Game[1],
-                alive=True,
-                round_position=1,
-                name="Player 1",
-            )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
+    @db_session
+    def get_player_data(self, id_player: int):
+        """Get player data."""
+        player = Player[id_player]
+        player_data = {
+            "id": player.id,
+            "role": player.role,
+            "name": player.name,
+            "round_position": player.round_position,
+            "alive": player.alive,
+            "game": player.game.id,
+            "hand": [card.id for card in player.hand],
+        }
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        return player_data
+
+    @db_session
+    def get_game_data(self, id_game: int):
+        """Get game data."""
+        game = Game[id_game]
+        game_data = {
+            "id": game.id,
+            "round_left_direction": game.round_left_direction,
+            "status": game.status,
+            "current_phase": game.current_phase,
+            "current_position": game.current_position,
+            "winners": game.winners,
+            "players": [
+                self.get_player_data(player.id) for player in game.players
+            ],
+            "deck": game.deck.id,
+        }
+
+        return game_data
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
+            Player(
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
+                game=Game[1],
+                alive=True,
+            )
+
+        draw_specific(id_game=1, id_player=2, idtype_card=15)
+
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=2, idtype_card=15)
+
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
 
     @db_session
     def test_no_thanks_effect(self):
-        """Test No, Thanks effect."""
-        self.init_db()
+        """Test No Thanks effect."""
+        game_data = self.get_game_data(id_game=1)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        do_effect(
+        effect = play(
             id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
+            attack_player_id=1,
+            defense_player_id=2,
+            idtype_attack_card=32,
+            idtype_defense_card=15,
         )
 
-        Game[1].current_phase = "Defense"
-        Player[2].hand.add(Card.select(idtype=5).first())
-        Player[2].hand.add(Card.select(idtype=15).first())
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=15,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-        ) == str(GameAction(action=ActionType.NOTHING))
+        # Without message to front
+        assert effect is None
 
-        self.end_db()
+        # Without modifications in the game and players
+        assert game_data == self.get_game_data(id_game=1)
+
+    @db_session
+    def test_no_thanks_effect_with_dead_player(self):
+        """Test No Thanks effect with dead player."""
+        Player[2].alive = False
+        commit()
+
+        with pytest.raises(ValueError) as excinfo:
+            play(
+                id_game=1,
+                attack_player_id=1,
+                defense_player_id=2,
+                idtype_attack_card=32,
+                idtype_defense_card=15,
+            )
 
 
 # YOU FAILED
 
 
-class TestYouFailedEffect:
+class TestYouFailed:
     """Test You Failed effect."""
 
     @classmethod
-    @db_session
     def setup_class(cls):
         """Setup class."""
         clean_db()
-        create_all_cards()
 
     @classmethod
     def teardown_class(cls):
         """Teardown class."""
         clean_db()
 
-    def init_db(self):
-        """Init DB."""
-        with db_session:
-            Deck(id=1)
-            Game(id=1, deck=Deck[1], current_phase="Play")
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        initialize_decks(id_game=1, quantity_players=12)
+        Game(id=1, current_phase="Defense", deck=Deck[1])
+        for i in range(1, 13):
             Player(
-                id=1,
+                id=i,
+                name=f"Player{i}",
+                round_position=i,
                 game=Game[1],
                 alive=True,
-                round_position=1,
-                name="Player 1",
             )
-            Player(
-                id=2,
-                game=Game[1],
-                alive=True,
-                round_position=2,
-                name="Player 2",
-            )
-            commit()
 
-    def end_db(self):
-        """End DB."""
-        with db_session:
-            Game[1].delete()
-            Deck[1].delete()
-            Player[1].delete()
-            Player[2].delete()
-            commit()
+        # draw_specific(id_game=1, id_player=1, idtype_card=1)
+
+        commit()
 
     @db_session
-    def test_you_failed_effect(self):
-        """Test You Failed effect."""
-        self.init_db()
+    def teardown_method(self):
+        """Teardown method."""
+        Game[1].current_phase = "Discard"
+        discard(id_game=1, id_player=1, idtype_card=1)
+        discard(id_game=1, id_player=1, idtype_card=2)
+        discard(id_game=1, id_player=1, idtype_card=3)
 
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        assert str(
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-        ) == str(
-            GameAction(
-                action=ActionType.ASK_EXCHANGE, target=[1, 2], card_target=[3]
-            )
-        )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_with_invalid_phase(self):
-        """Test You Failed effect with invalid phase."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=3).first())
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_without_target(self):
-        """Test You Failed effect without target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=16,
-                id_card_type_before=11,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_with_invalid_target(self):
-        """Test You Failed effect with invalid target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=31,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_with_dead_target(self):
-        """Test You Failed effect with dead target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-        Player[1].alive = False
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_with_invalid_player(self):
-        """Test You Failed effect with invalid player."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=31,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_with_player_as_target(self):
-        """Test You Failed effect with player as target."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=1,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=1,
-                card_chosen_by_target=3,
-            )
-
-        self.end_db()
-
-    @db_session
-    def test_you_failed_effect_without_target_card(self):
-        """Test You Failed effect without target card."""
-        self.init_db()
-
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card.select(idtype=11).first())
-
-        Player[2].hand.add(Card.select(idtype=16).first())
-
-        do_effect(
-            id_game=1,
-            id_player=1,
-            id_card_type=11,
-            target=2,
-            card_chosen_by_player=3,
-        )
-
-        Game[1].current_phase = "Defense"
-
-        with pytest.raises(ValueError):
-            do_effect(
-                id_game=1,
-                id_player=2,
-                id_card_type=16,
-                id_card_type_before=11,
-                target=1,
-            )
-
-        self.end_db()
+        delete_decks(id_game=1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
