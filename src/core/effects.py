@@ -96,3 +96,22 @@ def flamethower_effect(target_id: int):
     target_player.alive = False
     commit()
 
+@db_session
+def locked_door_effect(game_id: int, target_id: int):
+    game = Game.get(id=game_id)
+    position = Player.get(id=target_id).round_position - 1
+    game.locked_doors[position] = 1
+    commit()
+
+@db_session
+def axe_effect(game_id: int, target_id: int):
+    game = Game.get(id=game_id)
+    position = Player.get(id=target_id).round_position - 1
+    game.locked_doors[position] = 0
+    commit()
+
+@db_session
+def quarantine_effect(target_id: int):
+    player = Player.get(id=target_id)
+    player.quarantine = 2
+    commit()

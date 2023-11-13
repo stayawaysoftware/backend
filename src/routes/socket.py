@@ -131,6 +131,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                         match data["type"]:
                             case "play":
                                 response = handle_play(
+                                    room_id,
                                     data["played_card"],
                                     data["card_target"],
                                 )
@@ -157,7 +158,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     )
                                 else:
                                     defense_response = try_defense(
-                                    data["played_card"], data["card_target"]
+                                        room_id, 
+                                        data["played_card"], 
+                                        data["card_target"]
                                     )
                                     await connection_manager.broadcast(
                                         room_id, defense_response
