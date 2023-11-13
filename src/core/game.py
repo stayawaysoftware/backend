@@ -18,9 +18,16 @@ from pony.orm import commit
 from pony.orm import db_session
 from schemas.card import CardOut
 from schemas.player import PlayerOut
+from schemas.socket import GameMessage
 
 
 connection_manager = ConnectionManager()
+
+
+@db_session
+def get_card_idtype(card_id: int):
+    card = Card.get(id=card_id)
+    return card.idtype
 
 
 @db_session
@@ -51,6 +58,13 @@ def init_players(room_id: int, game: Game):
     for player in game.players:
         if player.hand.filter(idtype=1).count() > 0:
             player.role = "The Thing"
+            break
+
+    # The first player to game must to have one extra card (role position 1)
+    for player in game.players:
+        if player.round_position == 1:
+            gu.draw(room_id, player.id)
+            break
 
     commit()
 
@@ -217,7 +231,6 @@ def not_defended_card(
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
         response = {
             "type": "defense",
-            "type": "defense",
             "played_defense": 0,
             "target_player": defense_player_id,
             "last_played_card": attack_card.model_dump(
@@ -284,6 +297,10 @@ def handle_defense(
 
     if card_type_id == 0:
         try:
+            response, effect = not_defended_card(
+                last_card_played_id, game_id, attacker_id, defense_player_id
+            )
+
             response, effect = not_defended_card(
                 last_card_played_id, game_id, attacker_id, defense_player_id
             )
@@ -385,6 +402,14 @@ def exchange_not_defended(
         last_chosen_card,
         chosen_card,
     )
+    effect = effect_handler(
+        game_id,
+        32,
+        current_player_id,
+        exchange_requester,
+        last_chosen_card,
+        chosen_card,
+    )
     return effect
 
 
@@ -405,6 +430,13 @@ def handle_exchange_defense(
             try:
                 defense_card = Card.get(id=chosen_card)
                 exchange_defended(game_id, current_player_id, chosen_card)
+                effect = effect_handler(
+                    game_id,
+                    defense_card.idtype,
+                    current_player_id,
+                    exchange_requester,
+                    last_chosen_card,
+                )
                 effect = effect_handler(
                     game_id,
                     defense_card.idtype,
@@ -446,21 +478,35 @@ def handle_exchange_defense(
 
 
 @db_session
-def analisis_effect(game_id: int, adyacent_id: int):
-    # TODO: Revisar que sea adyacente
-    adyacent_player = Player.get(id=adyacent_id)
-    adyacent_player_json = PlayerOut.to_json(adyacent_player)
-    cards = adyacent_player_json["hand"]
-    players = Game.get(id=game_id).players
-    target = []
-    for p in players:
-        target.append(p.id)
-    response = {
-        "type": "show_card",
-        "player_name": adyacent_player.name,
-        "target": target,
-        "cards": cards,
-    }
+def sospecha_effect(game_id: int, target_id: int, user_id: int):
+    # TODO: Mirar una carta aleatoria de un jugador adyacente
+    target_hand = list(Player.get(id=target_id).hand)
+    random_card = CardOut.from_card(random.choice(target_hand))
+    response = show_one_card_effect(game_id, user_id, random_card.id)
+    return response
+
+
+@db_session
+def show_one_card_effect(game_id, target_id: int, target_chosen_card_id: int):
+    response = GameMessage.create(
+        type="show_card",
+        room_id=game_id,
+        quarantined=None,
+        card_id=target_chosen_card_id,
+        player_id=target_id,
+    )
+    return response
+
+
+@db_session
+def show_hand_effect(game_id: int, target_id: int):
+    response = GameMessage.create(
+        type="show_hand",
+        room_id=game_id,
+        quarantined=None,
+        card_id=None,
+        player_id=target_id,
+    )
     return response
 
 
@@ -468,6 +514,16 @@ def analisis_effect(game_id: int, adyacent_id: int):
 def vigila_tus_espaldas_effect(game_id: int):
     game = Game.get(id=game_id)
     game.round_left_direction = not game.round_left_direction
+    commit()
+
+
+@db_session
+def position_change_effect(target_id: int, user_id: int):
+    target = Player.get(id=target_id)
+    user = Player.get(id=user_id)
+    user_position = user.round_position
+    user.round_position = target.round_position
+    target.round_position = user_position
     commit()
 
 
@@ -503,61 +559,10 @@ def exchange_effect(
 
 
 @db_session
-def cambio_de_lugar_effect(target_id: int, user_id: int):
-    # TODO: implementar que si hay obstaculos o cuarentena no se puede usar y verificar que sea adyacente
-    target = Player.get(id=target_id)
-    user = Player.get(id=user_id)
-    user_position = user.round_position
-    user.round_position = target.round_position
-    target.round_position = user_position
-    commit()
-
-
-@db_session
-def mas_vale_que_corras_effect(target_id: int, user_id: int):
-    target = Player.get(id=target_id)
-    user = Player.get(id=user_id)
-    user_position = user.round_position
-    user.round_position = target.round_position
-    target.round_position = user_position
-    commit()
-
-
-@db_session
 def seduccion_effect(game_id: int):
     game = Game.get(id=game_id)
     game.current_phase = "Exchange"
     commit()
-
-
-@db_session
-def sospecha_effect(target_id: int, user_id: int):
-    # TODO: Mirar una carta aleatoria de un jugador adyacente
-    target = Player.get(id=target_id)
-    target_hand = list(target.hand)
-    random_card = random.choice(target_hand)
-    random_card = CardOut.from_card(random_card)
-    response = {
-        "type": "show_card",
-        "player_name": target.name,
-        "target": [user_id],
-        "cards": [random_card.model_dump(by_alias=True, exclude_unset=True)],
-    }
-    return response
-
-
-@db_session
-def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
-    target = Player.get(id=target_id)
-    target_card = Card.get(id=target_chosen_card_id)
-    target_card = CardOut.from_card(target_card)
-    response = {
-        "type": "show_card",
-        "player_name": target.name,
-        "target": [user_id],
-        "cards": [target_card.dict(by_alias=True, exclude_unset=True)],
-    }
-    return response
 
 
 @db_session

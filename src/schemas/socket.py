@@ -3,6 +3,7 @@ from typing import Optional
 
 from models.game import Card
 from models.game import Game
+from models.game import Player
 from models.room import Room
 from models.room import User
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from pydantic.config import ConfigDict
 from schemas import validators
 from schemas.card import CardOut
 from schemas.game import GameInfo
+from schemas.player import PlayerOut
 
 from .room import RoomId
 from .room import RoomInfo
@@ -139,6 +141,7 @@ class GameMessage(BaseModel):
         room_id: RoomId,
         quarantined: Optional[int] = None,
         card_id: Optional[int] = None,
+        player_id: Optional[int] = None,
     ):
         game = Game.get(id=room_id)
         match type:
@@ -163,4 +166,30 @@ class GameMessage(BaseModel):
                         card.model_dump(by_alias=True, exclude_unset=True)
                     ],
                     "target": all_players_except_quarantined,
+                }
+            case "show_hand":
+                assert player_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=player_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                return {
+                    "type": "show_card",
+                    "player_name": player["name"],
+                    "target": [1, 2, 3, 4],
+                    "cards": player["hand"],
+                }
+            case "show_card":
+                assert player_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=player_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "player_name": player["name"],
+                    "target": [1, 2, 3, 4],
+                    "cards": [
+                        card.model_dump(by_alias=True, exclude_unset=True)
+                    ],
                 }
