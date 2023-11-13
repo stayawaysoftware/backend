@@ -290,6 +290,7 @@ def handle_defense(
             response, effect = not_defended_card(
                 last_card_played_id, game_id, attacker_id, defense_player_id
             )
+            
         except ValueError as e:
             print("ERROR:", str(e))
     else:
@@ -411,65 +412,20 @@ def handle_exchange_defense(
 @db_session
 def sospecha_effect(target_id: int, user_id: int):
     # TODO: Mirar una carta aleatoria de un jugador adyacente
-    target = Player.get(id=target_id)
-    target_hand = list(target.hand)
-    random_card = random.choice(target_hand)
-    random_card = CardOut.from_card(random_card)
-    response = {
-        "type": "show_card",
-        "player_name": target.name,
-        "target": [user_id],
-        "cards": [random_card.model_dump(by_alias=True, exclude_unset=True)],
-    }
+    target_hand = list(Player.get(id=target_id).hand)
+    random_card = CardOut.from_card(random.choice(target_hand))
+    response = show_one_card_effect(target_id, user_id, random_card.id)
     return response
 
 @db_session
-def whisky_effect(game_id, user_id: int):
-    player = Player.get(id=user_id)
-    player_json = PlayerOut.to_json(player)
-    cards = player_json["hand"]
-    # Add every player from game_id to targe tarray
-    players = Game.get(id=game_id).players
-    target = []
-    for p in players:
-        target.append(p.id)
-    response = {
-        "type": "show_card",
-        "player_name": player.name,
-        "target": target,
-        "cards": cards,
-    }
-    return response
-
-@db_session
-def aterrador_effect(target_id: int, user_id: int, target_chosen_card_id: int):
+def show_one_card_effect(target_id: int, user_id: int, target_chosen_card_id: int):
     target = Player.get(id=target_id)
-    target_card = Card.get(id=target_chosen_card_id)
-    target_card = CardOut.from_card(target_card)
+    target_card = CardOut.from_card(Card.get(id=target_chosen_card_id))
     response = {
         "type": "show_card",
         "player_name" : target.name,
         "target" : [user_id],
         "cards": [target_card.dict(by_alias=True, exclude_unset=True)]
-
-    }
-    return response
-
-@db_session
-def analisis_effect(game_id: int, adyacent_id: int):
-    # TODO: Revisar que sea adyacente
-    adyacent_player = Player.get(id=adyacent_id)
-    adyacent_player_json = PlayerOut.to_json(adyacent_player)
-    cards = adyacent_player_json["hand"]
-    players = Game.get(id=game_id).players
-    target = []
-    for p in players:
-        target.append(p.id)
-    response = {
-        "type": "show_card",
-        "player_name": adyacent_player.name,
-        "target": target,
-        "cards": cards,
     }
     return response
 
