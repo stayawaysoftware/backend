@@ -153,37 +153,21 @@ def delete_game(game_id: int):
 
 
 def handle_play(
+    game_id: int,
     card_id: int,
     target_player_id: int,
 ):
-    card = Card.get(id=card_id)
-    card = CardOut.from_card(card)
-    response = {
-        "type": "play",
-        "played_card": card.model_dump(by_alias=True, exclude_unset=True),
-        "card_target": target_player_id,
-    }
+    response = GameMessage.create("play",room_id=game_id, card_id=card_id, target_id=target_player_id)
     return response
 
 
 @db_session
-def try_defense(played_card: int, card_target: int):
+def try_defense(game_id: int, played_card: int, card_target: int):
     with db_session:
-        if card_target == 0:
-            print("No se puede defender")
-        else:
-            player = Player.get(id=card_target)
-            player = PlayerOut.to_json(player)
-
-        card = Card.get(id=played_card)
-        card = CardOut.from_card(card)
-        defended_by = card_defense[card.idtype]
-        res = {
-            "type": "try_defense",
-            "target_player": card_target,
-            "played_card": card.model_dump(by_alias=True, exclude_unset=True),
-            "defended_by": defended_by,
-        }
+        res = GameMessage.create(type="try_defense",
+                                  room_id= game_id,
+                                  target_id=card_target,
+                                  card_id=played_card)
     return res
 
 
@@ -223,17 +207,14 @@ def not_defended_card(
     defense_player_id: int,
 ):
     at = Card.get(id=last_card_played_id)
-    attack_card = CardOut.from_card(at)
     try:
         effect = play_card(game_id, at.idtype, attacker_id, defense_player_id)
-        response = {
-            "type": "defense",
-            "played_defense": 0,
-            "target_player": defense_player_id,
-            "last_played_card": attack_card.model_dump(
-                by_alias=True, exclude_unset=True
-            ),
-        }
+        response = GameMessage.create(type="defense",
+                                      room_id=game_id,
+                                      target_id=defense_player_id,
+                                      card_id=last_card_played_id,
+                                      defense_card_id=0)
+                                    
     except ValueError as e:
         print("ERROR:", str(e))
 
@@ -286,16 +267,11 @@ def defended_card(
     game.current_phase = "Draw"
     commit()
     id = draw_no_panic(game_id, defense_player_id)
-    response = {
-        "type": "defense",
-        "played_defense": defense_card.model_dump(
-            by_alias=True, exclude_unset=True
-        ),
-        "target_player": defense_player_id,
-        "last_played_card": attack_card.model_dump(
-            by_alias=True, exclude_unset=True
-        ),
-    }
+    response = GameMessage.create(type="defense",
+                                    room_id=game_id,
+                                    target_id=defense_player_id,
+                                    card_id=last_card_played_id,
+                                    defense_card_id=defense_card_id)
     return response
 
 

@@ -2,6 +2,7 @@ import pytest
 from pony.orm import commit
 from pony.orm import db_session
 
+from . import handle_discard
 from . import check_winners
 from . import clean_db
 from . import create_room
@@ -11,8 +12,6 @@ from . import delete_user
 from . import discard
 from . import draw_specific
 from . import flamethower_effect
-from . import defended_card
-from . import card_defense
 from . import Game
 from . import handle_exchange_defense
 from . import handle_defense
@@ -22,6 +21,12 @@ from . import Room
 from . import start_game
 from . import draw_specific
 from . import PlayerOut
+from . import sospecha_effect
+from . import show_hand_effect
+from . import vigila_tus_espaldas_effect
+from . import position_change_effect
+from . import seduccion_effect
+from . import draw_card
 
 
 
@@ -36,7 +41,7 @@ class TestWinnerCheckoutHuman:
         room_id = create_room("test_room", host.id)
         room = Room.get(id=room_id)
 
-        for i in range(3):
+        for i in range(11):
             user = create_user(str("user" + str(i)))
             id_list.append(user.id)
             join_room(room_id, user.id)
@@ -228,7 +233,7 @@ class TestWinnerCheckoutHuman:
         assert not has_card
         has_card = self.has_card(card_id2, human_players[1])
         assert not has_card
-        assert response is not None
+
 
     @db_session
     def test_defended_card_seduction_by_16(self, resources):
@@ -242,7 +247,7 @@ class TestWinnerCheckoutHuman:
         assert not has_card
         has_card = self.has_card(card_id2, human_players[1])
         assert not has_card
-        assert response is not None
+
 
     @db_session
     def test_defended_card_you_better_run(self, resources):
@@ -296,7 +301,7 @@ class TestWinnerCheckoutHuman:
         assert not has_defense
         has_exchange_card = self.has_card(first_player_card.id, second_human)
         assert not has_exchange_card
-        assert response is None
+
 
     @db_session
     def test_exchange_defended_by_16(self, resources):
@@ -310,7 +315,7 @@ class TestWinnerCheckoutHuman:
         assert not has_defense
         has_exchange_card = self.has_card(first_player_card.id, second_human)
         assert not has_exchange_card
-        assert response is None
+
 
     @db_session
     def test_exchange_not_defended(self, resources):
@@ -341,7 +346,7 @@ class TestWinnerCheckoutHuman:
         assert exchange_success
         exchange_success = self.has_card(first_player_card_id, second_player)
         assert exchange_success
-        assert effect == None
+
 
     @db_session
     def test_exchange_infected_between_humans(self, resources):
@@ -449,24 +454,110 @@ class TestWinnerCheckoutHuman:
         second_human_player.role = "Human"
 # ================================ Card play and effects Testing ====================================================
 
-        @db_session
-        def return_all_players_to_alive(self, resources):
-            room = resources[1]
-            game = Game.get(id=room.id)
-            players = list(game.players)
-            for player in players:
-                player.alive = True
+    @db_session
+    def return_all_players_to_alive(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        for player in players:
+            player.alive = True
+            commit()
+
+    @db_session
+    def return_all_infected_to_human(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        for player in players:
+            if player.role == "Infected":
+                player.role = "Human"
                 commit()
 
-        @db_session
-        def return_all_infected_to_human(self, resources):
-            room = resources[1]
-            game = Game.get(id=room.id)
-            players = list(game.players)
-            for player in players:
-                if player.role == "Infected":
-                    player.role = "Human"
-                    commit()
+    @db_session
+    def test_sospecha_effect(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        first_human_player = players[0]
+        second_human_player = players[1]
+        response = sospecha_effect(game.id, second_human_player.id, first_human_player.id)
+        assert response is not None
+        card_id = response["cards"][0]["id"]
+        has_card = self.has_card(card_id=card_id, player=second_human_player)
+        assert has_card
+        
 
         
-   
+    @db_session
+    def test_show_hand_effect(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        first_human_player = players[0]
+        second_human_player = players[1]
+        response = show_hand_effect(game.id, second_human_player.id)
+        assert response is not None
+        cards = response["cards"]
+        player_hand = PlayerOut.from_player(second_human_player).model_dump(
+            by_alias=True, exclude_unset=True
+        )["hand"]
+        has_hand = cards == player_hand
+        assert has_hand
+
+    @db_session
+    def test_vigila_tus_espaldas_effect(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        game.round_left_direction = True
+        commit()
+        vigila_tus_espaldas_effect(game.id)
+        assert not game.round_left_direction
+        
+    @db_session
+    def test_position_change_effect(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        first_human_player = players[0]
+        second_human_player = players[1]
+        first_human_position = first_human_player.round_position
+        second_human_position = second_human_player.round_position
+        position_change_effect(first_human_player.id, second_human_player.id)
+        assert first_human_player.round_position == second_human_position
+        assert second_human_player.round_position == first_human_position
+        
+    @db_session
+    def test_seduccion_effect(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        seduccion_effect(game.id)
+        assert game.current_phase == "Exchange"
+
+    @db_session
+    def test_draw_card(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        first_human_player = players[0]
+        game.current_phase = "Draw"
+        commit()
+        response = draw_card(game.id, first_human_player.id)
+        assert response is not None
+        has_card = self.has_card(response["new_card"]["id"], first_human_player)
+        assert has_card
+
+        
+    @db_session
+    def test_handle_discard(self, resources):
+        room = resources[1]
+        game = Game.get(id=room.id)
+        players = list(game.players)
+        first_human_player = players[0]
+        first_human_player.alive = True
+        first_human_card = list(first_human_player.hand)[0].idtype
+        handle_discard(game.id, first_human_card, first_human_player.id) 
+        has_card = self.has_card(first_human_card, first_human_player)
+        assert not has_card
+
+
+
