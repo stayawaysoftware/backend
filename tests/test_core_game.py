@@ -422,7 +422,7 @@ class TestWinnerCheckoutHuman:
         second_human_player = human_players[1]
         second_human_player.role = "Infected"
         commit()
-        card_id1 = draw_specific(game.id, first_human_player.id, 3)
+        card_id1 = draw_specific(game.id, first_human_player.id, 21)
         card_id2 = draw_specific(game.id, second_human_player.id, 2)
         card_id2 = min(
             card_id2, draw_specific(game.id, second_human_player.id, 2)
