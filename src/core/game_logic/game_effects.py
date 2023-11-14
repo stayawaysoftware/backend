@@ -28,10 +28,6 @@ def play(
     if not Game.exists(id=id_game):
         raise ValueError(f"Game with id {id_game} doesn't exist")
 
-    # Game is not in the Defense phase
-    if Game[id_game].current_phase != "Defense":
-        raise ValueError(f"Game with id {id_game} is not in the Defense phase")
-
     # Player doesn't exist
     if not Player.exists(id=attack_player_id):
         raise ValueError(f"Player with id {attack_player_id} doesn't exist")
