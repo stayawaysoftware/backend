@@ -49,13 +49,18 @@ def vigila_tus_espaldas_effect(game_id: int):
     game.round_left_direction = not game.round_left_direction
     commit()
 
+
 @db_session
-def position_change_effect(target_id: int, user_id: int):
-    target = Player.get(id=target_id)
-    user = Player.get(id=user_id)
-    user_position = user.round_position
-    user.round_position = target.round_position
-    target.round_position = user_position
+def position_change_effect(game_id: int, target_id: int, user_id: int):
+    (
+        Player[target_id].round_position,
+        Player[user_id].round_position,
+    ) = (
+        Player[user_id].round_position,
+        Player[target_id].round_position,
+    )
+
+    Game[game_id].current_position = Player[user_id].round_position
     commit()
 
 @db_session

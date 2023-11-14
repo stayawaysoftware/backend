@@ -35,7 +35,7 @@ def effect_handler(
             return ga.show_hand_effect(game_id, attacker)
         case 9:  # Change of position
             # TODO: implementar que si hay obstaculos o cuarentena no se puede usar y verificar que sea adyacente
-            ga.position_change_effect(target, attacker)
+            ga.position_change_effect(game_id, target, attacker)
             return None
         case 10:  # Watch your back
             ga.vigila_tus_espaldas_effect(game_id)
@@ -44,7 +44,7 @@ def effect_handler(
             ga.seduccion_effect(game_id)
             return None
         case 12:  # You better run
-            ga.position_change_effect(target, attacker)
+            ga.position_change_effect(game_id, target, attacker)
             return None
         case 13:  # I'm fine here
             print("I'm fine here")
