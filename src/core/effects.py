@@ -1,45 +1,56 @@
 import random
-import core.game_logic.game_utility as gu
-
 from typing import Optional
-from pony.orm import db_session
-from pony.orm import commit
-from models.game import Player
-from models.game import Card
-from models.game import Game
-from schemas.socket import GameMessage
-from schemas.card import CardOut
+
+import core.game_logic.game_utility as gu
 from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_player
-
+from models.game import Card
+from models.game import Game
+from models.game import Player
+from pony.orm import commit
+from pony.orm import db_session
+from schemas.card import CardOut
+from schemas.socket import GameMessage
 
 
 @db_session
-def sospecha_effect(game_id: int,target_id: int, user_id: int):
+def sospecha_effect(game_id: int, target_id: int, user_id: int):
     target_hand = list(Player.get(id=target_id).hand)
     random_card = CardOut.from_card(random.choice(target_hand))
     response = show_one_card_effect(game_id, user_id, random_card.id)
     return response
 
-@db_session
-def show_one_card_effect(game_id, player_id: int, target_chosen_card_id: int, target_id: Optional[int] = None):
-    response = GameMessage.create(type="show_card",
-                                    room_id=game_id, 
-                                    quarantined=None, 
-                                    card_id=target_chosen_card_id,
-                                    player_id=player_id,
-                                    target_id=target_id,
-                                   )
-    return response
 
 @db_session
-def show_hand_effect(game_id: int, player_id: int, target_id: Optional[int] = None):
-    response = GameMessage.create(type="show_hand",
-                                  room_id=game_id,
-                                  quarantined=None,
-                                  card_id=None,
-                                  player_id=player_id,
-                                  target_id=target_id,)
+def show_one_card_effect(
+    game_id,
+    player_id: int,
+    target_chosen_card_id: int,
+    target_id: Optional[int] = None,
+):
+    response = GameMessage.create(
+        type="show_card",
+        room_id=game_id,
+        quarantined=None,
+        card_id=target_chosen_card_id,
+        player_id=player_id,
+        target_id=target_id,
+    )
+    return response
+
+
+@db_session
+def show_hand_effect(
+    game_id: int, player_id: int, target_id: Optional[int] = None
+):
+    response = GameMessage.create(
+        type="show_hand",
+        room_id=game_id,
+        quarantined=None,
+        card_id=None,
+        player_id=player_id,
+        target_id=target_id,
+    )
     return response
 
 
@@ -52,16 +63,14 @@ def vigila_tus_espaldas_effect(game_id: int):
 
 @db_session
 def position_change_effect(game_id: int, target_id: int, user_id: int):
-    (
-        Player[target_id].round_position,
-        Player[user_id].round_position,
-    ) = (
+    (Player[target_id].round_position, Player[user_id].round_position,) = (
         Player[user_id].round_position,
         Player[target_id].round_position,
     )
 
     Game[game_id].current_position = Player[user_id].round_position
     commit()
+
 
 @db_session
 def exchange_effect(
@@ -93,17 +102,20 @@ def exchange_effect(
         user.role = "Infected"
         commit()
 
+
 @db_session
 def seduccion_effect(game_id: int):
     game = Game.get(id=game_id)
     game.current_phase = "Exchange"
     commit()
 
+
 @db_session
 def flamethower_effect(target_id: int):
     target_player = Player.get(id=target_id)
     target_player.alive = False
     commit()
+
 
 @db_session
 def locked_door_effect(game_id: int, target_id: int, attacker_id: int):
@@ -126,6 +138,7 @@ def locked_door_effect(game_id: int, target_id: int, attacker_id: int):
             game.locked_doors[i] = 1
     commit()
 
+
 @db_session
 def axe_effect(game_id: int, target_id: int, attacker_id: int):
     game = Game.get(id=game_id)
@@ -141,11 +154,13 @@ def axe_effect(game_id: int, target_id: int, attacker_id: int):
             game.locked_doors[i] = 0
     commit()
 
+
 @db_session
 def quarantine_effect(target_id: int):
     player = Player.get(id=target_id)
     player.quarantine = 2
     commit()
+
 
 @db_session
 def test_cuatro_effect(game_id: int):
@@ -160,6 +175,7 @@ def test_cuatro_effect(game_id: int):
                 gu.draw_no_panic(game_id, p.id)
         commit()
 
+
 @db_session
 def cuerdas_podridas_effect(game_id: int):
     game = Game.get(id=game_id)
@@ -172,6 +188,7 @@ def cuerdas_podridas_effect(game_id: int):
                 game.current_phase = "Draw"
                 gu.draw_no_panic(game_id, p.id)
     commit()
+
 
 @db_session
 def olvidadizo_effect(game_id: int, user_id: int):
@@ -188,11 +205,11 @@ def olvidadizo_effect(game_id: int, user_id: int):
         if card.idtype == 2 and is_infected and consider_infected is False:
             consider_infected = True
             continue
-        
+
         if card.idtype == 23 and consider_olvidadizo is False:
             consider_olvidadizo = True
             continue
-        
+
         if card.idtype == 1:
             continue
 
@@ -209,6 +226,7 @@ def olvidadizo_effect(game_id: int, user_id: int):
         game.current_phase = "Draw"
         gu.draw_no_panic(game_id, user_id)
     commit()
+
 
 @db_session
 def cita_a_ciegas_effect(game_id: int, user_id: int):
@@ -229,7 +247,7 @@ def cita_a_ciegas_effect(game_id: int, user_id: int):
         if card.idtype == 30 and consider_cita_a_ciegas is False:
             consider_cita_a_ciegas = True
             continue
-        
+
         if card.idtype == 1:
             continue
 
@@ -241,4 +259,3 @@ def cita_a_ciegas_effect(game_id: int, user_id: int):
     game.current_phase = "Draw"
     gu.draw_no_panic(game_id, user_id)
     commit()
-

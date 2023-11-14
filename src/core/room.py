@@ -2,13 +2,13 @@ import hashlib
 from typing import Optional
 
 import core.game as game
+from models.game import Game
+from models.game import Player
 from models.room import Room
 from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.room import RoomListItem
-from models.game import Game
-from models.game import Player
 
 
 def hashing(pwd):
