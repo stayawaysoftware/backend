@@ -24,7 +24,7 @@ def effect_handler(
         case 4:  # Analysis
             return ga.show_hand_effect(game_id, attacker, target)
         case 5:  # Axe
-            ga.axe_effect(target)
+            ga.axe_effect(game_id, target, attacker)
             return None
         case 6:  # Suspicion
             return ga.sospecha_effect(game_id, target, attacker)
@@ -64,7 +64,7 @@ def effect_handler(
             ga.quarantine_effect(target)
             return None
         case 19:  # Locked Door
-            ga.locked_door_effect(game_id, target)
+            ga.locked_door_effect(game_id, target, attacker)
             return None
         case 20:  # Revelations
             print("Revelations")

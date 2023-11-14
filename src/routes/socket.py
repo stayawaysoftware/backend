@@ -299,9 +299,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     ),
                                 )
                         if player.quarantine > 0:
-                            print(
-                                f"Quien entra a cuarentena es: {player.name}"
-                            )
                             card_dict = {
                                 "play": data.get("played_card", None),
                                 "discard": data.get("played_card", None),
@@ -310,6 +307,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                 "exchange_defense": data.get(
                                     "chosen_card", None
                                 ),
+                                "cannot_exchange": None,
                             }
                             if card_dict[data["type"]] != 0:
                                 await connection_manager.broadcast(
