@@ -151,17 +151,28 @@ def cuerdas_podridas_effect(game_id: int):
                 gu.draw(game_id, p.id)
     commit()
 
+
+
 @db_session
 def olvidadizo_effect(game_id: int, user_id: int):
     game = Game.get(id=game_id)
     player = Player.get(id=user_id)
+
+    is_infected = player.role == "Infected"
+
+    infected_cards = 0
+    for card in list(player.hand):
+        if card.idtype == 2:
+            infected_cards += 1
+
     for i in list(player.hand):
         j = 0
         if i.idtype != 1 and j<3:
             game.current_phase = "Discard"
             commit()
-            gu.discard(game_id, i.idtype, user_id)
-            j+=1
+            if not(i.idtype == 2 and infected_cards == 1 and is_infected):
+                gu.discard(game_id, i.idtype, user_id)
+                j+=1
         for i in range(3):
             game.current_phase = "Draw"
             gu.draw_no_panic(game_id, user_id)
