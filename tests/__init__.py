@@ -38,6 +38,7 @@ from schemas.validators import SocketValidators  # noqa : F401
 from schemas.validators import EndpointValidators  # noqa : F401
 from pony.orm import db_session  # noqa : F401
 from pony.orm import commit  # noqa : F401
+from schemas.player import *  # noqa : F401
 
 
 # Generate the database mapping

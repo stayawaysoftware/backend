@@ -1,6 +1,7 @@
 """Effect handler"""
 from typing import Optional
 
+import core.effects as effect_aplication
 from core.game_logic.effects.analysis_effect import analysis_effect
 from core.game_logic.effects.change_of_position_effect import (
     change_of_position_effect,
@@ -56,7 +57,11 @@ def do_effect_attack(
             )
         case 5:
             # Axe
-            return None
+            effect = effect_aplication.axe_effect(
+                game_id=id_game,
+                target_id=defense_player_id,
+                attacker_id=attack_player_id,
+            )
         case 6:
             # Suspicion
             return suspicion_effect(
@@ -85,7 +90,9 @@ def do_effect_attack(
             return watch_your_back_effect(id_game=id_game)
         case 11:
             # Seduction
-            return None
+            return effect_aplication.seduccion_effect(
+                game_id=id_game,
+            )
         case 12:
             # You better run
             return you_better_run_effect(
@@ -95,46 +102,66 @@ def do_effect_attack(
             )
         case 18:
             # Quarantine
-            return None
+            return effect_aplication.quarantine_effect(
+                target_id=defense_player_id,
+            )
         case 19:
             # Locked Door
-            return None
+            return effect_aplication.locked_door_effect(
+                game_id=id_game,
+                target_id=defense_player_id,
+                attacker_id=attack_player_id,
+            )
         case 20:
             # Revelations
             return None
         case 21:
             # Rotten ropes
-            return None
+            return effect_aplication.cuerdas_podridas_effect(game_id=id_game)
         case 22:
             # Get out of here
-            return None
+            return effect_aplication.position_change_effect(
+                game_id=id_game,
+                target_id=defense_player_id,
+                user_id=attack_player_id,
+            )
         case 23:
             # Forgetful
-            return None
+            return effect_aplication.olvidadizo_effect(
+                game_id=id_game,
+                user_id=attack_player_id,
+            )
         case 24:
             # One, two...
             return None
         case 25:
             # Three, four...
-            return None
+            return effect_aplication.test_cuatro_effect(game_id=id_game)
         case 26:
             # Is the party here?
             return None
         case 27:
             # Let it stay between us
-            return None
+            return effect_aplication.show_hand_effect(
+                game_id=id_game, player_id=attack_player_id
+            )
         case 28:
             # Turn and turn
             return None
         case 29:
             # Can't we be friends?
-            return None
+            return effect_aplication.seduccion_effect(game_id=id_game)
         case 30:
             # Blind date
-            return None
+            return effect_aplication.cita_a_ciegas_effect(
+                game_id=id_game, user_id=attack_player_id
+            )
         case 31:
             # Ups!
-            return None
+            return effect_aplication.show_hand_effect(
+                game_id=id_game,
+                player_id=attack_player_id,
+            )
         case 32:
             # Exchange
             return exchange_effect(
@@ -183,6 +210,7 @@ def do_effect_defense(
         case 14:
             # Terrifying
             return terrifying_effect(
+                id_game,
                 attack_player_id,
                 defense_player_id,
                 card_chosen_by_attacker,

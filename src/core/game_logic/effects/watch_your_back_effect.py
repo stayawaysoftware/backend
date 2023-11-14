@@ -1,6 +1,5 @@
 """Watch your back effect."""
-from models.game import Game
-from pony.orm import commit
+import core.effects as effect_aplication
 from pony.orm import db_session
 
 
@@ -9,10 +8,8 @@ def watch_your_back_effect(id_game: int):
     """Watch your back effect."""
 
     # With modifications in the game
-
-    Game[id_game].round_left_direction ^= 1
-    commit()
-
     # Without effects to show in the frontend
 
-    return None
+    effect = effect_aplication.vigila_tus_espaldas_effect(game_id=id_game)
+
+    return effect

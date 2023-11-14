@@ -1,7 +1,7 @@
 """Analysis Effect."""
+import core.effects as effect_aplication
 from core.player import get_alive_neighbors
 from models.game import Player
-from schemas.card import CardOut
 
 
 def analysis_effect(
@@ -25,18 +25,10 @@ def analysis_effect(
     # Without modifications in the game
     # With effects to show in the frontend
 
-    card_list_to_show = [
-        CardOut.from_card(card) for card in Player[defense_player_id].hand
-    ]
-
-    effect = {
-        "type": "show_card",
-        "player_name": Player[defense_player_id].name,
-        "target": [attack_player_id],
-        "cards": [
-            card.dict(by_alias=True, exclude_unset=True)
-            for card in card_list_to_show
-        ],
-    }
+    effect = effect_aplication.show_hand_effect(
+        game_id=id_game,
+        player_id=attack_player_id,
+        target_id=defense_player_id,
+    )
 
     return effect

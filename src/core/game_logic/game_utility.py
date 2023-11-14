@@ -6,6 +6,7 @@ from core.game_logic.card import relate_card_with_player
 from core.game_logic.card import unrelate_card_with_available_deck
 from core.game_logic.card import unrelate_card_with_disposable_deck
 from core.game_logic.card import unrelate_card_with_player
+from core.game_logic.card_creation import card_defense
 from core.game_logic.card_creation import init_available_deck
 from core.game_logic.deck import create_available_deck
 from core.game_logic.deck import create_deck
@@ -82,6 +83,17 @@ def delete_decks(id_game: int) -> None:
     delete_deck(id_game)
     delete_available_deck(id_game)
     delete_disposable_deck(id_game)
+
+
+# Get defense cards
+
+
+def get_defense_cards(idtype_card: int) -> list[int]:
+    """Return the list of cards that can be used as defense."""
+    if idtype_card not in range(0, 33):
+        raise ValueError(f"idtype_card {idtype_card} is not in range [0, 32]")
+
+    return card_defense[idtype_card]
 
 
 # ===================== GAME PHASES OF DECK LOGIC =====================

@@ -1,12 +1,10 @@
 """Exchange effect."""
 from typing import Optional
 
-from core.game_logic.card import relate_card_with_player
-from core.game_logic.card import unrelate_card_with_player
+import core.effects as effect_aplication
 from core.player import get_alive_neighbors
 from models.game import Player
 from pony.orm import db_session
-from schemas.card import CardOut
 
 
 @db_session
@@ -47,8 +45,6 @@ def exchange_effect(
 
     # Calculate important values to do the exchange and check if the exchange is possible
 
-    player_infected = None
-
     attack_player_role = Player[attack_player_id].role
     defense_player_role = Player[defense_player_id].role
 
@@ -88,7 +84,8 @@ def exchange_effect(
                 )
             elif defense_player_role == "Human":
                 # Attacker is The Thing and defender is Human
-                player_infected = defense_player_id
+                # ALL OK
+                pass
 
         # Attacker is Infected
         elif attack_player_role == "Infected":
@@ -118,7 +115,8 @@ def exchange_effect(
                 )
             elif attack_player_role == "Human":
                 # Defender is The Thing and attacker is Human
-                player_infected = attack_player_id
+                # ALL OK
+                pass
 
         # Defender is Infected
         elif defense_player_role == "Infected":
@@ -159,23 +157,21 @@ def exchange_effect(
             ):
                 id_chosen_defender_card = card.id
 
-    unrelate_card_with_player(id_chosen_attacker_card, attack_player_id)
-    unrelate_card_with_player(id_chosen_defender_card, defense_player_id)
-
-    relate_card_with_player(id_chosen_attacker_card, defense_player_id)
-    relate_card_with_player(id_chosen_defender_card, attack_player_id)
-
-    # Set the infection player
-    if player_infected is not None:
-        Player[player_infected].role = "Infected"
-
     # Without effects to show in the frontend
 
-    return None
+    effect = effect_aplication.exchange_effect(
+        target_id=defense_player_id,
+        user_id=attack_player_id,
+        target_chosen_card=id_chosen_defender_card,
+        user_chosen_card=id_chosen_attacker_card,
+    )
+
+    return effect
 
 
 @db_session
 def terrifying_effect(
+    id_game: int,
     attack_player_id: int,
     defense_player_id: int,
     card_chosen_by_attacker: Optional[int],
@@ -200,18 +196,21 @@ def terrifying_effect(
 
     # With effects to show in the frontend !!!
 
-    card_to_show = CardOut.from_card(
-        Player[attack_player_id]
-        .hand.select(idtype=card_chosen_by_attacker)
-        .first()
-    )
+    id_chosen_attacker_card = None
 
-    effect = {
-        "type": "show_card",
-        "player_name": Player[attack_player_id].name,
-        "target": [defense_player_id],
-        "cards": [card_to_show.dict(by_alias=True, exclude_unset=True)],
-    }
+    for card in list(Player[attack_player_id].hand):
+        if card.idtype == card_chosen_by_attacker:
+            if (
+                id_chosen_attacker_card is None
+                or id_chosen_attacker_card > card.id
+            ):
+                id_chosen_attacker_card = card.id
+
+    effect = effect_aplication.show_one_card_effect(
+        game_id=id_game,
+        player_id=defense_player_id,
+        target_chosen_card_id=id_chosen_attacker_card,
+    )
 
     return effect
 
@@ -225,4 +224,6 @@ def no_thanks_effect(defense_player_id: int):
 
     # Without modifications in the game and without effects to show in the frontend
 
-    return None
+    effect = None
+
+    return effect

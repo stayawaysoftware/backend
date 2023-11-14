@@ -9,6 +9,7 @@ from . import delete_decks
 from . import discard
 from . import draw_specific
 from . import Game
+from . import GameMessage
 from . import initialize_decks
 from . import play
 from . import Player
@@ -119,16 +120,16 @@ class TestAnalysisEffect:
         )
 
         # With message to front
-        card_list_to_show = [
-            {"id": card.id, "idtype": card.idtype} for card in Player[2].hand
-        ]
+        message = GameMessage.create(
+            type="show_hand",
+            room_id=1,
+            quarantined=None,
+            card_id=None,
+            player_id=1,
+            target_id=2,
+        )
 
-        assert effect == {
-            "type": "show_card",
-            "player_name": Player[2].name,
-            "target": [1],
-            "cards": card_list_to_show,
-        }
+        assert effect == message
 
         # Without modifications in the game and players
         assert game_data == self.get_game_data(id_game=1)

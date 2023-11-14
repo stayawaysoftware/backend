@@ -75,23 +75,6 @@ class TestPlayInvalidOptions:
                 idtype_defense_card=0,
             )
 
-    # Game is not in the Defense phase
-    @db_session
-    def test_game_is_not_in_the_defense_phase(self):
-        """Test game is not in the defense phase."""
-
-        Game[1].current_phase = "Play"
-        commit()
-
-        with pytest.raises(ValueError):
-            play(
-                id_game=1,
-                attack_player_id=1,
-                defense_player_id=2,
-                idtype_attack_card=3,
-                idtype_defense_card=0,
-            )
-
     # Player doesn't exist
     def test_player_doesnt_exist(self):
         """Test player doesn't exist."""

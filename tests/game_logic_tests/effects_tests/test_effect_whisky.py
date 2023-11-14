@@ -9,6 +9,7 @@ from . import delete_decks
 from . import discard
 from . import draw_specific
 from . import Game
+from . import GameMessage
 from . import initialize_decks
 from . import play
 from . import Player
@@ -117,16 +118,16 @@ class TestWhisky:
         )
 
         # With message to front
-        card_list_to_show = [
-            {"id": card.id, "idtype": card.idtype} for card in Player[1].hand
-        ]
+        message = GameMessage.create(
+            type="show_hand",
+            room_id=1,
+            quarantined=None,
+            card_id=None,
+            player_id=1,
+            target_id=None,
+        )
 
-        assert effect == {
-            "type": "show_card",
-            "player_name": Player[1].name,
-            "target": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-            "cards": card_list_to_show,
-        }
+        assert effect == message
 
         # Without modifications in the game
         assert game_data == self.get_game_data(id_game=1)

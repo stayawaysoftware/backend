@@ -1,7 +1,7 @@
 """Suspicion effect."""
+import core.effects as effect_aplication
 from core.player import get_alive_neighbors
 from models.game import Player
-from schemas.card import CardOut
 
 
 def suspicion_effect(
@@ -25,15 +25,11 @@ def suspicion_effect(
     # Without modifications in the game
 
     # With effects to show in the frontend - Get a random card to show
-    card_to_show = CardOut.from_card(
-        Player[defense_player_id].hand.random(1)[0]
-    )
 
-    effect = {
-        "type": "show_card",
-        "player_name": Player[defense_player_id].name,
-        "target": [attack_player_id],
-        "cards": [card_to_show.dict(by_alias=True, exclude_unset=True)],
-    }
+    effect = effect_aplication.sospecha_effect(
+        game_id=id_game,
+        target_id=defense_player_id,
+        user_id=attack_player_id,
+    )
 
     return effect
