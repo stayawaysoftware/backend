@@ -162,10 +162,14 @@ def olvidadizo_effect(game_id: int, user_id: int):
 
     is_infected = player.role == "Infected"
     consider_infected = False
+    consider_olvidadizo = False
 
     for card in list(player.hand):
         if card.idtype == 2 and is_infected and consider_infected is False:
             consider_infected = True
+        
+        if card.idtype == 23 and consider_olvidadizo is False:
+            consider_olvidadizo = True
         
         if card.idtype == 1:
             continue
@@ -192,17 +196,26 @@ def cita_a_ciegas_effect(game_id: int, user_id: int):
     game = Game.get(id=game_id)
     game.current_phase = "Discard"
     commit()
-    user_hand = list(Player.get(id=user_id).hand)
-    random_card = CardOut.from_card(random.choice(user_hand))
+
+    possible_cards = []
     is_infected = Player.get(id=user_id).role == "Infected"
+    consider_infected = False
+    consider_cita_a_ciegas = False
 
-    infected_cards = 0
-    for card in user_hand:
-        if card.idtype == 2:
-            infected_cards += 1
+    for card in list(Player.get(id=user_id).hand):
+        if card.idtype == 2 and is_infected and consider_infected is False:
+            consider_infected = True
 
-    while random_card.idtype == 1 or (is_infected and infected_cards == 1 and random_card.idtype == 2):
-        random_card = CardOut.from_card(random.choice(user_hand))
+        if card.idtype == 30 and consider_cita_a_ciegas is False:
+            consider_cita_a_ciegas = True
+        
+        if card.idtype == 1:
+            continue
+
+        possible_cards.append(card)
+
+    random_card = CardOut.from_card(random.choice(possible_cards))
+
     gu.discard(game_id, random_card.idtype, user_id)
     game.current_phase = "Draw"
     gu.draw_no_panic(game_id, user_id)
