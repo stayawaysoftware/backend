@@ -70,7 +70,7 @@ def effect_handler(
             print("Revelations")
             return None
         case 21:  # Rotten ropes
-            ga.cuerdas_podridas_effect(game_id, attacker)
+            ga.cuerdas_podridas_effect(game_id)
             return None
         case 22:  # Get out of here
             return ga.position_change_effect(game_id, target, attacker)
@@ -81,7 +81,7 @@ def effect_handler(
             print("One, two...")
             return None
         case 25:  # Three, four...
-            ga.test_cuatro_effect(game_id, attacker)
+            ga.test_cuatro_effect(game_id)
             return None
         case 26:  # Is the party here?
             print("Is the party here?")
