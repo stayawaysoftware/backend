@@ -153,12 +153,14 @@ def olvidadizo_effect(game_id: int, user_id: int):
     game = Game.get(id=game_id)
     player = Player.get(id=user_id)
     for i in list(player.hand):
-        if i.idtype != 0:
+        j = 0
+        if i.idtype != 0 and j<3:
             game.current_phase = "Discard"
             commit()
             gu.discard(game_id, i.idtype, user_id)
             game.current_phase = "Draw"
             gu.draw_no_panic(game_id, user_id)
+            j+=1
     commit()
 
 @db_session
