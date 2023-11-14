@@ -404,6 +404,11 @@ def handle_cannot_exchange(
     game = Game.get(id=game_id)
     game.current_phase = "Draw"
     commit()
+    next_player = list(
+        filter(lambda p: p.round_position == game.current_position, list(game.players))
+    )[0]
+    draw_response = draw_card(game_id, next_player.id)
+    return draw_response, next_player.id
 
 @db_session
 def handle_exchange_defense(
