@@ -126,31 +126,31 @@ def quarantine_effect(target_id: int):
     commit()
 
 @db_session
-def test_cuatro_effect(game_id: int, user_id: int):
+def test_cuatro_effect(game_id: int):
     game = Game.get(id=game_id)
-    player = Player.get(id=user_id)
-    for i in list(player.hand):
-        if i.idtype == 18:
-            game.current_phase = "Discard"
-            commit()
-            gu.discard(game_id, 18, user_id)
-            game.current_phase = "Draw"
-            gu.draw(game_id, user_id)
-    commit()
+    for p in list(game.players):
+        for i in list(p.hand):
+            if i.idtype == 18:
+                game.current_phase = "Discard"
+                commit()
+                gu.discard(game_id, 18, p.id)
+                game.current_phase = "Draw"
+                gu.draw(game_id, p.id)
+        commit()
 
 @db_session
 
 @db_session
-def cuerdas_podridas_effect(game_id: int, user_id: int):
+def cuerdas_podridas_effect(game_id: int):
     game = Game.get(id=game_id)
-    player = Player.get(id=user_id)
-    for i in list(player.hand):
-        if i.idtype == 19:
-            game.current_phase = "Discard"
-            commit()
-            gu.discard(game_id, 19, user_id)
-            game.current_phase = "Draw"
-            gu.draw_no_panic(game_id, user_id)
+    for p in list(game.players):
+        for i in list(p.hand):
+            if i.idtype == 18:
+                game.current_phase = "Discard"
+                commit()
+                gu.discard(game_id, 19, p.id)
+                game.current_phase = "Draw"
+                gu.draw(game_id, p.id)
     commit()
 
 @db_session
