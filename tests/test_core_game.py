@@ -522,7 +522,7 @@ class TestWinnerCheckoutHuman:
         second_human_player = players[1]
         first_human_position = first_human_player.round_position
         second_human_position = second_human_player.round_position
-        position_change_effect(first_human_player.id, second_human_player.id)
+        position_change_effect(game.id, first_human_player.id, second_human_player.id)
         assert first_human_player.round_position == second_human_position
         assert second_human_player.round_position == first_human_position
         
