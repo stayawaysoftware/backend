@@ -174,6 +174,15 @@ def cita_a_ciegas_effect(game_id: int, user_id: int):
     commit()
     user_hand = list(Player.get(id=user_id).hand)
     random_card = CardOut.from_card(random.choice(user_hand))
+    is_infected = Player.get(id=user_id).role == "Infected"
+
+    infected_cards = 0
+    for card in user_hand:
+        if card.idtype == 2:
+            infected_cards += 1
+
+    while random_card.idtype == 1 or (is_infected and infected_cards == 1):
+        random_card = CardOut.from_card(random.choice(user_hand))
     gu.discard(game_id, random_card.idtype, user_id)
     game.current_phase = "Draw"
     gu.draw_no_panic(game_id, user_id)
