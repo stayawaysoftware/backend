@@ -1,8 +1,7 @@
 """Change of position effect."""
+import core.effects as effect_aplication
 from core.player import get_alive_neighbors
-from models.game import Game
 from models.game import Player
-from pony.orm import commit
 
 
 def change_of_position_effect(
@@ -24,24 +23,16 @@ def change_of_position_effect(
         )
 
     # With modifications in the game
-
     # Swap positions
-    (
-        Player[attack_player_id].round_position,
-        Player[defense_player_id].round_position,
-    ) = (
-        Player[defense_player_id].round_position,
-        Player[attack_player_id].round_position,
-    )
-
     # Set current position to the attack player position
-    Game[id_game].current_position = Player[attack_player_id].round_position
-
-    commit()
 
     # Without effects to show in the frontend
 
-    return None
+    effect = effect_aplication.position_change_effect(
+        game_id=id_game,
+        target_id=defense_player_id,
+        user_id=attack_player_id,
+    )
 
 
 def you_better_run_effect(
@@ -54,24 +45,18 @@ def you_better_run_effect(
         raise ValueError("The player with id {defense_player_id} is dead.")
 
     # With modifications in the game
-
     # Swap positions
-    (
-        Player[attack_player_id].round_position,
-        Player[defense_player_id].round_position,
-    ) = (
-        Player[defense_player_id].round_position,
-        Player[attack_player_id].round_position,
-    )
-
     # Set current position to the attack player position
-    Game[id_game].current_position = Player[attack_player_id].round_position
-
-    commit()
 
     # Without effects to show in the frontend
 
-    return None
+    effect = effect_aplication.position_change_effect(
+        game_id=id_game,
+        target_id=defense_player_id,
+        user_id=attack_player_id,
+    )
+
+    return effect
 
 
 def im_fine_here_effect(defense_player_id: int):
@@ -82,4 +67,6 @@ def im_fine_here_effect(defense_player_id: int):
 
     # Without modifications in the game and without effects to show in the frontend
 
-    return None
+    effect = None
+
+    return effect
