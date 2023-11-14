@@ -9,6 +9,7 @@ from . import delete_decks
 from . import discard
 from . import draw_specific
 from . import Game
+from . import GameMessage
 from . import initialize_decks
 from . import play
 from . import Player
@@ -505,12 +506,16 @@ class TestTerrifying:
         # With message to front
         card_id = Player[1].hand.select(idtype=3).first().id
 
-        assert effect == {
-            "type": "show_card",
-            "player_name": Player[1].name,
-            "target": [2],
-            "cards": [{"id": card_id, "idtype": 3}],
-        }
+        message = GameMessage.create(
+            type="show_card",
+            room_id=1,
+            quarantined=None,
+            card_id=card_id,
+            player_id=1,
+            target_id=2,
+        )
+
+        assert effect == message
 
     @db_session
     def test_terrifying_effect_with_dead_attaker(self):

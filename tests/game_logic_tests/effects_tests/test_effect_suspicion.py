@@ -9,6 +9,7 @@ from . import delete_decks
 from . import discard
 from . import draw_specific
 from . import Game
+from . import GameMessage
 from . import initialize_decks
 from . import play
 from . import Player
@@ -114,12 +115,22 @@ class TestSuspicionEffect:
         # With message to front
         card_to_show = Player[2].hand.select().first()
 
-        assert effect == {
-            "type": "show_card",
-            "player_name": Player[2].name,
-            "target": [1],
-            "cards": [{"id": card_to_show.id, "idtype": card_to_show.idtype}],
-        }
+        some_check = False
+
+        for card_to_show in list(Player[2].hand):
+            message = GameMessage.create(
+                type="show_card",
+                room_id=1,
+                quarantined=None,
+                card_id=card_to_show.id,
+                player_id=1,
+                target_id=None,
+            )
+
+            if effect == message:
+                some_check = True
+
+        assert some_check
 
         # Without modifications in the game
         assert game_data == self.get_game_data(id_game=1)
