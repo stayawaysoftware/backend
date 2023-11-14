@@ -158,24 +158,33 @@ def olvidadizo_effect(game_id: int, user_id: int):
     game = Game.get(id=game_id)
     player = Player.get(id=user_id)
 
+    possible_cards = []
+
     is_infected = player.role == "Infected"
+    consider_infected = False
 
-    infected_cards = 0
     for card in list(player.hand):
-        if card.idtype == 2:
-            infected_cards += 1
+        if card.idtype == 2 and is_infected and consider_infected is False:
+            consider_infected = True
+        
+        if card.idtype == 1:
+            continue
 
-    for i in list(player.hand):
+        possible_cards.append(card)
+
+    assert len(possible_cards) >= 3
+
+    for i in possible_cards:
         j = 0
-        if i.idtype != 1 and j<3:
+        if j<3:
             game.current_phase = "Discard"
             commit()
-            if not(i.idtype == 2 and infected_cards == 1 and is_infected):
-                gu.discard(game_id, i.idtype, user_id)
-                j+=1
-        for i in range(3):
-            game.current_phase = "Draw"
-            gu.draw_no_panic(game_id, user_id)
+            gu.discard(game_id, i.idtype, user_id)
+            j+=1
+
+    for i in range(3):
+        game.current_phase = "Draw"
+        gu.draw_no_panic(game_id, user_id)
     commit()
 
 @db_session
