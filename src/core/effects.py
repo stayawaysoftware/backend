@@ -1,6 +1,7 @@
 import random
 import core.game_logic.game_utility as gu
 
+from typing import Optional
 from pony.orm import db_session
 from pony.orm import commit
 from models.game import Player
@@ -21,21 +22,24 @@ def sospecha_effect(game_id: int,target_id: int, user_id: int):
     return response
 
 @db_session
-def show_one_card_effect(game_id, target_id: int, target_chosen_card_id: int):
+def show_one_card_effect(game_id, player_id: int, target_chosen_card_id: int, target_id: Optional[int] = None):
     response = GameMessage.create(type="show_card",
-                                   room_id=game_id, 
-                                   quarantined=None, 
-                                   card_id=target_chosen_card_id,
-                                   player_id=target_id)
+                                    room_id=game_id, 
+                                    quarantined=None, 
+                                    card_id=target_chosen_card_id,
+                                    player_id=player_id,
+                                    target_id=target_id,
+                                   )
     return response
 
 @db_session
-def show_hand_effect(game_id: int, target_id: int):
+def show_hand_effect(game_id: int, player_id: int, target_id: Optional[int] = None):
     response = GameMessage.create(type="show_hand",
                                   room_id=game_id,
                                   quarantined=None,
                                   card_id=None,
-                                  player_id=target_id)
+                                  player_id=player_id,
+                                  target_id=target_id,)
     return response
 
 

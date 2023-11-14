@@ -22,7 +22,7 @@ def effect_handler(
             ga.flamethower_effect(target)
             return None
         case 4:  # Analysis
-            return ga.show_hand_effect(game_id, attacker)
+            return ga.show_hand_effect(game_id, attacker, target)
         case 5:  # Axe
             ga.axe_effect(target)
             return None
