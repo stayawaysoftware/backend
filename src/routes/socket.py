@@ -2,7 +2,7 @@ from time import sleep
 
 import core.room as rooms
 from core.connections import ConnectionManager
-from core.game import delete_game
+from core.room import delete_game
 from core.game import get_card_idtype
 from core.game import handle_defense
 from core.game import handle_exchange

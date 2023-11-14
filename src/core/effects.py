@@ -167,9 +167,11 @@ def olvidadizo_effect(game_id: int, user_id: int):
     for card in list(player.hand):
         if card.idtype == 2 and is_infected and consider_infected is False:
             consider_infected = True
+            continue
         
         if card.idtype == 23 and consider_olvidadizo is False:
             consider_olvidadizo = True
+            continue
         
         if card.idtype == 1:
             continue
@@ -178,13 +180,10 @@ def olvidadizo_effect(game_id: int, user_id: int):
 
     assert len(possible_cards) >= 3
 
-    for i in possible_cards:
-        j = 0
-        if j<3:
-            game.current_phase = "Discard"
-            commit()
-            gu.discard(game_id, i.idtype, user_id)
-            j+=1
+    for i in range(3):
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(game_id, possible_cards[i].idtype, user_id)
 
     for i in range(3):
         game.current_phase = "Draw"
@@ -205,9 +204,11 @@ def cita_a_ciegas_effect(game_id: int, user_id: int):
     for card in list(Player.get(id=user_id).hand):
         if card.idtype == 2 and is_infected and consider_infected is False:
             consider_infected = True
+            continue
 
         if card.idtype == 30 and consider_cita_a_ciegas is False:
             consider_cita_a_ciegas = True
+            continue
         
         if card.idtype == 1:
             continue

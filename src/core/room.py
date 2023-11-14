@@ -7,6 +7,8 @@ from models.room import User
 from pony.orm import commit
 from pony.orm import db_session
 from schemas.room import RoomListItem
+from models.game import Game
+from models.game import Player
 
 
 def hashing(pwd):
@@ -143,4 +145,18 @@ def delete_room(room_id: int, host_id: int):
     for user in room.users:
         user.room = None
     room.delete()
+    commit()
+
+
+@db_session
+def delete_game(game_id: int):
+    room = Room.get(id=game_id)
+    for user in room.users:
+        player = Player.get(id=user.id)
+        player.delete()
+        commit()
+        room_id = leave_room(game_id, user.id)
+    game = Game.get(id=room_id)
+    if game is not None:
+        game.delete()
     commit()
