@@ -130,7 +130,7 @@ def test_cuatro_effect(game_id: int):
     game = Game.get(id=game_id)
     for p in list(game.players):
         for i in list(p.hand):
-            if i.idtype == 18:
+            if i.idtype == 18 and p.alive:
                 game.current_phase = "Discard"
                 commit()
                 gu.discard(game_id, 18, p.id)
@@ -143,7 +143,7 @@ def cuerdas_podridas_effect(game_id: int):
     game = Game.get(id=game_id)
     for p in list(game.players):
         for i in list(p.hand):
-            if i.idtype == 18:
+            if i.idtype == 18 and p.alive:
                 game.current_phase = "Discard"
                 commit()
                 gu.discard(game_id, 19, p.id)
