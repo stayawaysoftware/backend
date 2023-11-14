@@ -60,6 +60,7 @@ def do_effect_attack(
             effect = effect_aplication.axe_effect(
                 game_id=id_game,
                 target_id=defense_player_id,
+                attacker_id=attack_player_id,
             )
         case 6:
             # Suspicion
@@ -109,6 +110,7 @@ def do_effect_attack(
             return effect_aplication.locked_door_effect(
                 game_id=id_game,
                 target_id=defense_player_id,
+                attacker_id=attack_player_id,
             )
         case 20:
             # Revelations
