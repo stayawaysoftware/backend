@@ -73,7 +73,7 @@ def effect_handler(
             ga.cuerdas_podridas_effect(game_id, attacker)
             return None
         case 22:  # Get out of here
-            return ga.position_change_effect(target, attacker)
+            return ga.position_change_effect(game_id, target, attacker)
         case 23:  # Forgetful
             ga.olvidadizo_effect(game_id, attacker)
             return None
