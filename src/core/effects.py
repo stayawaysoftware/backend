@@ -135,7 +135,7 @@ def test_cuatro_effect(game_id: int):
                 commit()
                 gu.discard(game_id, 18, p.id)
                 game.current_phase = "Draw"
-                gu.draw(game_id, p.id)
+                gu.draw_no_panic(game_id, p.id)
         commit()
 
 @db_session
@@ -148,7 +148,7 @@ def cuerdas_podridas_effect(game_id: int):
                 commit()
                 gu.discard(game_id, 19, p.id)
                 game.current_phase = "Draw"
-                gu.draw(game_id, p.id)
+                gu.draw_no_panic(game_id, p.id)
     commit()
 
 @db_session

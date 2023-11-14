@@ -151,6 +151,7 @@ def delete_room(room_id: int, host_id: int):
 @db_session
 def delete_game(game_id: int):
     room = Room.get(id=game_id)
+    room.in_game = False
     for user in room.users:
         player = Player.get(id=user.id)
         if player is not None:
