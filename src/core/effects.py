@@ -139,8 +139,6 @@ def test_cuatro_effect(game_id: int):
         commit()
 
 @db_session
-
-@db_session
 def cuerdas_podridas_effect(game_id: int):
     game = Game.get(id=game_id)
     for p in list(game.players):
