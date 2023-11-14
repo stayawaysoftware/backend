@@ -396,6 +396,14 @@ def exchange_not_defended(
     )
     return effect
 
+@db_session
+def handle_cannot_exchange(
+    game_id: int
+):
+    calculate_next_turn(game_id)
+    game = Game.get(id=game_id)
+    game.current_phase = "Draw"
+    commit()
 
 @db_session
 def handle_exchange_defense(

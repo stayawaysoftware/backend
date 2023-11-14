@@ -9,6 +9,7 @@ from core.game import handle_exchange
 from core.game import handle_exchange_defense
 from core.game import handle_play
 from core.game import try_defense
+from core.game import handle_cannot_exchange
 from core.game import handle_discard
 from core.game import handle_not_target
 from fastapi import APIRouter
@@ -213,6 +214,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
 
                                 await connection_manager.broadcast(
                                     room_id, exchange_res
+                                )
+
+                            case "cannot_exchange":
+                                handle_cannot_exchange(
+                                    room_id
+                                )
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create("game_info", room_id),
                                 )
 
                             case "exchange_defense":

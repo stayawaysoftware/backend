@@ -43,6 +43,7 @@ class GameEventTypes(str, Enum):
     exchange_defense = "exchange_defense"
     finished = "finished"
     discard = "discard"
+    cannot_exchange = "cannot_exchange"
     end = "end"
 
     @classmethod
