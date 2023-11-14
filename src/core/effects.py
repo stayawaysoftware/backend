@@ -181,7 +181,7 @@ def cita_a_ciegas_effect(game_id: int, user_id: int):
         if card.idtype == 2:
             infected_cards += 1
 
-    while random_card.idtype == 1 or (is_infected and infected_cards == 1):
+    while random_card.idtype == 1 or (is_infected and infected_cards == 1 and random_card.idtype == 2):
         random_card = CardOut.from_card(random.choice(user_hand))
     gu.discard(game_id, random_card.idtype, user_id)
     game.current_phase = "Draw"
