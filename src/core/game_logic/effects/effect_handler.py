@@ -183,6 +183,7 @@ def do_effect_defense(
         case 14:
             # Terrifying
             return terrifying_effect(
+                id_game,
                 attack_player_id,
                 defense_player_id,
                 card_chosen_by_attacker,
