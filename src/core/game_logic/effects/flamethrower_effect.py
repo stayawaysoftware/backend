@@ -1,7 +1,7 @@
 """Flamethrower effect."""
+import core.effects as effect_aplication
 from core.player import get_alive_neighbors
 from models.game import Player
-from pony.orm import commit
 from pony.orm import db_session
 
 
@@ -26,12 +26,11 @@ def flamethrower_effect(
 
     # With modifications in the game
 
-    Player[defense_player_id].alive = False
-    commit()
-
     # Without effects to show in the frontend
 
-    return None
+    effect = effect_aplication.flamethower_effect(target_id=defense_player_id)
+
+    return effect
 
 
 @db_session
@@ -43,4 +42,6 @@ def no_barbecues_effect(defense_player_id: int):
 
     # Without modifications in the game and without effects to show in the frontend
 
-    return None
+    effect = None
+
+    return effect
