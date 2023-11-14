@@ -143,15 +143,13 @@ def cuerdas_podridas_effect(game_id: int):
     game = Game.get(id=game_id)
     for p in list(game.players):
         for i in list(p.hand):
-            if i.idtype == 18 and p.alive:
+            if i.idtype == 19 and p.alive:
                 game.current_phase = "Discard"
                 commit()
                 gu.discard(game_id, 19, p.id)
                 game.current_phase = "Draw"
                 gu.draw(game_id, p.id)
     commit()
-
-
 
 @db_session
 def olvidadizo_effect(game_id: int, user_id: int):
