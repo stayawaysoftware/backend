@@ -1,6 +1,7 @@
 import random
 import core.game_logic.game_utility as gu
 
+from typing import Optional
 from pony.orm import db_session
 from pony.orm import commit
 from models.game import Player
@@ -21,21 +22,24 @@ def sospecha_effect(game_id: int,target_id: int, user_id: int):
     return response
 
 @db_session
-def show_one_card_effect(game_id, target_id: int, target_chosen_card_id: int):
+def show_one_card_effect(game_id, player_id: int, target_chosen_card_id: int, target_id: Optional[int] = None):
     response = GameMessage.create(type="show_card",
-                                   room_id=game_id, 
-                                   quarantined=None, 
-                                   card_id=target_chosen_card_id,
-                                   player_id=target_id)
+                                    room_id=game_id, 
+                                    quarantined=None, 
+                                    card_id=target_chosen_card_id,
+                                    player_id=player_id,
+                                    target_id=target_id,
+                                   )
     return response
 
 @db_session
-def show_hand_effect(game_id: int, target_id: int):
+def show_hand_effect(game_id: int, player_id: int, target_id: Optional[int] = None):
     response = GameMessage.create(type="show_hand",
                                   room_id=game_id,
                                   quarantined=None,
                                   card_id=None,
-                                  player_id=target_id)
+                                  player_id=player_id,
+                                  target_id=target_id,)
     return response
 
 
@@ -45,13 +49,18 @@ def vigila_tus_espaldas_effect(game_id: int):
     game.round_left_direction = not game.round_left_direction
     commit()
 
+
 @db_session
-def position_change_effect(target_id: int, user_id: int):
-    target = Player.get(id=target_id)
-    user = Player.get(id=user_id)
-    user_position = user.round_position
-    user.round_position = target.round_position
-    target.round_position = user_position
+def position_change_effect(game_id: int, target_id: int, user_id: int):
+    (
+        Player[target_id].round_position,
+        Player[user_id].round_position,
+    ) = (
+        Player[user_id].round_position,
+        Player[target_id].round_position,
+    )
+
+    Game[game_id].current_position = Player[user_id].round_position
     commit()
 
 @db_session
@@ -115,3 +124,99 @@ def quarantine_effect(target_id: int):
     player = Player.get(id=target_id)
     player.quarantine = 2
     commit()
+
+@db_session
+def test_cuatro_effect(game_id: int):
+    game = Game.get(id=game_id)
+    for p in list(game.players):
+        for i in list(p.hand):
+            if i.idtype == 19 and p.alive:
+                game.current_phase = "Discard"
+                commit()
+                gu.discard(game_id, 19, p.id)
+                game.current_phase = "Draw"
+                gu.draw_no_panic(game_id, p.id)
+        commit()
+
+@db_session
+def cuerdas_podridas_effect(game_id: int):
+    game = Game.get(id=game_id)
+    for p in list(game.players):
+        for i in list(p.hand):
+            if i.idtype == 18 and p.alive:
+                game.current_phase = "Discard"
+                commit()
+                gu.discard(game_id, 18, p.id)
+                game.current_phase = "Draw"
+                gu.draw_no_panic(game_id, p.id)
+    commit()
+
+@db_session
+def olvidadizo_effect(game_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    player = Player.get(id=user_id)
+
+    possible_cards = []
+
+    is_infected = player.role == "Infected"
+    consider_infected = False
+    consider_olvidadizo = False
+
+    for card in list(player.hand):
+        if card.idtype == 2 and is_infected and consider_infected is False:
+            consider_infected = True
+            continue
+        
+        if card.idtype == 23 and consider_olvidadizo is False:
+            consider_olvidadizo = True
+            continue
+        
+        if card.idtype == 1:
+            continue
+
+        possible_cards.append(card)
+
+    assert len(possible_cards) >= 3
+
+    for i in range(3):
+        game.current_phase = "Discard"
+        commit()
+        gu.discard(game_id, possible_cards[i].idtype, user_id)
+
+    for i in range(3):
+        game.current_phase = "Draw"
+        gu.draw_no_panic(game_id, user_id)
+    commit()
+
+@db_session
+def cita_a_ciegas_effect(game_id: int, user_id: int):
+    game = Game.get(id=game_id)
+    game.current_phase = "Discard"
+    commit()
+
+    possible_cards = []
+    is_infected = Player.get(id=user_id).role == "Infected"
+    consider_infected = False
+    consider_cita_a_ciegas = False
+
+    for card in list(Player.get(id=user_id).hand):
+        if card.idtype == 2 and is_infected and consider_infected is False:
+            consider_infected = True
+            continue
+
+        if card.idtype == 30 and consider_cita_a_ciegas is False:
+            consider_cita_a_ciegas = True
+            continue
+        
+        if card.idtype == 1:
+            continue
+
+        possible_cards.append(card)
+
+    random_card = CardOut.from_card(random.choice(possible_cards))
+
+    gu.discard(game_id, random_card.idtype, user_id)
+    game.current_phase = "Draw"
+    gu.draw_no_panic(game_id, user_id)
+    commit()
+

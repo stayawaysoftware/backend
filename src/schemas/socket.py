@@ -43,6 +43,7 @@ class GameEventTypes(str, Enum):
     exchange_defense = "exchange_defense"
     finished = "finished"
     discard = "discard"
+    cannot_exchange = "cannot_exchange"
     end = "end"
 
     @classmethod
@@ -179,6 +180,8 @@ class GameMessage(BaseModel):
                     player.id
                     for player in game.players
                 ]
+                if target_id is not None:
+                    player = PlayerOut.from_player(Player.get(id=target_id)).model_dump(by_alias=True, exclude_unset=True)
                 return {
                     "type": "show_card",
                     "player_name": player["name"],
@@ -196,6 +199,8 @@ class GameMessage(BaseModel):
                     player.id
                     for player in game.players
                 ]
+                if target_id is not None:
+                    player = PlayerOut.from_player(Player.get(id=target_id)).model_dump(by_alias=True, exclude_unset=True)
                 return {
                     "type": type,
                     "player_name": player["name"],

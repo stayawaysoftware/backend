@@ -2,13 +2,14 @@ from time import sleep
 
 import core.room as rooms
 from core.connections import ConnectionManager
-from core.game import delete_game
+from core.room import delete_game
 from core.game import get_card_idtype
 from core.game import handle_defense
 from core.game import handle_exchange
 from core.game import handle_exchange_defense
 from core.game import handle_play
 from core.game import try_defense
+from core.game import handle_cannot_exchange
 from core.game import handle_discard
 from core.game import handle_not_target
 from fastapi import APIRouter
@@ -25,7 +26,7 @@ from schemas.socket import GameMessage
 from schemas.socket import RoomEventTypes
 from schemas.socket import RoomMessage
 
-PRIVATE_CARDTYPES = [4, 6, 14]
+PRIVATE_CARDTYPES = [4, 6, 14, 27, 31]
 
 connection_manager = ConnectionManager()
 ws = APIRouter(tags=["websocket"])
@@ -215,6 +216,16 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     room_id, exchange_res
                                 )
 
+                            case "cannot_exchange":
+                                handle_cannot_exchange(
+                                    room_id
+                                )
+
+                                await connection_manager.broadcast(
+                                    room_id,
+                                    GameMessage.create("game_info", room_id),
+                                )
+
                             case "exchange_defense":
                                 draw_response, next_player_id, effect = handle_exchange_defense(
                                     game_id=room_id,
@@ -300,15 +311,15 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, user_id: int):
                                     "chosen_card", None
                                 ),
                             }
-
-                            await connection_manager.broadcast(
-                                room_id,
-                                GameMessage.create(
-                                    "quarantine",
+                            if card_dict[data["type"]] != 0:
+                                await connection_manager.broadcast(
                                     room_id,
-                                    user_id,
-                                    card_dict[data["type"]],
-                                ),
+                                    GameMessage.create(
+                                        "quarantine",
+                                        room_id,
+                                        user_id,
+                                        card_dict[data["type"]],
+                                    ),
                             )
                     except ValidationError as error:
                         await connection_manager.send_to(

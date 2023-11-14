@@ -142,19 +142,6 @@ def calculate_next_turn(game_id: int):
     game.current_position = next_player_position
     commit()
 
-
-@db_session
-def delete_game(game_id: int):
-    game = Game.get(id=game_id)
-    players = Game.get(id=game_id).players
-    if players is None:
-        raise HTTPException(status_code=404, detail="Players not found")
-    for p in players:
-        p.delete()
-    game.delete()
-    commit()
-
-
 def handle_play(
     game_id: int,
     card_id: int,
@@ -409,6 +396,14 @@ def exchange_not_defended(
     )
     return effect
 
+@db_session
+def handle_cannot_exchange(
+    game_id: int
+):
+    calculate_next_turn(game_id)
+    game = Game.get(id=game_id)
+    game.current_phase = "Draw"
+    commit()
 
 @db_session
 def handle_exchange_defense(
