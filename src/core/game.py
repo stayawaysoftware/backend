@@ -316,13 +316,6 @@ def handle_defense(
         defense_card = Card.get(id=card_type_id)
         if defense_card.idtype in get_defense_cards(attack_card.idtype):
             try:
-                response = defended_card(
-                    game_id,
-                    attacker_id,
-                    defense_player_id,
-                    last_card_played_id,
-                    card_type_id,
-                )
 
                 effect = play(
                     id_game=game_id,
@@ -330,6 +323,14 @@ def handle_defense(
                     defense_player_id=defense_player_id,
                     idtype_attack_card=attack_card.idtype,
                     idtype_defense_card=defense_card.idtype,
+                )
+
+                response = defended_card(
+                    game_id,
+                    attacker_id,
+                    defense_player_id,
+                    last_card_played_id,
+                    card_type_id,
                 )
 
             except ValueError as e:
@@ -445,7 +446,6 @@ def handle_exchange_defense(
         if defense_card.idtype in get_defense_cards(32):
             try:
                 defense_card = Card.get(id=chosen_card)
-                exchange_defended(game_id, current_player_id, chosen_card)
 
                 effect = play(
                     id_game=game_id,
@@ -457,6 +457,8 @@ def handle_exchange_defense(
                         id=last_chosen_card
                     ).idtype,
                 )
+
+                exchange_defended(game_id, current_player_id, chosen_card)
 
             except ValueError as e:
                 print("ERROR:", str(e))
