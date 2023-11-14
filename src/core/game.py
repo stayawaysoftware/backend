@@ -404,6 +404,11 @@ def handle_cannot_exchange(
     game = Game.get(id=game_id)
     game.current_phase = "Draw"
     commit()
+    next_player = list(
+        filter(lambda p: p.round_position == game.current_position, list(game.players))
+    )[0]
+    draw_response = draw_card(game_id, next_player.id)
+    return draw_response, next_player.id
 
 @db_session
 def handle_exchange_defense(
@@ -469,8 +474,6 @@ def handle_discard(game_id: int, card_id: int, player_id: int):
         game.current_phase = "Discard"
         commit()
         gu.discard(game_id, card_id, player_id)
-        game.current_phase = "Draw"
-        commit()
         game.current_phase = "Exchange"
         commit()
     except ValueError as e:

@@ -10,6 +10,7 @@ class PlayerOut(BaseModel):
     alive: bool
     role: str
     hand: list[CardOut] = []
+    quarantine: bool
 
     @classmethod
     def from_player(cls, player: Player):
@@ -23,6 +24,7 @@ class PlayerOut(BaseModel):
             hand=[
                 CardOut.from_card(card) for card in player.hand
             ],  # Agregar el campo 'hand'
+            quarantine=(player.quarantine > 0),
         )
 
     @classmethod
@@ -36,4 +38,5 @@ class PlayerOut(BaseModel):
             "alive": player.alive,
             "role": player.role,
             "hand": [card.to_json(card) for card in player.hand],
+            "quarantine": player.quarantine,
         }

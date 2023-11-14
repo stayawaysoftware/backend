@@ -106,17 +106,39 @@ def flamethower_effect(target_id: int):
     commit()
 
 @db_session
-def locked_door_effect(game_id: int, target_id: int):
+def locked_door_effect(game_id: int, target_id: int, attacker_id: int):
     game = Game.get(id=game_id)
-    position = Player.get(id=target_id).round_position - 1
-    game.locked_doors[position] = 1
+    players = list(game.players)
+    target_position = Player.get(id=target_id).round_position - 1
+    attacker_position = Player.get(id=attacker_id).round_position - 1
+    if target_position == (attacker_position + 1) % len(players):
+        game.locked_doors[target_position] = 1
+    elif target_position == (attacker_position - 1) % len(players):
+        game.locked_doors[attacker_position] = 1
+    # elif target and attacker not are adjacent
+    elif target_position > attacker_position:
+        # set all the doors between them to 1
+        for i in range(attacker_position, target_position):
+            game.locked_doors[i] = 1
+    elif target_position < attacker_position:
+        # set all the doors between them to 1
+        for i in range(target_position, attacker_position):
+            game.locked_doors[i] = 1
     commit()
 
 @db_session
-def axe_effect(game_id: int, target_id: int):
+def axe_effect(game_id: int, target_id: int, attacker_id: int):
     game = Game.get(id=game_id)
-    position = Player.get(id=target_id).round_position - 1
-    game.locked_doors[position] = 0
+    target_position = Player.get(id=target_id).round_position - 1
+    attacker_position = Player.get(id=attacker_id).round_position - 1
+    print(target_position, attacker_position)
+    # set all the doors between them to 0
+    if target_position > attacker_position:
+        for i in range(attacker_position, target_position):
+            game.locked_doors[i] = 0
+    elif target_position < attacker_position:
+        for i in range(target_position, attacker_position):
+            game.locked_doors[i] = 0
     commit()
 
 @db_session
