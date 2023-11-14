@@ -1,9 +1,9 @@
-import schemas.validators as validators
 from models.room import Room
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import validator
 from pydantic.config import ConfigDict
+from schemas import validators
 
 
 # ======================= Input Schemas =======================
@@ -11,14 +11,14 @@ from pydantic.config import ConfigDict
 
 class RoomCreateForm(BaseModel):
     name: str = Field(max_length=32)
-    password: str | None = Field(max_length=32, nullable=True)
+    password: str | None = Field(max_length=32)
     host_id: int = Field(gt=0)
     min_users: int
     max_users: int
 
     @validator("max_users", allow_reuse=True)
     def validate_max_min_users(cls, max_users, values):
-        max_users = max_users
+
         min_users = values["min_users"]
         max_users = validators.EndpointValidators.validate_max_users(max_users)
         min_users = validators.EndpointValidators.validate_min_users(min_users)
@@ -43,7 +43,7 @@ class RoomCreateForm(BaseModel):
 class RoomJoinForm(BaseModel):
     room_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
-    password: str | None = Field(max_length=32, nullable=True)
+    password: str | None = Field(max_length=32)
 
     @validator("room_id", pre=True, allow_reuse=True)
     def validate_room_id(cls, room_id):

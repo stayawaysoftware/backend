@@ -2,6 +2,8 @@ import hashlib
 from typing import Optional
 
 import core.game as game
+from models.game import Game
+from models.game import Player
 from models.room import Room
 from models.room import User
 from pony.orm import commit
@@ -69,12 +71,12 @@ def join_room(room_id: int, user_id: int):
     room = Room.get(id=room_id)
     if len(room.users) >= room.max_users:
         raise PermissionError("Room is full")
-    if User[user_id].room is not None:
+    if user.room is not None:
         raise PermissionError("User is already in a room")
     if Room.get(id=room_id).in_game:
         raise PermissionError("Game is already in progress")
     room = Room.get(id=room_id)
-    User[user_id].room = room
+    user.room = room
     commit()
 
 
@@ -143,4 +145,20 @@ def delete_room(room_id: int, host_id: int):
     for user in room.users:
         user.room = None
     room.delete()
+    commit()
+
+
+@db_session
+def delete_game(game_id: int):
+    room = Room.get(id=game_id)
+    room.in_game = False
+    for user in room.users:
+        player = Player.get(id=user.id)
+        if player is not None:
+            player.delete()
+            commit()
+        room_id = leave_room(game_id, user.id)
+    game = Game.get(id=room_id)
+    if game is not None:
+        game.delete()
     commit()

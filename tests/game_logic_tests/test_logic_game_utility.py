@@ -10,11 +10,12 @@ from . import Deck
 from . import delete_decks
 from . import discard
 from . import DisposableDeck
-from . import do_effect
 from . import draw
+from . import draw_no_panic
+from . import draw_specific
 from . import Game
+from . import get_initial_player_hand
 from . import initialize_decks
-from . import play
 from . import Player
 
 # ===================== BASIC GAME FUNCTIONS =====================
@@ -115,6 +116,95 @@ class TestGameUtilityBasic:
                 Card[i].delete()
 
 
+class TestGameUtilityBasicInitialHand:
+    """Test basic game functions with initial hand."""
+
+    @classmethod
+    @db_session
+    def setup_class(cls):
+        """Setup class."""
+        clean_db()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown class."""
+        clean_db()
+
+    @db_session
+    def setup_method(self):
+        """Setup method."""
+        Game(id=1)
+        for i in range(1, 13):
+            Player(id=i, name=f"Player{i}", round_position=i, game=Game[1])
+        initialize_decks(1, 12)
+        commit()
+
+    @db_session
+    def teardown_method(self):
+        """Teardown method."""
+        delete_decks(1)
+        Game[1].delete()
+        for i in range(1, 13):
+            Player[i].delete()
+        commit()
+
+    @db_session
+    def test_get_initial_player_hand(self):
+        """Test get_initial_player_hand function."""
+        player1 = 1
+
+        get_initial_player_hand(1, player1)
+
+        assert len(Player[player1].hand) == 4
+        assert Player[player1].hand.select(idtype=1).count() == 1
+        for card in Player[player1].hand:
+            assert len(card.players) == 1
+            assert Player[player1] in card.players
+            assert len(card.available_deck) == 0
+            assert len(card.disposable_deck) == 0
+
+            assert card.idtype != 2
+            assert card.type != "PANIC"
+
+        for i in range(1, 13):
+            if i != player1:
+                assert len(Player[i].hand) == 0
+
+        # Check other players
+
+        for player1 in range(2, 13):
+            get_initial_player_hand(1, player1)
+
+            assert len(Player[player1].hand) == 4
+            assert Player[player1].hand.select(idtype=1).count() == 0
+            for card in Player[player1].hand:
+                assert len(card.players) == 1
+                assert Player[player1] in card.players
+                assert len(card.available_deck) == 0
+                assert len(card.disposable_deck) == 0
+
+                assert card.idtype != 2
+                assert card.type != "PANIC"
+
+            for i in range(player1 + 1, 13):
+                assert len(Player[i].hand) == 0
+
+    @db_session
+    def test_get_initial_player_hand_with_invalid_player(self):
+        """Test get_initial_player_hand function with invalid player."""
+        with pytest.raises(ValueError):
+            get_initial_player_hand(1, 0)
+
+        with pytest.raises(ValueError):
+            get_initial_player_hand(1, 13)
+
+    @db_session
+    def test_get_initial_player_hand_with_invalid_game(self):
+        """Test get_initial_player_hand function with invalid game."""
+        with pytest.raises(ValueError):
+            get_initial_player_hand(2, 1)
+
+
 # ===================== GAME PHASES FUNCTIONS =====================
 
 
@@ -211,6 +301,107 @@ class TestGameUtilityPhases:
         Game[1].current_phase = "Discard"
         with pytest.raises(ValueError):
             draw(1, 1)
+
+    @db_session
+    def test_draw_specific(self):
+        """Test draw_specific function."""
+        id_player = 1
+        for idtype_required in range(1, 32):
+            for _ in range(2 * 109 + 1):
+                # I do this for to test several possibilities and that everything works correctly
+
+                card = draw_specific(1, id_player, idtype_required)
+
+                assert Card.exists(id=card)
+                assert (
+                    len(Card[card].players) == 1
+                    and Player[id_player] in Card[card].players  # noqa : W503
+                )
+                assert (
+                    len(Player[id_player].hand) == 1
+                    and Card[card] in Player[id_player].hand  # noqa : W503
+                )
+                assert len(Card[card].available_deck) == 0
+                assert len(Card[card].disposable_deck) == 0
+                for i in range(1, 13):
+                    if i != id_player:
+                        assert len(Player[i].hand) == 0
+
+                assert Card[card].idtype == idtype_required
+
+                Player[id_player].hand.remove(Card[card])
+                DisposableDeck[1].cards.add(Card[card])
+
+    @db_session
+    def test_draw_specific_with_invalid_player(self):
+        """Test draw_specific function with invalid player."""
+        with pytest.raises(ValueError):
+            draw_specific(1, 0, 1)
+
+        with pytest.raises(ValueError):
+            draw_specific(1, 13, 1)
+
+    @db_session
+    def test_draw_specific_with_invalid_game(self):
+        """Test draw_specific function with invalid game."""
+        with pytest.raises(ValueError):
+            draw_specific(2, 1, 1)
+
+    @db_session
+    def test_draw_specific_with_idtype_that_decks_doesnt_have(self):
+        """Test draw_specific function with idtype that decks doesn't have."""
+        with pytest.raises(ValueError):
+            draw_specific(1, 1, 100)
+
+        draw_specific(1, 1, 1)
+        with pytest.raises(ValueError):
+            draw_specific(1, 1, 1)
+
+    @db_session
+    def test_draw_no_panic(self):
+        """Test draw_no_panic function."""
+        id_player = 1
+        for _ in range(2 * 109 + 1):
+            # Draw the no panic card
+            card = draw_no_panic(1, id_player)
+
+            assert Card.exists(id=card)
+            assert (
+                len(Card[card].players) == 1
+                and Player[id_player] in Card[card].players  # noqa : W503
+            )
+            assert (
+                len(Player[id_player].hand) == 1
+                and Card[card] in Player[id_player].hand  # noqa : W503
+            )
+            assert len(Card[card].available_deck) == 0
+            assert len(Card[card].disposable_deck) == 0
+            for i in range(1, 13):
+                if i != id_player:
+                    assert len(Player[i].hand) == 0
+            assert Card[card].type != "PANIC"
+
+            # Discard the card to check others
+            Player[id_player].hand.remove(Card[card])
+            DisposableDeck[1].cards.add(Card[card])
+
+            id_player += 1
+            if id_player > 12:
+                id_player = 1
+
+    @db_session
+    def test_draw_no_panic_with_invalid_player(self):
+        """Test draw_no_panic function with invalid player."""
+        with pytest.raises(ValueError):
+            draw_no_panic(1, 0)
+
+        with pytest.raises(ValueError):
+            draw_no_panic(1, 13)
+
+    def test_draw_no_panic_with_invalid_game(self):
+        """Test draw_no_panic function with invalid game."""
+        with pytest.raises(ValueError):
+            draw_no_panic(2, 1)
 
     @db_session
     def test_discard(self):
@@ -385,131 +576,3 @@ class TestGameUtilityPhases:
             id_player += 1
             if id_player > 12:
                 id_player = 1
-
-    @db_session
-    def test_play(self):
-        """Test play function."""
-        Game[1].current_phase = "Play"
-        for i in range(0, 109):
-            Player[1].hand.add(Card[i])
-
-        for i in range(0, 109):
-            try:
-                action = play(
-                    id_game=1,
-                    id_player=1,
-                    idtype_card=Card[i].idtype,
-                    target=2,
-                )
-                assert str(action) == str(
-                    do_effect(
-                        id_game=1,
-                        id_player=1,
-                        id_card_type=Card[i].idtype,
-                        target=2,
-                    )
-                )
-            except ValueError:
-                with pytest.raises(ValueError):
-                    do_effect(
-                        id_game=1,
-                        id_player=1,
-                        id_card_type=Card[i].idtype,
-                        target=2,
-                    )
-
-    @db_session
-    def test_play_with_invalid_game(self):
-        """Test play function with invalid game."""
-        Game[1].current_phase = "Play"
-
-        with pytest.raises(ValueError):
-            play(id_game=2, id_player=1, idtype_card=Card[0].idtype, target=2)
-
-    @db_session
-    def test_play_with_invalid_phase(self):
-        """Test play function with invalid phase."""
-        Game[1].current_phase = "Draw"
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=1, idtype_card=Card[0].idtype, target=2)
-
-        Game[1].current_phase = "Discard"
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=1, idtype_card=Card[0].idtype, target=2)
-
-    @db_session
-    def test_play_with_invalid_player(self):
-        """Test play function with invalid player."""
-        Game[1].current_phase = "Play"
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=0, idtype_card=Card[0].idtype, target=2)
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=13, idtype_card=Card[0].idtype, target=2)
-
-    @db_session
-    def test_play_with_invalid_card(self):
-        """Test play function with invalid card."""
-        Game[1].current_phase = "Play"
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=1, idtype_card=100, target=2)
-
-    @db_session
-    def test_play_with_invalid_target(self):
-        """Test play function with invalid target."""
-        Game[1].current_phase = "Play"
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=1, idtype_card=Card[0].idtype, target=0)
-
-        with pytest.raises(ValueError):
-            play(id_game=1, id_player=1, idtype_card=Card[0].idtype, target=13)
-
-    @db_session
-    def test_play_with_invalid_card_type_before(self):
-        """Test play function with invalid card_type_before."""
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card[0])
-
-        with pytest.raises(ValueError):
-            play(
-                id_game=1,
-                id_player=1,
-                idtype_card=Card[0].idtype,
-                idtype_card_before=100,
-                target=2,
-            )
-
-    @db_session
-    def test_play_with_invalid_card_chosen_by_player(self):
-        """Test play function with invalid card_chosen_by_player."""
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card[0])
-
-        with pytest.raises(ValueError):
-            play(
-                id_game=1,
-                id_player=1,
-                idtype_card=Card[0].idtype,
-                card_chosen_by_player=100,
-                target=2,
-            )
-
-    @db_session
-    def test_play_with_invalid_card_chosen_by_target(self):
-        """Test play function with invalid card_chosen_by_target."""
-        Game[1].current_phase = "Play"
-        Player[1].hand.add(Card[0])
-
-        with pytest.raises(ValueError):
-            play(
-                id_game=1,
-                id_player=1,
-                idtype_card=Card[0].idtype,
-                card_chosen_by_target=100,
-                target=2,
-            )

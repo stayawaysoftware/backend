@@ -1,14 +1,19 @@
 from enum import Enum
+from typing import Optional
 
-import schemas.validators as validators
+from core.game_logic.game_utility import get_defense_cards
+from models.game import Card
 from models.game import Game
+from models.game import Player
 from models.room import Room
 from models.room import User
 from pydantic import BaseModel
 from pydantic import Field
-from pydantic import validator
 from pydantic.config import ConfigDict
+from schemas import validators
+from schemas.card import CardOut
 from schemas.game import GameInfo
+from schemas.player import PlayerOut
 
 from .room import RoomId
 from .room import RoomInfo
@@ -36,8 +41,9 @@ class GameEventTypes(str, Enum):
     defense = "defense"
     exchange = "exchange"
     exchange_defense = "exchange_defense"
-    finished= "finished"
+    finished = "finished"
     discard = "discard"
+    cannot_exchange = "cannot_exchange"
     end = "end"
 
     @classmethod
@@ -46,15 +52,6 @@ class GameEventTypes(str, Enum):
 
 
 # ======================= Input Schemas =======================
-
-
-class EventInRoom(BaseModel):
-    model_config = ConfigDict(title="EventInRoom")
-    type: RoomEventTypes = Field(...)
-
-
-class EventInGame(BaseModel):
-    pass
 
 
 class ChatMessage(BaseModel):
@@ -73,7 +70,7 @@ class ChatMessage(BaseModel):
         )
 
     @classmethod
-    def create(cls, message: str, sender: int, room_id: int):
+    def create(cls, message: str, sender: int):
         sendername = User.get(id=sender).username
         return {
             "type": "message",
@@ -112,11 +109,6 @@ class RoomMessage(BaseModel):
 
     type: RoomEventTypes = Field(...)
 
-    @validator("type", pre=True, allow_reuse=True)
-    def validate_type(cls, type):
-        assert RoomEventTypes.has_type(type), "Invalid type"
-        return type
-
     @classmethod
     def create(cls, type: RoomEventTypes, room_id: RoomId):
         room = Room.get(id=room_id)
@@ -144,17 +136,160 @@ class GameMessage(BaseModel):
 
     type: GameEventTypes = Field(...)
 
-    @validator("type", pre=True, allow_reuse=True)
-    def validate_type(cls, type):
-        assert GameEventTypes.has_type(type), "Invalid type"
-        return type
-
     @classmethod
-    def create(cls, type: GameEventTypes, room_id: RoomId):
+    def create(
+        cls,
+        type: GameEventTypes,
+        room_id: RoomId,
+        quarantined: Optional[int] = None,
+        card_id: Optional[int] = None,
+        player_id: Optional[int] = None,
+        target_id: Optional[int] = None,
+        defense_card_id: Optional[int] = None,
+    ):
         game = Game.get(id=room_id)
         match type:
             case "game_info":
                 return {
                     "type": type,
                     "game": GameInfo.from_db(game),
+                }
+            case "quarantine":
+                assert quarantined is not None
+                assert card_id is not None
+                card = CardOut.from_card(Card.get(id=card_id))
+                all_players_except_quarantined = [
+                    player.id
+                    for player in game.players
+                    if player.id != quarantined
+                ]
+                return {
+                    "type": "show_card",
+                    "player_name": User.get(id=quarantined).username,
+                    "cards": [
+                        card.model_dump(by_alias=True, exclude_unset=True)
+                    ],
+                    "target": all_players_except_quarantined,
+                }
+            case "show_hand":
+                assert player_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=player_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                all_players = [player.id for player in game.players]
+                if target_id is not None:
+                    player = PlayerOut.from_player(
+                        Player.get(id=target_id)
+                    ).model_dump(by_alias=True, exclude_unset=True)
+                return {
+                    "type": "show_card",
+                    "player_name": player["name"],
+                    "target": all_players,
+                    "cards": player["hand"],
+                }
+            case "show_card":
+                assert player_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=player_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                all_players = [player.id for player in game.players]
+                if target_id is not None:
+                    player = PlayerOut.from_player(
+                        Player.get(id=target_id)
+                    ).model_dump(by_alias=True, exclude_unset=True)
+                return {
+                    "type": type,
+                    "player_name": player["name"],
+                    "target": all_players,
+                    "cards": [
+                        card.model_dump(by_alias=True, exclude_unset=True)
+                    ],
+                }
+            case "play":
+                assert target_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=target_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "played_card": card.model_dump(
+                        by_alias=True, exclude_unset=True
+                    ),
+                    "card_target": target_id,
+                }
+            case "try_defense":
+                assert target_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=target_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "target_player": target_id,
+                    "played_card": card.model_dump(
+                        by_alias=True, exclude_unset=True
+                    ),
+                    "defended_by": get_defense_cards(card.idtype),
+                }
+            case "defense":
+                assert target_id is not None
+                assert card_id is not None
+                target_id = PlayerOut.from_player(
+                    Player.get(id=target_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                if defense_card_id != 0:
+                    defense_card = CardOut.from_card(
+                        Card.get(id=defense_card_id)
+                    )
+                else:
+                    defense_card = 0
+                return {
+                    "type": type,
+                    "played_card": defense_card,
+                    "target_player": target_id,
+                    "last_played_card": card.model_dump(
+                        by_alias=True, exclude_unset=True
+                    ),
+                }
+            case "draw":
+                assert player_id is not None
+                assert card_id is not None
+                player = PlayerOut.from_player(
+                    Player.get(id=player_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                return {
+                    "type": type,
+                    "new_card": card.model_dump(
+                        by_alias=True, exclude_unset=True
+                    ),
+                    "card_type": card.type,
+                }
+            case "exchange_defense":
+                assert target_id is not None
+                assert card_id is not None
+                assert player_id is not None
+                assert defense_card_id is not None
+                target = PlayerOut.from_player(
+                    Player.get(id=target_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                card = CardOut.from_card(Card.get(id=card_id))
+                player = PlayerOut.from_player(
+                    Player.get(id=player_id)
+                ).model_dump(by_alias=True, exclude_unset=True)
+                defense_card = CardOut.from_card(Card.get(id=defense_card_id))
+                return {
+                    "type": type,
+                    "defended_by": get_defense_cards(32),
+                    "last_chosen_card": defense_card.model_dump(
+                        by_alias=True, exclude_unset=True
+                    ),
+                    "target_player": player,
+                    "exchange_requester": target,
                 }

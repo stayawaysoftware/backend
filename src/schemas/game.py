@@ -24,7 +24,7 @@ class PlayersInfo(BaseModel):
         players = list(game.players)
         players.sort(key=lambda player: player.id)
         # Crear una instancia de PlayerOut jsonificado
-        players = [PlayerOut.json(player) for player in players]
+        players = [PlayerOut.to_json(player) for player in players]
         return players
 
 
@@ -44,5 +44,6 @@ class GameInfo(BaseModel):
             "current_turn": game.current_position,
             "turn_order": game.round_left_direction,
             "status": game.status,
-            "winners": game.winners
+            "winners": game.winners,
+            "locked_doors": game.locked_doors,
         }

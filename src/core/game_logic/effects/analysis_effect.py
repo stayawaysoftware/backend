@@ -1,0 +1,34 @@
+"""Analysis Effect."""
+import core.effects as effect_aplication
+from core.player import get_alive_neighbors
+from models.game import Player
+
+
+def analysis_effect(
+    id_game: int, attack_player_id: int, defense_player_id: int
+):
+    """Analysis effect."""
+
+    # The defense player must to be alive
+    if Player[defense_player_id].alive is False:
+        raise ValueError("The player with id {defense_player_id} is dead.")
+
+    # The defense player must to be neighbor of the attack player
+    attack_neighbors = get_alive_neighbors(
+        id_game=id_game, id_player=attack_player_id
+    )
+    if defense_player_id not in attack_neighbors:
+        raise ValueError(
+            "The player with id {defense_player_id} is not a neighbor of the player with id {attack_player_id}."
+        )
+
+    # Without modifications in the game
+    # With effects to show in the frontend
+
+    effect = effect_aplication.show_hand_effect(
+        game_id=id_game,
+        player_id=attack_player_id,
+        target_id=defense_player_id,
+    )
+
+    return effect

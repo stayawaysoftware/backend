@@ -13,8 +13,8 @@ build-test:
 
 .PHONY: clean
 clean:
-	@rm -rf */__pycache__ */*/__pycache__ src/*.sqlite .coverage \
-	 */.*_cache coverage.xml .*_cache htmlcov/ site/
+	@rm -rf */__pycache__ */*/__pycache__ */*/*/__pycache__ */*/*/*/__pycache__ src/*.sqlite .coverage \
+	 */.*_cache coverage.xml .*_cache htmlcov/ site/ .report/
 
 delete-containers:
 	@sudo docker stop devcontainer || true && sudo docker rm devcontainer || true
@@ -45,7 +45,15 @@ test-see-coverage: .venv clean
 	pytest -v -s --cov=src --cov-report=html --cov-config=configs/.coveragerc)
 	@xdg-open htmlcov/index.html
 
-run-precommit: .venv
+run-precommit: .venv clean
 	@(. .venv/bin/activate; \
 	pre-commit install; \
 	pre-commit run --all-files)
+
+report: .venv
+	@mkdir -p .report
+	@(. .venv/bin/activate; \
+	pylint src/ --disable E0401,C0411,C0114,C0115,C0116,E0213 > ./.report/pylint-report; \
+	pyflakes src/ > ./.report/pyflakes-report; \
+	mypy --ignore-missing-imports src/ > ./.report/mypy-report; \
+	vulture src/ > ./.report/vulture-report)
