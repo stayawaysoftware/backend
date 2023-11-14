@@ -3,7 +3,7 @@ from typing import Optional
 
 import core.game_logic.game_utility as gu
 from core.connections import ConnectionManager
-from core.effect_handler import effect_handler
+from core.game_logic.game_effects import play
 from core.game_logic.game_utility import draw_no_panic
 from core.game_logic.game_utility import get_defense_cards
 from core.player import create_player
@@ -94,9 +94,14 @@ def play_card(
         if target_player_id == 0:
             target_player_id = None
 
-        effect = effect_handler(
-            game_id, card_idtype, current_player_id, target_player_id
+        effect = play(
+            id_game=game_id,
+            attack_player_id=current_player_id,
+            defense_player_id=target_player_id,
+            idtype_attack_card=card_idtype,
+            idtype_defense_card=0,
         )
+
         game.current_phase = "Discard"
         commit()
         gu.discard(
@@ -226,9 +231,15 @@ def handle_not_target(
         game = Game.get(id=game_id)
         card = Card.get(id=card_id)
         card_idtype = card.idtype
-        effect = effect_handler(
-            game_id, card_idtype, current_player_id, current_player_id
+
+        effect = play(
+            id_game=game_id,
+            attack_player_id=current_player_id,
+            defense_player_id=current_player_id,
+            idtype_attack_card=card_idtype,
+            idtype_defense_card=0,
         )
+
         game.current_phase = "Discard"
         commit()
         gu.discard(game_id, card_idtype, current_player_id)
@@ -312,13 +323,15 @@ def handle_defense(
                     last_card_played_id,
                     card_type_id,
                 )
-                effect = effect_handler(
-                    game_id,
-                    defense_card.idtype,
-                    defense_player_id,
-                    attacker_id,
-                    last_card_played_id,
+
+                effect = play(
+                    id_game=game_id,
+                    attack_player_id=attacker_id,
+                    defense_player_id=defense_player_id,
+                    idtype_attack_card=attack_card.idtype,
+                    idtype_defense_card=defense_card.idtype,
                 )
+
             except ValueError as e:
                 print("ERROR:", str(e))
         else:
@@ -390,14 +403,21 @@ def exchange_not_defended(
     exchange_requester: int,
     chosen_card: int,
 ):
-    effect = effect_handler(
-        game_id,
-        32,
-        current_player_id,
-        exchange_requester,
-        last_chosen_card,
-        chosen_card,
-    )
+    effect = None
+
+    try:
+        effect = play(
+            id_game=game_id,
+            attack_player_id=exchange_requester,
+            defense_player_id=current_player_id,
+            idtype_attack_card=32,
+            idtype_defense_card=0,
+            card_chosen_by_attacker=Card.get(id=last_chosen_card).idtype,
+            card_chosen_by_defender=Card.get(id=chosen_card).idtype,
+        )
+    except ValueError as e:
+        print("ERROR:", str(e))
+
     return effect
 
 
@@ -426,13 +446,18 @@ def handle_exchange_defense(
             try:
                 defense_card = Card.get(id=chosen_card)
                 exchange_defended(game_id, current_player_id, chosen_card)
-                effect = effect_handler(
-                    game_id,
-                    defense_card.idtype,
-                    current_player_id,
-                    exchange_requester,
-                    last_chosen_card,
+
+                effect = play(
+                    id_game=game_id,
+                    attack_player_id=exchange_requester,
+                    defense_player_id=current_player_id,
+                    idtype_attack_card=32,
+                    idtype_defense_card=defense_card.idtype,
+                    card_chosen_by_attacker=Card.get(
+                        id=last_chosen_card
+                    ).idtype,
                 )
+
             except ValueError as e:
                 print("ERROR:", str(e))
         else:
